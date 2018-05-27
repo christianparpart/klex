@@ -191,6 +191,15 @@ void RegExprEvaluator::visit(CharacterExpr& characterExpr) {
 
 void RegExprEvaluator::visit(ClosureExpr& closureExpr) {
   // TODO, think backtracking
+
+  int n = 0;
+  while (evaluate(closureExpr.subExpr()))
+    n++;
+
+  if (closureExpr.minimumOccurrences() <= n && n <= closureExpr.maximumOccurrences())
+    result_ = true;
+  else
+    result_ = false;
 }
 // }}}
 
