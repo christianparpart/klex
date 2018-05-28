@@ -1,7 +1,9 @@
 #pragma once
 
-#include <fmt/format.h>
+#include <lexer/regexpr.h>
+#include <lexer/util/UnboxedRange.h>
 
+#include <fmt/format.h>
 #include <string_view>
 #include <map>
 #include <memory>
@@ -16,16 +18,22 @@ constexpr Condition EpsilonTransition = '\0';
 
 class State {
  public:
-  explicit State(std::string id) : id_{id}, successors_{} {}
+  explicit State(std::string label) : label_{label}, successors_{} {}
 
-  const std::string& id() const noexcept { return id_; }
-  const std::map<Condition, State*>& successors() const noexcept { return successors_; }
+  const std::string& label() const noexcept { return label_; }
+  void relabel(std::string label) { label_ = std::move(label); }
 
-  void linkSuccessor(Condition condition, State* state);
+  std::list<std::pair<Condition, State*>>& successors() noexcept { return successors_; }
+  const std::list<std::pair<Condition, State*>>& successors() const noexcept { return successors_; }
+
+  void linkTo(State* state) { linkTo(EpsilonTransition, state); }
+  void linkTo(Condition condition, State* state);
+
+  std::list<std::string> to_strings() const;
 
  private:
-  std::string id_;
-  std::map<Condition, State*> successors_;
+  std::string label_;
+  std::list<std::pair<Condition, State*>> successors_;
 };
 
 // represents a finite automaton (NFA or DFA)
@@ -33,13 +41,7 @@ class FiniteAutomaton {
  public:
   FiniteAutomaton();
 
-  State* createState(std::string id);
-
-  // applies "Subset Construction"
-  std::unique_ptr<FiniteAutomaton> minimize() const;
-
-  // merges an alternation FA into this FA
-  void mergeAlternation(std::unique_ptr<FiniteAutomaton> alternation);
+  State* createState();
 
  private:
   std::list<std::unique_ptr<State>> states_;
@@ -47,16 +49,57 @@ class FiniteAutomaton {
   std::list<State*> acceptStates_;
 };
 
+class ThompsonConstruct {
+ public:
+  ThompsonConstruct()
+      : states_{},
+        startState_{nullptr},
+        endState_{nullptr} {
+  }
+
+  explicit ThompsonConstruct(Condition value)
+      : startState_(createState()),
+        endState_(createState()) {
+    startState_->linkTo(value, endState_);
+  }
+
+  ThompsonConstruct(ThompsonConstruct&&) = default;
+  ThompsonConstruct& operator=(ThompsonConstruct&&) = default;
+
+  ThompsonConstruct(const ThompsonConstruct&) = delete;
+  ThompsonConstruct& operator=(const ThompsonConstruct&) = delete;
+
+  ThompsonConstruct& concatenate(ThompsonConstruct rhs);
+  ThompsonConstruct& alternate(ThompsonConstruct other);
+  ThompsonConstruct& repeat(unsigned minimum);
+  ThompsonConstruct& repeat(unsigned minimum, unsigned maximum);
+
+  ThompsonConstruct& relabel(std::string_view prefix);
+
+  auto states() { return util::unbox(states_); }
+
+  std::string dot() const;
+
+  // applies "Subset Construction"
+  std::unique_ptr<FiniteAutomaton> minimize() const;
+
+ private:
+  State* createState();
+  void relabel(State* s, std::string_view prefix, unsigned* base,
+               std::set<State*>* registry);
+
+ private:
+  std::list<std::unique_ptr<State>> states_;
+  State* startState_;
+  State* endState_;
+};
+
 class Generator : public RegExprVisitor {
  public:
   explicit Generator(std::string prefix)
-      : prefix_{prefix}, id_{0}, fa_{} {}
+      : prefix_{prefix}, label_{0}, fa_{} {}
 
-  std::unique_ptr<FiniteAutomaton> generate(const RegExpr* re);
-
-  State* createState() {
-    return fa_->createState(fmt::format("{}{}", prefix_, id_++));
-  }
+  ThompsonConstruct generate(const RegExpr* re);
 
  private:
   void visit(AlternationExpr& alternationExpr) override;
@@ -66,9 +109,8 @@ class Generator : public RegExprVisitor {
 
  private:
   std::string prefix_; 
-  unsigned id_;
-  std::unique_ptr<FiniteAutomaton> fa_;
-  State* state_;
+  unsigned label_;
+  ThompsonConstruct fa_;
 };
 
 } // namespace lexer::fa
