@@ -46,7 +46,7 @@ class AlternationExpr : public RegExpr {
   RegExpr* leftExpr() const { return left_.get(); }
   RegExpr* rightExpr() const { return right_.get(); }
 
-  std::string to_string() const override { return left_->to_string() + "|" + right_->to_string(); }
+  std::string to_string() const override { return fmt::format("({}|{})", left_->to_string(), right_->to_string()); }
   void accept(RegExprVisitor& visitor) override;
 
  private:
