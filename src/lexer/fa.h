@@ -68,7 +68,7 @@ class FiniteAutomaton {
   // creates a dot-file that can be visualized with dot/xdot CLI tools
   std::string dot() const;
 
-  // applies "Subset Construction"
+  // applies "Subset Construction", effectively creating an DFA
   std::unique_ptr<FiniteAutomaton> minimize() const;
 
  private:
