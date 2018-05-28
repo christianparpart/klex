@@ -158,6 +158,9 @@ class RegExprEvaluator : protected RegExprVisitor {
 
   bool match(std::string_view pattern, RegExpr* expr);
 
+  bool result() const noexcept { return result_; }
+  size_t offset() const noexcept { return offset_; }
+
  private:
   bool evaluate(RegExpr* expr);
   void visit(AlternationExpr& alternationExpr) override;
@@ -167,12 +170,7 @@ class RegExprEvaluator : protected RegExprVisitor {
 
   bool eof() const { return offset_ == pattern_.size(); }
   int currentChar() const { return !eof() ? pattern_[offset_] : -1; }
-  int consume() {
-    int ch = currentChar();
-    if (!eof())
-      ++offset_;
-    return ch;
-  }
+  int consume();
 
  private:
   std::string_view pattern_;

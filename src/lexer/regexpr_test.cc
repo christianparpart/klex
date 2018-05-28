@@ -6,25 +6,29 @@
 
 using namespace lexer;
 
+void testOne(std::string regexprStr, std::string inputStr) {
+  RegExprParser rep;
+  std::unique_ptr<RegExpr> expr = rep.parse(regexprStr);
+  std::cout << "INPUT  : " << inputStr << "\n";
+  std::cout << "REGEXP : " << regexprStr << "\n";
+  std::cout << "STRIFY : " << expr->to_string() << "\n";
+  RegExprEvaluator evaluator;
+  bool m = evaluator.match(inputStr, expr.get());
+  if (m) {
+    std::cout << "MATCH  : true, remainder: " << &inputStr[evaluator.offset()] << "\n";
+  } else {
+    std::cout << "MATCH  : false" << "\n";
+  }
+}
+
 int main(int argc, const char* argv[]) {
-  if (argc == 2) {
-    std::string input = argv[1];
-    RegExprParser rep;
-    std::unique_ptr<RegExpr> expr = rep.parse(input);
-    std::string output = expr->to_string();
-    std::cout << "INPUT  : " << input << "\n";
-    std::cout << "OUTPUT : " << output << "\n";
+  if (argc == 1) {
+    testOne("(ab)*c", "ababcFNORD");
     return EXIT_SUCCESS;
   }
-
-  std::string input;
-  std::istream& stream = std::cin;
-  for (std::getline(stream, input); !stream.eof(); std::getline(stream, input)) {
-    std::cout << "INPUT  : " << input << "\n";
-    RegExprParser rep;
-    std::unique_ptr<RegExpr> expr = rep.parse(input);
-    std::string output = expr->to_string();
-    std::cout << "OUTPUT : " << output << "\n";
+  if (argc == 3) {
+    testOne(argv[1], argv[2]);
+    return EXIT_SUCCESS;
   }
 
   return EXIT_SUCCESS;

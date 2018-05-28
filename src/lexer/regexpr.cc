@@ -58,7 +58,6 @@ int RegExprParser::consume() {
     return -1;
 
   int ch = *currentChar_;
-  printf("consume: '%c'\n", ch);
   ++currentChar_;
   return ch;
 }
@@ -153,11 +152,21 @@ std::unique_ptr<RegExpr> RegExprParser::parseAtom() {
 // {{{ RegExprEvaluator
 RegExprEvaluator::RegExprEvaluator()
     : pattern_{},
+      offset_{},
       result_{false} {
+}
+
+int RegExprEvaluator::consume() {
+  int ch = currentChar();
+  if (!eof())
+    ++offset_;
+  return ch;
 }
 
 bool RegExprEvaluator::match(std::string_view pattern, RegExpr* expr) {
   pattern_ = pattern;
+  offset_ = 0;
+
   return evaluate(expr);
 }
 
@@ -193,7 +202,7 @@ void RegExprEvaluator::visit(ClosureExpr& closureExpr) {
   // TODO, think backtracking
 
   int n = 0;
-  while (evaluate(closureExpr.subExpr()))
+  while (n < closureExpr.maximumOccurrences() && evaluate(closureExpr.subExpr()))
     n++;
 
   if (closureExpr.minimumOccurrences() <= n && n <= closureExpr.maximumOccurrences())
