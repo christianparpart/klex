@@ -27,7 +27,7 @@ void testFA(std::string regexprStr) {
   RegExprParser rep;
   std::unique_ptr<RegExpr> expr = rep.parse(regexprStr);
 
-  fa::ThompsonConstruct nfa = lexer::fa::Generator{"n"}.generate(expr.get());
+  fa::FiniteAutomaton nfa = lexer::fa::Generator{"n"}.generate(expr.get());
   nfa.relabel("n");
   std::cout << nfa.dot() << "\n";
 }

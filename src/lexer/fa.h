@@ -4,10 +4,11 @@
 #include <lexer/util/UnboxedRange.h>
 
 #include <fmt/format.h>
-#include <string_view>
+#include <list>
 #include <map>
 #include <memory>
-#include <list>
+#include <string_view>
+#include <tuple>
 
 namespace lexer::fa {
 
@@ -36,17 +37,47 @@ class State {
   std::list<std::pair<Condition, State*>> successors_;
 };
 
+using OwnedStateList = std::list<std::unique_ptr<State>>;
+using StateList = std::list<State*>;
+
 // represents a finite automaton (NFA or DFA)
 class FiniteAutomaton {
  public:
-  FiniteAutomaton();
+  FiniteAutomaton(const FiniteAutomaton&) = delete;
+  FiniteAutomaton& operator=(const FiniteAutomaton&) = delete;
+  FiniteAutomaton(FiniteAutomaton&&) = default;
+  FiniteAutomaton& operator=(FiniteAutomaton&&) = default;
+  ~FiniteAutomaton() = default;
 
-  State* createState();
+  FiniteAutomaton()
+      : FiniteAutomaton{nullptr, {}, {}} {}
+
+  FiniteAutomaton(State* initialState, OwnedStateList states, StateList acceptStates)
+      : states_{std::move(states)},
+        initialState_{initialState},
+        acceptStates_{std::move(acceptStates)} {}
+
+  FiniteAutomaton(std::tuple<OwnedStateList, State*, State*> thompsonConstruct)
+      : states_{std::move(std::get<0>(thompsonConstruct))},
+        initialState_{std::get<1>(thompsonConstruct)},
+        acceptStates_{{std::get<2>(thompsonConstruct)}} {}
+
+  // relables all states with given prefix and an monotonically ascending number
+  void relabel(std::string_view prefix);
+
+  // creates a dot-file that can be visualized with dot/xdot CLI tools
+  std::string dot() const;
+
+  // applies "Subset Construction"
+  std::unique_ptr<FiniteAutomaton> minimize() const;
 
  private:
-  std::list<std::unique_ptr<State>> states_;
+  void relabel(State* s, std::string_view prefix, std::set<State*>* registry);
+
+ private:
+  OwnedStateList states_;
   State* initialState_;
-  std::list<State*> acceptStates_;
+  StateList acceptStates_;
 };
 
 class ThompsonConstruct {
@@ -71,25 +102,18 @@ class ThompsonConstruct {
 
   ThompsonConstruct& concatenate(ThompsonConstruct rhs);
   ThompsonConstruct& alternate(ThompsonConstruct other);
-  ThompsonConstruct& repeat(unsigned minimum);
+  ThompsonConstruct& repeat(unsigned factor);
   ThompsonConstruct& repeat(unsigned minimum, unsigned maximum);
-
-  ThompsonConstruct& relabel(std::string_view prefix);
 
   auto states() { return util::unbox(states_); }
 
-  std::string dot() const;
-
-  // applies "Subset Construction"
-  std::unique_ptr<FiniteAutomaton> minimize() const;
+  std::tuple<OwnedStateList, State*, State*> release();
 
  private:
   State* createState();
-  void relabel(State* s, std::string_view prefix, unsigned* base,
-               std::set<State*>* registry);
 
  private:
-  std::list<std::unique_ptr<State>> states_;
+  OwnedStateList states_;
   State* startState_;
   State* endState_;
 };
@@ -99,9 +123,10 @@ class Generator : public RegExprVisitor {
   explicit Generator(std::string prefix)
       : prefix_{prefix}, label_{0}, fa_{} {}
 
-  ThompsonConstruct generate(const RegExpr* re);
+  FiniteAutomaton generate(const RegExpr* re);
 
  private:
+  ThompsonConstruct construct(const RegExpr* re);
   void visit(AlternationExpr& alternationExpr) override;
   void visit(ConcatenationExpr& concatenationExpr) override;
   void visit(CharacterExpr& characterExpr) override;
