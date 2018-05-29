@@ -94,7 +94,7 @@ class FiniteAutomaton {
 };
 
 /**
- * A Thompson Construction is an NFA with certain properties.
+ * NFA Builder with the Thompson's Construction properties.
  *
  * <ul>
  *   <li> There is exactly one initial state and exactly one accepting state..
@@ -107,12 +107,14 @@ class FiniteAutomaton {
  */
 class ThompsonConstruct {
  public:
+  //! Constructs an empty NFA.
   ThompsonConstruct()
       : states_{},
         startState_{nullptr},
         endState_{nullptr} {
   }
 
+  //! Constructs an NFA for a single character transition
   explicit ThompsonConstruct(Condition value)
       : startState_(createState()),
         endState_(createState()) {
@@ -125,15 +127,25 @@ class ThompsonConstruct {
   ThompsonConstruct(const ThompsonConstruct&) = delete;
   ThompsonConstruct& operator=(const ThompsonConstruct&) = delete;
 
+  //! Concatenates the right FA's initial state with this FA's accepting state.
   ThompsonConstruct& concatenate(ThompsonConstruct rhs);
+
+  //! Reconstructs this FA to alternate between this FA and the @p other FA.
   ThompsonConstruct& alternate(ThompsonConstruct other);
-  ThompsonConstruct& repeat(unsigned factor);
+
+  //! Reconstructs this FA with the given @p quantifier factor.
+  ThompsonConstruct& repeat(unsigned quantifier);
+
+  //! Reconstructs this FA to be repeatable between range [minimum, maximum].
   ThompsonConstruct& repeat(unsigned minimum, unsigned maximum);
 
-  auto states() { return util::unbox(states_); }
+  //! Retrieves the list of states this FA contains.
+  auto states() const { return util::unbox(states_); }
 
+  //! Creates a dot-file that can be visualized with dot/xdot CLI tools
   std::string dot() const;
 
+  //! Moves internal structures into a FiniteAutomaton and returns that.
   FiniteAutomaton release();
 
  private:
