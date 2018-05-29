@@ -17,6 +17,10 @@ else()
 endif()
 
 # ----------------------------------------------------------------------------
+add_definitions(-Wall)
+add_definitions(-pedantic)
+
+# ----------------------------------------------------------------------------
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/src
                     ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
@@ -25,8 +29,9 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/lexer/sysconfig.h.cmake
 
 # ----------------------------------------------------------------------------
 add_library(lexer STATIC
-    src/lexer/regexpr.cc
+    src/lexer/alphabet.cc
     src/lexer/fa.cc
+    src/lexer/regexpr.cc
     )
 
 target_link_libraries(lexer PUBLIC fmt::fmt-header-only)

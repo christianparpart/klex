@@ -26,9 +26,11 @@ void testRegExpr(std::string regexprStr, std::string inputStr) {
 void testFA(std::string regexprStr) {
   RegExprParser rep;
   std::unique_ptr<RegExpr> expr = rep.parse(regexprStr);
-  std::cerr << "STRIFY : " << expr->to_string() << "\n";
+  std::cerr << "STRIFY   = " << expr->to_string() << "\n";
 
   fa::FiniteAutomaton nfa = lexer::fa::Generator{"n"}.generate(expr.get());
+  Alphabet alphabet = nfa.alphabet();
+  std::cerr << "alphabet = " << alphabet.to_string() << "\n";
   nfa.relabel("n");
   std::cout << nfa.dot() << "\n";
 }

@@ -10,16 +10,6 @@
 
 namespace lexer {
 
-class Alphabet {
- public:
-  void add(char ch);
-
-  std::string to_string() const;
-
- private:
-  std::set<char> alphabet_;
-};
-
 class RegExprVisitor;
 
 class RegExpr {

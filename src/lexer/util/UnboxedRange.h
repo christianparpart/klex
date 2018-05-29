@@ -45,9 +45,12 @@ class UnboxedRange {
 
   UnboxedRange(BoxedIterator begin, BoxedIterator end) : begin_(begin), end_(end) {}
   explicit UnboxedRange(BoxedContainer& c) : begin_(c.begin()), end_(c.end()) {}
+  explicit UnboxedRange(const BoxedContainer& c) : UnboxedRange{const_cast<BoxedContainer&>(c)} {}
 
   iterator begin() const { return begin_; }
   iterator end() const { return end_; }
+  iterator cbegin() const { return begin_; }
+  iterator cend() const { return end_; }
   size_t size() const { return std::distance(begin_, end_); }
 
  private:
@@ -70,6 +73,11 @@ class UnboxedRange {
  */
 template<typename BoxedContainer>
 UnboxedRange<BoxedContainer> unbox(BoxedContainer& boxedContainer) {
+  return UnboxedRange<BoxedContainer>(boxedContainer);
+}
+
+template<typename BoxedContainer>
+UnboxedRange<BoxedContainer> unbox(const BoxedContainer& boxedContainer) {
   return UnboxedRange<BoxedContainer>(boxedContainer);
 }
 

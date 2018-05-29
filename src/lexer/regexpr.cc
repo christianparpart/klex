@@ -58,7 +58,6 @@ int RegExprParser::consume() {
     return -1;
 
   int ch = *currentChar_;
-  fprintf(stderr, "consume: '%c'\n", ch);
   ++currentChar_;
   return ch;
 }
@@ -198,7 +197,7 @@ void RegExprEvaluator::visit(CharacterExpr& characterExpr) {
 void RegExprEvaluator::visit(ClosureExpr& closureExpr) {
   // TODO, think backtracking
 
-  int n = 0;
+  unsigned int n = 0;
   while (n < closureExpr.maximumOccurrences() && evaluate(closureExpr.subExpr()))
     n++;
 

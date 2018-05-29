@@ -15,7 +15,7 @@ void State::linkTo(Condition condition, State* state) {
 std::list<std::string> State::to_strings() const {
   std::list<std::string> list;
 
-  for (const std::pair<Condition, State*>& succ: successors_) {
+  for (const Edge& succ: successors_) {
     std::string cond = succ.first == EpsilonTransition
         ? fmt::format("{}", "epsilon")
         : fmt::format("{}", static_cast<char>(succ.first));
@@ -36,10 +36,20 @@ void FiniteAutomaton::relabel(std::string_view prefix) {
   relabel(initialState_, prefix, &registry);
 }
 
+Alphabet FiniteAutomaton::alphabet() const {
+  Alphabet alphabet;
+  for (const State* state : states()) {
+    for (const Edge& edge : state->successors()) {
+      alphabet.insert(edge.first);
+    }
+  }
+  return alphabet;
+}
+
 void FiniteAutomaton::relabel(State* s, std::string_view prefix, std::set<State*>* registry) {
   s->relabel(fmt::format("{}{}", prefix, registry->size()));
   registry->insert(s);
-  for (const std::pair<Condition, State*>& succ : s->successors()) {
+  for (const Edge& succ : s->successors()) {
     if (registry->find(succ.second) == registry->end()) {
       relabel(succ.second, prefix, registry);
     }
@@ -53,12 +63,13 @@ std::unique_ptr<FiniteAutomaton> FiniteAutomaton::minimize() const {
   auto delta(StateList q, char c) -> StateList {
   };
 
-  StateList q0 = epsilonClosure({initialState_});
-  StateList Q = q0;
-  std::deque<StateList> workList = {q0};
+  StateList q_0 = epsilonClosure({initialState_});
+  StateList Q = q_0;
+  std::deque<StateList> workList = {q_0};
   TransitionTable T;
+  Alphabet alphas = alphabet();
 
-  for (char c : alphabet_) {
+  for (char c : alphas) {
     StateList q = workList.front();
     workList.pop_front();
 
@@ -100,7 +111,7 @@ std::string FiniteAutomaton::dot(const OwnedStateList& states, State* initialSta
 
   // all states and their edges
   for (const std::unique_ptr<State>& state: states) {
-    for (const std::pair<Condition, State*>& edge: state->successors()) {
+    for (const Edge& edge: state->successors()) {
       const Condition cond = edge.first;
       const State* succ = edge.second;
 
@@ -142,8 +153,6 @@ State* ThompsonConstruct::createState() {
 }
 
 ThompsonConstruct& ThompsonConstruct::concatenate(ThompsonConstruct rhs) {
-  std::cerr << "lhs: " << dot() << "\n";
-  std::cerr << "rhs: " << rhs.dot() << "\n";
   endState_->linkTo(rhs.startState_);
   endState_ = rhs.endState_;
 

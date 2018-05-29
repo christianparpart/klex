@@ -1,5 +1,6 @@
 #pragma once
 
+#include <lexer/alphabet.h>
 #include <lexer/regexpr.h>
 #include <lexer/util/UnboxedRange.h>
 
@@ -17,6 +18,10 @@ using Condition = char;
 // represents an epsilon-transition
 constexpr Condition EpsilonTransition = '\0';
 
+class State;
+using Edge = std::pair<Condition, State*>;
+using EdgeList = std::list<Edge>;
+
 class State {
  public:
   explicit State(std::string label) : label_{label}, successors_{} {}
@@ -24,8 +29,8 @@ class State {
   const std::string& label() const noexcept { return label_; }
   void relabel(std::string label) { label_ = std::move(label); }
 
-  std::list<std::pair<Condition, State*>>& successors() noexcept { return successors_; }
-  const std::list<std::pair<Condition, State*>>& successors() const noexcept { return successors_; }
+  EdgeList& successors() noexcept { return successors_; }
+  const EdgeList& successors() const noexcept { return successors_; }
 
   void linkTo(State* state) { linkTo(EpsilonTransition, state); }
   void linkTo(Condition condition, State* state);
@@ -34,7 +39,7 @@ class State {
 
  private:
   std::string label_;
-  std::list<std::pair<Condition, State*>> successors_;
+  EdgeList successors_;
 };
 
 using OwnedStateList = std::list<std::unique_ptr<State>>;
@@ -62,6 +67,11 @@ class FiniteAutomaton {
         initialState_{std::get<1>(thompsonConstruct)},
         acceptStates_{{std::get<2>(thompsonConstruct)}} {}
 
+  Alphabet alphabet() const;
+  State* initialState() const { return initialState_; }
+  auto states() const { return util::unbox(states_); }
+  const StateList& acceptStates() const noexcept { return acceptStates_; }
+
   // relables all states with given prefix and an monotonically ascending number
   void relabel(std::string_view prefix);
 
@@ -73,6 +83,7 @@ class FiniteAutomaton {
 
   static std::string dot(const OwnedStateList& states, State* initialState,
                          const StateList& acceptStates);
+
  private:
   void relabel(State* s, std::string_view prefix, std::set<State*>* registry);
 
