@@ -14,13 +14,13 @@
 
 namespace lexer::fa {
 
-using Input = char;
+using Symbol = char;
 class State;
-using Edge = std::pair<Input, State*>;
+using Edge = std::pair<Symbol, State*>;
 using EdgeList = std::list<Edge>;
 
 // represents an epsilon-transition
-constexpr Input EpsilonTransition = '\0';
+constexpr Symbol EpsilonTransition = '\0';
 
 class State {
  public:
@@ -34,7 +34,7 @@ class State {
   const EdgeList& successors() const noexcept { return successors_; }
 
   void linkTo(State* state) { linkTo(EpsilonTransition, state); }
-  void linkTo(Input condition, State* state);
+  void linkTo(Symbol condition, State* state);
 
   void setAccept(bool accepting) { accepting_ = accepting; }
   bool isAccepting() const noexcept { return accepting_; }
@@ -101,7 +101,7 @@ class FiniteAutomaton {
   std::string dot(const std::string_view& label) const;
 
   //! applies "Subset Construction", effectively creating an DFA
-  FiniteAutomaton minimize() const;
+  FiniteAutomaton deterministic() const;
 
   /*!
    * Creates a dot-file that can be visualized with dot/xdot CLI tools.
@@ -146,7 +146,7 @@ class ThompsonConstruct {
   }
 
   //! Constructs an NFA for a single character transition
-  explicit ThompsonConstruct(Input value)
+  explicit ThompsonConstruct(Symbol value)
       : startState_(createState()),
         endState_(createState()) {
     startState_->linkTo(value, endState_);
@@ -224,7 +224,7 @@ StateSet epsilonClosure(const StateSet& S);
  *
  * @return set of states that the FA can reach from @p c given the input @p c.
  */
-StateSet delta(const StateSet& q, char c);
+StateSet delta(const StateSet& q, Symbol c);
 
 std::string to_string(const StateSet& S);
 

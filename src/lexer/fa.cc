@@ -11,11 +11,11 @@ namespace lexer::fa {
 // ---------------------------------------------------------------------------
 // State
 
-void State::linkTo(Input input, State* state) {
+void State::linkTo(Symbol input, State* state) {
   successors_.emplace_back(input, state);
 }
 
-std::string prettyInput(char input) {
+std::string prettySymbol(Symbol input) {
   if (input == EpsilonTransition)
     return "ε";
   else
@@ -27,7 +27,7 @@ std::list<std::string> State::to_strings() const {
 
   for (const Edge& succ: successors_) {
     list.emplace_back(fmt::format("{}: --({})--> {}", label_,
-                                                      prettyInput(succ.first),
+                                                      prettySymbol(succ.first),
                                                       succ.second->label()));
   }
 
@@ -95,7 +95,7 @@ StateSet epsilonClosure(const StateSet& S) {
   return result;
 }
 
-StateSet delta(const StateSet& q, char c) {
+StateSet delta(const StateSet& q, Symbol c) {
   StateSet result;
   for (State* s : q) {
     for (Edge& edge : s->successors()) {
@@ -161,41 +161,46 @@ int configurationNumber(const std::deque<StateSet>& Q, const StateSet& t) {
 struct TransitionTable {
   struct Input {
     int configurationNumber;
-    char character;
+    Symbol symbol;
+    int targetNumber;
   };
 
-  void insert(int q, char c, int t) {
+  void insert(int q, Symbol c, int t) {
     auto i = std::find_if(transitions.begin(), transitions.end(),
                           [=](const auto& input) {
-        return input.first.configurationNumber == q && input.first.character == c;
+        return input.first.configurationNumber == q && input.first.symbol == c;
     });
     if (i == transitions.end()) {
       transitions.emplace_back(Input{q, c}, t);
+    } else {
+      DEBUG("TransitionTable[q{}][{}] = q{}; already present", q, prettySymbol(c), t);
     }
   }
 
   std::list<std::pair<Input, int>> transitions;
 };
 
-FiniteAutomaton FiniteAutomaton::minimize() const {
+FiniteAutomaton FiniteAutomaton::deterministic() const {
   StateSet q_0 = epsilonClosure({initialState_});
   DEBUG("q_0 = epsilonClosure({}) = {}", to_string({initialState_}), q_0);
   std::deque<StateSet> Q = {q_0};          // resulting states
   std::deque<StateSet> workList = {q_0};
   TransitionTable T;
 
-  FiniteAutomaton dfa;
+  DEBUG(" {:<8} | {:<14} | {:<14} | {:<}", "set name", "DFA state", "NFA states", "ε-closures(q, *)");
+  DEBUG("{}", "------------------------------------------------------------------------");
 
   while (!workList.empty()) {
     StateSet q = workList.front();    // each set q represents a valid configuration from the NFA
     workList.pop_front();
     const int q_i = configurationNumber(Q, q);
 
-    DEBUG("q_{} = {}", q_i, q);
+    std::stringstream dbg;
+    for (Symbol c : alphabet()) {
+      if (c == EpsilonTransition) continue;
 
-    for (char c : alphabet()) {
       StateSet _delta = delta(q, c);
-      DEBUG("  delta({}, '{}') = {}", q, prettyInput(c), _delta);
+      DEBUG("  delta({}, '{}') = {}", q, prettySymbol(c), _delta);
       StateSet t = epsilonClosure(delta(q, c));
       DEBUG("  epsilonClosure({}) = {}", _delta, t);
 
@@ -204,13 +209,19 @@ FiniteAutomaton FiniteAutomaton::minimize() const {
         Q.push_back(t);
         workList.push_back(t);
         t_i = configurationNumber(Q, t);
+        dbg << prettySymbol(c) << ": " << to_string(t) << ", ";
+      } else {
+        dbg << prettySymbol(c) << ": none, ";
       }
 
-      DEBUG("  T[q{}][{}] = q{}", q_i, prettyInput(c), t_i);
+      DEBUG("  T[q{}][{}] = q{}", q_i, prettySymbol(c), t_i);
       T.insert(q_i, c, t_i); // T[q][c] = t;
     }
+    DEBUG(" q{:<7} | d{:<13} | {:14} | {}", q_i, q_i, to_string(q), dbg.str());
   }
   // Q now contains all the valid configurations and T all transitions between them
+
+  FiniteAutomaton dfa;
 
   // map q_i to d_i and flag accepting states
   for (StateSet& q : Q) {
@@ -225,7 +236,7 @@ FiniteAutomaton FiniteAutomaton::minimize() const {
   // observe mapping from q_i to d_i
   for (const std::pair<TransitionTable::Input, int>& t: T.transitions) {
     const int q_i = t.first.configurationNumber;
-    const char c = t.first.character;
+    const Symbol c = t.first.symbol;
     const int t_i = t.second;
     DEBUG("map n{} |--({})--> d{}", q_i, c, t_i);
 
@@ -265,11 +276,11 @@ std::string FiniteAutomaton::dot(const std::string_view& label,
   // all states and their edges
   for (const std::unique_ptr<State>& state: states) {
     for (const Edge& edge: state->successors()) {
-      const Input input = edge.first;
+      const Symbol input = edge.first;
       const State* succ = edge.second;
 
       sstr << "  " << state->label() << " -> " << succ->label();
-      sstr << " [label=\"" << prettyInput(input) << "\"]";
+      sstr << " [label=\"" << prettySymbol(input) << "\"]";
       sstr << ";\n";
     }
   }

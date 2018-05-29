@@ -11,7 +11,7 @@ void dump(std::string regexprStr) {
   RegExprParser rep;
   std::unique_ptr<RegExpr> expr = rep.parse(regexprStr);
   fa::FiniteAutomaton nfa = lexer::fa::Generator{"n"}.generate(expr.get());
-  //nfa.relabel("n");
+  nfa.relabel("n");
   std::cout << nfa.dot(expr->to_string()) << "\n";
 }
 
