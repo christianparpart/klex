@@ -46,22 +46,27 @@ void FiniteAutomaton::relabel(State* s, std::string_view prefix, std::set<State*
 }
 
 std::string FiniteAutomaton::dot() const {
+  return dot(states_, initialState_, acceptStates_);
+}
+
+std::string FiniteAutomaton::dot(const OwnedStateList& states, State* initialState,
+                                 const StateList& acceptStates) {
   std::stringstream sstr;
 
   sstr << "digraph {\n";
   sstr << "  rankdir=LR;\n";
 
   // endState
-  for (State* endState: acceptStates_)
+  for (State* endState: acceptStates)
     sstr << "  node [shape=doublecircle]; " << endState->label() << ";\n";
 
   // startState
   sstr << "  \"\" [shape=plaintext];\n";
   sstr << "  node [shape=circle];\n";
-  sstr << "  \"\" -> " << initialState_->label() << ";\n";
+  sstr << "  \"\" -> " << initialState->label() << ";\n";
 
   // all states and their edges
-  for (const std::unique_ptr<State>& state: states_) {
+  for (const std::unique_ptr<State>& state: states) {
     for (const std::pair<Condition, State*>& edge: state->successors()) {
       const Condition cond = edge.first;
       const State* succ = edge.second;
@@ -84,6 +89,10 @@ std::string FiniteAutomaton::dot() const {
 // ---------------------------------------------------------------------------
 // ThompsonConstruct
 
+std::string ThompsonConstruct::dot() const {
+  return FiniteAutomaton::dot(states_, startState_, {endState_});
+}
+
 std::tuple<OwnedStateList, State*, State*> ThompsonConstruct::release() {
   auto t = std::make_tuple(std::move(states_), startState_, endState_);
   startState_ = nullptr;
@@ -100,6 +109,8 @@ State* ThompsonConstruct::createState() {
 }
 
 ThompsonConstruct& ThompsonConstruct::concatenate(ThompsonConstruct rhs) {
+  std::cerr << "lhs: " << dot() << "\n";
+  std::cerr << "rhs: " << rhs.dot() << "\n";
   endState_->linkTo(rhs.startState_);
   endState_ = rhs.endState_;
 

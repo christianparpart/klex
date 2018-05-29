@@ -120,7 +120,10 @@ class RegExprParser {
   class UnexpectedToken : public std::runtime_error {
    public:
     UnexpectedToken(int actual, int expected)
-        : std::runtime_error{fmt::format("Unexpected token {}. Found {} instead.", actual, expected)}
+        : std::runtime_error{fmt::format("Unexpected token {}. Expected {} instead.",
+                                         actual == -1 ? "EOF"
+                                                      : fmt::format("{}", static_cast<char>(actual)),
+                                         static_cast<char>(expected))}
     {}
   };
 

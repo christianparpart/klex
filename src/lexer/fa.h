@@ -71,6 +71,8 @@ class FiniteAutomaton {
   // applies "Subset Construction", effectively creating an DFA
   std::unique_ptr<FiniteAutomaton> minimize() const;
 
+  static std::string dot(const OwnedStateList& states, State* initialState,
+                         const StateList& acceptStates);
  private:
   void relabel(State* s, std::string_view prefix, std::set<State*>* registry);
 
@@ -106,6 +108,8 @@ class ThompsonConstruct {
   ThompsonConstruct& repeat(unsigned minimum, unsigned maximum);
 
   auto states() { return util::unbox(states_); }
+
+  std::string dot() const;
 
   std::tuple<OwnedStateList, State*, State*> release();
 

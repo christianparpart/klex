@@ -58,6 +58,7 @@ int RegExprParser::consume() {
     return -1;
 
   int ch = *currentChar_;
+  fprintf(stderr, "consume: '%c'\n", ch);
   ++currentChar_;
   return ch;
 }
@@ -69,7 +70,7 @@ int RegExprParser::nextChar() {
 
 void RegExprParser::consume(int expected) {
   int actual = currentChar();
-  nextChar();
+  consume();
   if (actual != expected) {
     throw UnexpectedToken{actual, expected};
   }
@@ -98,15 +99,11 @@ std::unique_ptr<RegExpr> RegExprParser::parseAlternation() {
   return std::move(lhs);
 }
 
-static inline bool isSpecialToken(int ch) {
-  static const std::string specials = "^|()[]";
-  return specials.find(ch) != specials.npos;
-}
-
 std::unique_ptr<RegExpr> RegExprParser::parseConcatenation() {
+  static const std::string follow = "|)"; // FOLLOW-set
   std::unique_ptr<RegExpr> lhs = parseClosure();
 
-  while (!eof() && !isSpecialToken(currentChar())) {
+  while (!eof() && follow.find(currentChar()) == follow.npos) {
     std::unique_ptr<RegExpr> rhs = parseClosure();
     lhs = std::make_unique<ConcatenationExpr>(std::move(lhs), std::move(rhs));
   }
