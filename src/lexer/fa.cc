@@ -1,5 +1,6 @@
 #include <lexer/fa.h>
 #include <sstream>
+#include <deque>
 #include <iostream>
 
 namespace lexer::fa {
@@ -43,6 +44,38 @@ void FiniteAutomaton::relabel(State* s, std::string_view prefix, std::set<State*
       relabel(succ.second, prefix, registry);
     }
   }
+}
+
+std::unique_ptr<FiniteAutomaton> FiniteAutomaton::minimize() const {
+#if 1==0
+  auto epsilonClosure(StateList S) -> StateList {
+  };
+  auto delta(StateList q, char c) -> StateList {
+  };
+
+  StateList q0 = epsilonClosure({initialState_});
+  StateList Q = q0;
+  std::deque<StateList> workList = {q0};
+  TransitionTable T;
+
+  for (char c : alphabet_) {
+    StateList q = workList.front();
+    workList.pop_front();
+
+    StateList t = epsilonClosure(delta(q, c));
+
+    T[q][c] = t;
+
+    if (!t.empty()) {
+      Q.push_back(t);
+      workList.push_back(t);
+    }
+  }
+
+  // next: create states and their edges based on the above output
+#else
+  return nullptr;
+#endif
 }
 
 std::string FiniteAutomaton::dot() const {
