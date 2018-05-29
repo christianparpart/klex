@@ -14,13 +14,13 @@
 namespace lexer::fa {
 
 using Condition = char;
-
-// represents an epsilon-transition
-constexpr Condition EpsilonTransition = '\0';
-
 class State;
 using Edge = std::pair<Condition, State*>;
 using EdgeList = std::list<Edge>;
+
+
+// represents an epsilon-transition
+constexpr Condition EpsilonTransition = '\0';
 
 class State {
  public:
