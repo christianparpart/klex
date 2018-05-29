@@ -1,6 +1,12 @@
-#include "regexpr.h"
+#include <lexer/regexpr.h>
+
 #include <sstream>
 #include <limits>
+#include <iostream>
+
+#include <fmt/format.h>
+
+#define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
 
 namespace lexer {
 
@@ -9,12 +15,25 @@ void AlternationExpr::accept(RegExprVisitor& visitor) {
   return visitor.visit(*this);
 }
 
+std::string AlternationExpr::to_string() const {
+  // TODO: optimize superfluous ()'s
+  return fmt::format("{}|{}", left_->to_string(), right_->to_string());
+}
+
 void ConcatenationExpr::accept(RegExprVisitor& visitor) {
   return visitor.visit(*this);
 }
 
+std::string ConcatenationExpr::to_string() const {
+  return left_->to_string() + right_->to_string();
+}
+
 void CharacterExpr::accept(RegExprVisitor& visitor) {
   return visitor.visit(*this);
+}
+
+std::string CharacterExpr::to_string() const {
+  return std::string(1, value_);
 }
 
 void ClosureExpr::accept(RegExprVisitor& visitor) {
@@ -24,9 +43,12 @@ void ClosureExpr::accept(RegExprVisitor& visitor) {
 std::string ClosureExpr::to_string() const {
   std::stringstream sstr;
 
-  sstr << '(';
-  sstr << subExpr_->to_string();
-  sstr << ')';
+  // TODO: optimize superfluous ()'s
+  if (precedence() > subExpr_->precedence()) {
+    sstr << '(' << subExpr_->to_string() << ')';
+    DEBUG("closure.precedence: {}, subExpr's: {}", precedence(), subExpr_->precedence());
+  } else
+    sstr << subExpr_->to_string();
 
   if (minimumOccurrences_ == 0 && maximumOccurrences_ == 1)
     sstr << '?';

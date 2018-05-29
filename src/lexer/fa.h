@@ -98,7 +98,7 @@ class FiniteAutomaton {
   void relabel(std::string_view prefix);
 
   //! Creates a dot-file that can be visualized with dot/xdot CLI tools.
-  std::string dot() const;
+  std::string dot(const std::string_view& label) const;
 
   //! applies "Subset Construction", effectively creating an DFA
   FiniteAutomaton minimize() const;
@@ -106,11 +106,13 @@ class FiniteAutomaton {
   /*!
    * Creates a dot-file that can be visualized with dot/xdot CLI tools.
    *
+   * @param some descriptive label (such as the RE)
    * @param states list of states of the FA to visualize
    * @param initialState special state to be marked as initial state
    * @param acceptStates special states to be marked as accepting states
    */
-  static std::string dot(const OwnedStateSet& states, State* initialState,
+  static std::string dot(const std::string_view& label,
+                         const OwnedStateSet& states, State* initialState,
                          const StateSet& acceptStates);
 
  private:
@@ -172,7 +174,7 @@ class ThompsonConstruct {
   auto states() const { return util::unbox(states_); }
 
   //! Creates a dot-file that can be visualized with dot/xdot CLI tools.
-  std::string dot() const;
+  std::string dot(const std::string_view& label) const;
 
   //! Moves internal structures into a FiniteAutomaton and returns that.
   FiniteAutomaton release();

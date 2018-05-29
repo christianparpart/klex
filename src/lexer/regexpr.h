@@ -36,7 +36,7 @@ class AlternationExpr : public RegExpr {
   RegExpr* leftExpr() const { return left_.get(); }
   RegExpr* rightExpr() const { return right_.get(); }
 
-  std::string to_string() const override { return fmt::format("({}|{})", left_->to_string(), right_->to_string()); }
+  std::string to_string() const override;
   void accept(RegExprVisitor& visitor) override;
 
  private:
@@ -54,27 +54,12 @@ class ConcatenationExpr : public RegExpr {
   RegExpr* leftExpr() const { return left_.get(); }
   RegExpr* rightExpr() const { return right_.get(); }
 
-  std::string to_string() const override { return left_->to_string() + right_->to_string(); }
+  std::string to_string() const override;
   void accept(RegExprVisitor& visitor) override;
 
  private:
   std::unique_ptr<RegExpr> left_;
   std::unique_ptr<RegExpr> right_;
-};
-
-class CharacterExpr : public RegExpr {
- public:
-  explicit CharacterExpr(char value)
-      : RegExpr{2},
-        value_{value} {}
-
-  char value() const noexcept { return value_; }
-
-  std::string to_string() const override { return std::string(1, value_); }
-  void accept(RegExprVisitor& visitor) override;
-
- private:
-  char value_;
 };
 
 class ClosureExpr : public RegExpr {
@@ -99,6 +84,21 @@ class ClosureExpr : public RegExpr {
   std::unique_ptr<RegExpr> subExpr_;
   unsigned minimumOccurrences_;
   unsigned maximumOccurrences_;
+};
+
+class CharacterExpr : public RegExpr {
+ public:
+  explicit CharacterExpr(char value)
+      : RegExpr{4},
+        value_{value} {}
+
+  char value() const noexcept { return value_; }
+
+  std::string to_string() const override;
+  void accept(RegExprVisitor& visitor) override;
+
+ private:
+  char value_;
 };
 
 class RegExprParser {

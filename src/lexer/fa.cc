@@ -239,16 +239,19 @@ FiniteAutomaton FiniteAutomaton::minimize() const {
   return dfa;
 }
 
-std::string FiniteAutomaton::dot() const {
-  return dot(states_, initialState_, acceptStates_);
+std::string FiniteAutomaton::dot(const std::string_view& label) const {
+  return dot(label, states_, initialState_, acceptStates_);
 }
 
-std::string FiniteAutomaton::dot(const OwnedStateSet& states, State* initialState,
+std::string FiniteAutomaton::dot(const std::string_view& label,
+                                 const OwnedStateSet& states,
+                                 State* initialState,
                                  const StateSet& acceptStates) {
   std::stringstream sstr;
 
   sstr << "digraph {\n";
   sstr << "  rankdir=LR;\n";
+  sstr << "  label=\"" << label << "\";\n";
 
   // endState
   for (State* endState: acceptStates)
@@ -279,8 +282,8 @@ std::string FiniteAutomaton::dot(const OwnedStateSet& states, State* initialStat
 // ---------------------------------------------------------------------------
 // ThompsonConstruct
 
-std::string ThompsonConstruct::dot() const {
-  return FiniteAutomaton::dot(states_, startState_, {endState_});
+std::string ThompsonConstruct::dot(const std::string_view& label) const {
+  return FiniteAutomaton::dot(label, states_, startState_, {endState_});
 }
 
 FiniteAutomaton ThompsonConstruct::release() {
