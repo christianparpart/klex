@@ -99,7 +99,8 @@ std::unique_ptr<RegExpr> RegExprParser::parseAlternation() {
 }
 
 std::unique_ptr<RegExpr> RegExprParser::parseConcatenation() {
-  static const std::string follow = "|)"; // FOLLOW-set
+  // FOLLOW-set, the set of terminal tokens that can occur right after a concatenation
+  static const std::string_view follow = "|)";
   std::unique_ptr<RegExpr> lhs = parseClosure();
 
   while (!eof() && follow.find(currentChar()) == follow.npos) {

@@ -8,6 +8,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <set>
 #include <string_view>
 #include <tuple>
 
@@ -24,7 +25,8 @@ constexpr Condition EpsilonTransition = '\0';
 
 class State {
  public:
-  explicit State(std::string label) : label_{label}, successors_{} {}
+  explicit State(std::string label) : State{std::move(label), false} {}
+  State(std::string label, bool accepting) : label_{label}, accepting_{accepting}, successors_{} {}
 
   const std::string& label() const noexcept { return label_; }
   void relabel(std::string label) { label_ = std::move(label); }
@@ -35,17 +37,26 @@ class State {
   void linkTo(State* state) { linkTo(EpsilonTransition, state); }
   void linkTo(Condition condition, State* state);
 
+  void setAccept(bool accepting) { accepting_ = accepting; }
+  bool isAccepting() const noexcept { return accepting_; }
+
   std::list<std::string> to_strings() const;
 
  private:
   std::string label_;
+  bool accepting_;
   EdgeList successors_;
 };
 
-using OwnedStateList = std::list<std::unique_ptr<State>>;
-using StateList = std::list<State*>;
+using OwnedStateSet = std::set<std::unique_ptr<State>>;
+using StateSet = std::set<State*>;
 
-// represents a finite automaton (NFA or DFA)
+/*!
+ * Represents a finite automaton (NFA or DFA).
+ *
+ * @see Generator
+ * @see ThompsonConstruct
+ */
 class FiniteAutomaton {
  public:
   FiniteAutomaton(const FiniteAutomaton&) = delete;
@@ -57,40 +68,58 @@ class FiniteAutomaton {
   FiniteAutomaton()
       : FiniteAutomaton{nullptr, {}, {}} {}
 
-  FiniteAutomaton(State* initialState, OwnedStateList states, StateList acceptStates)
+  FiniteAutomaton(State* initialState, OwnedStateSet states, StateSet acceptStates)
       : states_{std::move(states)},
         initialState_{initialState},
         acceptStates_{std::move(acceptStates)} {}
 
-  FiniteAutomaton(std::tuple<OwnedStateList, State*, State*> thompsonConstruct)
+  FiniteAutomaton(std::tuple<OwnedStateSet, State*, State*> thompsonConstruct)
       : states_{std::move(std::get<0>(thompsonConstruct))},
         initialState_{std::get<1>(thompsonConstruct)},
         acceptStates_{{std::get<2>(thompsonConstruct)}} {}
 
-  Alphabet alphabet() const;
-  State* initialState() const { return initialState_; }
-  auto states() const { return util::unbox(states_); }
-  const StateList& acceptStates() const noexcept { return acceptStates_; }
+  State* createState(std::string label);
+  State* findState(std::string_view label) const;
 
-  // relables all states with given prefix and an monotonically ascending number
+  //! Retrieves the alphabet of this finite automaton.
+  Alphabet alphabet() const;
+
+  //! Retrieves the initial state.
+  State* initialState() const { return initialState_; }
+  void setInitialState(State* s);
+
+  //! Retrieves the list of available states.
+  auto states() const { return util::unbox(states_); }
+
+  //! Retrieves the list of accepting states.
+  const StateSet& acceptStates() const noexcept { return acceptStates_; }
+
+  //! Relables all states with given prefix and an monotonically increasing number.
   void relabel(std::string_view prefix);
 
-  // creates a dot-file that can be visualized with dot/xdot CLI tools
+  //! Creates a dot-file that can be visualized with dot/xdot CLI tools.
   std::string dot() const;
 
-  // applies "Subset Construction", effectively creating an DFA
-  std::unique_ptr<FiniteAutomaton> minimize() const;
+  //! applies "Subset Construction", effectively creating an DFA
+  FiniteAutomaton minimize() const;
 
-  static std::string dot(const OwnedStateList& states, State* initialState,
-                         const StateList& acceptStates);
+  /*!
+   * Creates a dot-file that can be visualized with dot/xdot CLI tools.
+   *
+   * @param states list of states of the FA to visualize
+   * @param initialState special state to be marked as initial state
+   * @param acceptStates special states to be marked as accepting states
+   */
+  static std::string dot(const OwnedStateSet& states, State* initialState,
+                         const StateSet& acceptStates);
 
  private:
   void relabel(State* s, std::string_view prefix, std::set<State*>* registry);
 
  private:
-  OwnedStateList states_;
+  OwnedStateSet states_;
   State* initialState_;
-  StateList acceptStates_;
+  StateSet acceptStates_;
 };
 
 /**
@@ -142,7 +171,7 @@ class ThompsonConstruct {
   //! Retrieves the list of states this FA contains.
   auto states() const { return util::unbox(states_); }
 
-  //! Creates a dot-file that can be visualized with dot/xdot CLI tools
+  //! Creates a dot-file that can be visualized with dot/xdot CLI tools.
   std::string dot() const;
 
   //! Moves internal structures into a FiniteAutomaton and returns that.
@@ -152,11 +181,14 @@ class ThompsonConstruct {
   State* createState();
 
  private:
-  OwnedStateList states_;
+  OwnedStateSet states_;
   State* startState_;
   State* endState_;
 };
 
+/*!
+ * Generates a finite automaton from the given input (a regular expression).
+ */
 class Generator : public RegExprVisitor {
  public:
   explicit Generator(std::string prefix)
@@ -176,5 +208,20 @@ class Generator : public RegExprVisitor {
   unsigned label_;
   ThompsonConstruct fa_;
 };
+
+/**
+ * Builds a list of states that can be exclusively reached from S via epsilon-transitions.
+ */
+StateSet epsilonClosure(const StateSet& S);
+
+/**
+ * Computes a valid configuration the FA can reach with the given input @p q and @p c.
+ *
+ * @param q valid input configuration of the original NFA.
+ * @param c the input character that the FA would consume next
+ *
+ * @return set of states that the FA can reach from @p c given the input @p c.
+ */
+StateSet delta(const StateSet& q, char c);
 
 } // namespace lexer::fa
