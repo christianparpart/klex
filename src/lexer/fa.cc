@@ -2,30 +2,54 @@
 #include <sstream>
 #include <deque>
 #include <iostream>
+#include <algorithm>
+
+#define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
 
 namespace lexer::fa {
 
 // ---------------------------------------------------------------------------
 // State
 
-void State::linkTo(Condition condition, State* state) {
-  successors_.emplace_back(condition, state);
+void State::linkTo(Input input, State* state) {
+  successors_.emplace_back(input, state);
+}
+
+std::string prettyInput(char input) {
+  if (input == EpsilonTransition)
+    return "ε";
+  else
+    return fmt::format("{}", input);
 }
 
 std::list<std::string> State::to_strings() const {
   std::list<std::string> list;
 
   for (const Edge& succ: successors_) {
-    std::string cond = succ.first == EpsilonTransition
-        ? fmt::format("{}", "epsilon")
-        : fmt::format("{}", static_cast<char>(succ.first));
-    list.emplace_back(fmt::format("{}: --({})--> {}", label_, cond, succ.second->label()));
+    list.emplace_back(fmt::format("{}: --({})--> {}", label_,
+                                                      prettyInput(succ.first),
+                                                      succ.second->label()));
   }
 
   if (list.empty())
     list.emplace_back(fmt::format("{}:", label_));
 
   return list;
+}
+
+std::string to_string(const StateSet& S) {
+  std::stringstream sstr;
+  sstr << "{";
+  int i = 0;
+  for (const State* s : S) {
+    if (i)
+      sstr << ", ";
+    sstr << s->label();
+    i++;
+  }
+  sstr << "}";
+
+  return sstr.str();
 }
 
 // ---------------------------------------------------------------------------
@@ -60,7 +84,6 @@ StateSet epsilonClosure(const StateSet& S) {
   StateSet result;
 
   for (State* s : S) {
-    result.insert(s);
     for (Edge& edge : s->successors()) {
       if (edge.first == EpsilonTransition) {
         result.insert(edge.second);
@@ -86,26 +109,19 @@ StateSet delta(const StateSet& q, char c) {
   return result;
 }
 
-struct TransitionTable {
-  struct Input {
-    State* state;
-    char ch;
-  };
-
-  void insert(const StateSet& q, char c, const StateSet& t) {
-    for (State* s : q)
-      transitions.emplace_back(Input{s, c}, t);
-  }
-
-  std::list<std::pair<Input, StateSet>> transitions;
-};
-
 static bool containsAcceptingState(const StateSet& Q) {
   for (State* q : Q)
     if (q->isAccepting())
       return true;
 
   return false;
+}
+
+State* FiniteAutomaton::createState() {
+  static unsigned int n = 10000;
+  std::string name = fmt::format("n{}", n);
+  n++;
+  return createState(name);
 }
 
 State* FiniteAutomaton::createState(std::string label) {
@@ -129,46 +145,96 @@ void FiniteAutomaton::setInitialState(State* s) {
   initialState_ = s;
 }
 
+//! Finds @p t in @p Q and returns its offset (aka configuration number) or -1 if not found.
+int configurationNumber(const std::deque<StateSet>& Q, const StateSet& t) {
+  int i = 0;
+  for (const StateSet& q_i : Q) {
+    if (q_i == t) {
+      return i;
+    }
+    i++;
+  }
+
+  return -1;
+}
+
+struct TransitionTable {
+  struct Input {
+    int configurationNumber;
+    char character;
+  };
+
+  void insert(int q, char c, int t) {
+    auto i = std::find_if(transitions.begin(), transitions.end(),
+                          [=](const auto& input) {
+        return input.first.configurationNumber == q && input.first.character == c;
+    });
+    if (i == transitions.end()) {
+      transitions.emplace_back(Input{q, c}, t);
+    }
+  }
+
+  std::list<std::pair<Input, int>> transitions;
+};
+
 FiniteAutomaton FiniteAutomaton::minimize() const {
   StateSet q_0 = epsilonClosure({initialState_});
-  std::list<StateSet> Q = {q_0};                                  // resulting states
-  std::list<StateSet> workList = {q_0};
+  DEBUG("q_0 = epsilonClosure({}) = {}", to_string({initialState_}), q_0);
+  std::deque<StateSet> Q = {q_0};          // resulting states
+  std::deque<StateSet> workList = {q_0};
   TransitionTable T;
+
+  FiniteAutomaton dfa;
 
   while (!workList.empty()) {
     StateSet q = workList.front();    // each set q represents a valid configuration from the NFA
     workList.pop_front();
+    const int q_i = configurationNumber(Q, q);
+
+    DEBUG("q_{} = {}", q_i, q);
 
     for (char c : alphabet()) {
+      StateSet _delta = delta(q, c);
+      DEBUG("  delta({}, '{}') = {}", q, prettyInput(c), _delta);
       StateSet t = epsilonClosure(delta(q, c));
+      DEBUG("  epsilonClosure({}) = {}", _delta, t);
 
-      // T[q][c] = t;
-
-      if (!t.empty()) {
+      int t_i = configurationNumber(Q, t);
+      if (t_i == -1) {
         Q.push_back(t);
         workList.push_back(t);
+        t_i = configurationNumber(Q, t);
       }
+
+      DEBUG("  T[q{}][{}] = q{}", q_i, prettyInput(c), t_i);
+      T.insert(q_i, c, t_i); // T[q][c] = t;
     }
   }
   // Q now contains all the valid configurations and T all transitions between them
 
-  FiniteAutomaton dfa;
+  // map q_i to d_i and flag accepting states
   for (StateSet& q : Q) {
-    const bool q_containsAcceptingState = containsAcceptingState(q);
-    for (State* q_i : q) {
-      State* d_i = dfa.createState(q_i->label());
+    // d_i represents the corresponding state in the DFA for all states of q from the NFA
+    State* d_i = dfa.createState();
 
-      // if q contains an accepting state, then d is an accepting state in the DFA
-      if (q_containsAcceptingState)
-        d_i->setAccept(true);
+    // if q contains an accepting state, then d is an accepting state in the DFA
+    if (containsAcceptingState(q))
+      d_i->setAccept(true);
+  }
 
-      // TODO: observe mapping from q_i to d_i
-      //...
-    }
+  // observe mapping from q_i to d_i
+  for (const std::pair<TransitionTable::Input, int>& t: T.transitions) {
+    const int q_i = t.first.configurationNumber;
+    const char c = t.first.character;
+    const int t_i = t.second;
+    DEBUG("map n{} |--({})--> d{}", q_i, c, t_i);
+
+    //q->linkTo(c, t);
   }
 
   // q_0 becomes d_0 (initial state)
   dfa.setInitialState(dfa.findState(initialState_->label()));
+  //dfa.setInitialState("n0");
 
   return dfa;
 }
@@ -196,15 +262,11 @@ std::string FiniteAutomaton::dot(const OwnedStateSet& states, State* initialStat
   // all states and their edges
   for (const std::unique_ptr<State>& state: states) {
     for (const Edge& edge: state->successors()) {
-      const Condition cond = edge.first;
+      const Input input = edge.first;
       const State* succ = edge.second;
 
       sstr << "  " << state->label() << " -> " << succ->label();
-      if (cond == EpsilonTransition) {
-         sstr << " [label=\"ε\"]";
-      } else {
-         sstr << " [label=\"" << static_cast<char>(cond) << "\"]";
-      }
+      sstr << " [label=\"" << prettyInput(input) << "\"]";
       sstr << ";\n";
     }
   }

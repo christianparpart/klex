@@ -14,14 +14,13 @@
 
 namespace lexer::fa {
 
-using Condition = char;
+using Input = char;
 class State;
-using Edge = std::pair<Condition, State*>;
+using Edge = std::pair<Input, State*>;
 using EdgeList = std::list<Edge>;
 
-
 // represents an epsilon-transition
-constexpr Condition EpsilonTransition = '\0';
+constexpr Input EpsilonTransition = '\0';
 
 class State {
  public:
@@ -35,7 +34,7 @@ class State {
   const EdgeList& successors() const noexcept { return successors_; }
 
   void linkTo(State* state) { linkTo(EpsilonTransition, state); }
-  void linkTo(Condition condition, State* state);
+  void linkTo(Input condition, State* state);
 
   void setAccept(bool accepting) { accepting_ = accepting; }
   bool isAccepting() const noexcept { return accepting_; }
@@ -78,6 +77,7 @@ class FiniteAutomaton {
         initialState_{std::get<1>(thompsonConstruct)},
         acceptStates_{{std::get<2>(thompsonConstruct)}} {}
 
+  State* createState();
   State* createState(std::string label);
   State* findState(std::string_view label) const;
 
@@ -144,7 +144,7 @@ class ThompsonConstruct {
   }
 
   //! Constructs an NFA for a single character transition
-  explicit ThompsonConstruct(Condition value)
+  explicit ThompsonConstruct(Input value)
       : startState_(createState()),
         endState_(createState()) {
     startState_->linkTo(value, endState_);
@@ -224,4 +224,19 @@ StateSet epsilonClosure(const StateSet& S);
  */
 StateSet delta(const StateSet& q, char c);
 
+std::string to_string(const StateSet& S);
+
 } // namespace lexer::fa
+
+namespace fmt {
+  template<>
+  struct formatter<lexer::fa::StateSet> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    constexpr auto format(const lexer::fa::StateSet& v, FormatContext &ctx) {
+      return format_to(ctx.begin(), "{}", lexer::fa::to_string(v));
+    }
+  };
+}
