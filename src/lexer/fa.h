@@ -93,6 +93,18 @@ class FiniteAutomaton {
   StateList acceptStates_;
 };
 
+/**
+ * A Thompson Construction is an NFA with certain properties.
+ *
+ * <ul>
+ *   <li> There is exactly one initial state and exactly one accepting state..
+ *   <li> No transition other than the initial transition enters the initial state.
+ *   <li> The accepting state has no leaving edges
+ *   <li> An ε-transition always connects two states that were (earlier in the construction process)
+ *        the initial state and the accepting state of NFAs for some component REs.
+ *   <li> Each state has at most two entering states and at most two leaving states.
+ * </ul>
+ */
 class ThompsonConstruct {
  public:
   ThompsonConstruct()
@@ -122,7 +134,7 @@ class ThompsonConstruct {
 
   std::string dot() const;
 
-  std::tuple<OwnedStateList, State*, State*> release();
+  FiniteAutomaton release();
 
  private:
   State* createState();

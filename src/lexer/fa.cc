@@ -137,11 +137,11 @@ std::string ThompsonConstruct::dot() const {
   return FiniteAutomaton::dot(states_, startState_, {endState_});
 }
 
-std::tuple<OwnedStateList, State*, State*> ThompsonConstruct::release() {
+FiniteAutomaton ThompsonConstruct::release() {
   auto t = std::make_tuple(std::move(states_), startState_, endState_);
   startState_ = nullptr;
   endState_ = nullptr;
-  return t;
+  return FiniteAutomaton{std::move(t)};
 }
 
 State* ThompsonConstruct::createState() {
