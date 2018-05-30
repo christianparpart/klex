@@ -8,6 +8,7 @@
 using namespace lexer;
 
 void dump(std::string regexprStr) {
+  std::cerr << "RE: " << regexprStr << "\n";
   RegExprParser rep;
   std::unique_ptr<RegExpr> expr = rep.parse(regexprStr);
   fa::FiniteAutomaton nfa = lexer::fa::Generator{"n"}.generate(expr.get());
