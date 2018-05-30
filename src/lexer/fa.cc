@@ -14,7 +14,7 @@ namespace lexer::fa {
 // State
 
 void State::linkTo(Symbol input, State* state) {
-  successors_.emplace_back(input, state);
+  transitions_.emplace_back(input, state);
 }
 
 std::string prettySymbol(Symbol input) {
@@ -27,10 +27,10 @@ std::string prettySymbol(Symbol input) {
 std::list<std::string> State::to_strings() const {
   std::list<std::string> list;
 
-  for (const Edge& succ: successors_) {
+  for (const Edge& transition: transitions_) {
     list.emplace_back(fmt::format("{}: --({})--> {}", label_,
-                                                      prettySymbol(succ.first),
-                                                      succ.second->label()));
+                                                      prettySymbol(transition.symbol),
+                                                      transition.state->label()));
   }
 
   if (list.empty())
@@ -71,9 +71,9 @@ void FiniteAutomaton::relabel(std::string_view prefix) {
 Alphabet FiniteAutomaton::alphabet() const {
   Alphabet alphabet;
   for (const State* state : states()) {
-    for (const Edge& edge : state->successors()) {
-      if (edge.first != EpsilonTransition) {
-        alphabet.insert(edge.first);
+    for (const Edge& transition : state->transitions()) {
+      if (transition.symbol != EpsilonTransition) {
+        alphabet.insert(transition.symbol);
       }
     }
   }
@@ -83,48 +83,11 @@ Alphabet FiniteAutomaton::alphabet() const {
 void FiniteAutomaton::relabel(State* s, std::string_view prefix, std::set<State*>* registry) {
   s->relabel(fmt::format("{}{}", prefix, registry->size()));
   registry->insert(s);
-  for (const Edge& succ : s->successors()) {
-    if (registry->find(succ.second) == registry->end()) {
-      relabel(succ.second, prefix, registry);
+  for (const Edge& transition : s->transitions()) {
+    if (registry->find(transition.state) == registry->end()) {
+      relabel(transition.state, prefix, registry);
     }
   }
-}
-
-StateSet epsilonClosure(const StateSet& S) {
-  StateSet result;
-
-  for (State* s : S) {
-    result.insert(s);
-    for (Edge& edge : s->successors()) {
-      if (edge.first == EpsilonTransition) {
-        result.merge(epsilonClosure({edge.second}));
-      }
-    }
-  }
-
-  return result;
-}
-
-StateSet delta(const StateSet& q, Symbol c) {
-  StateSet result;
-  for (State* s : q) {
-    for (Edge& edge : s->successors()) {
-      if (edge.first == EpsilonTransition) {
-        result.merge(delta({edge.second}, c));
-      } else if (edge.first == c) {
-        result.insert(edge.second);
-      }
-    }
-  }
-  return result;
-}
-
-static bool containsAcceptingState(const StateSet& Q) {
-  for (State* q : Q)
-    if (q->isAccepting())
-      return true;
-
-  return false;
 }
 
 State* FiniteAutomaton::createState() {
@@ -155,8 +118,45 @@ void FiniteAutomaton::setInitialState(State* s) {
   initialState_ = s;
 }
 
+StateSet epsilonClosure(const StateSet& S) {
+  StateSet result;
+
+  for (State* s : S) {
+    result.insert(s);
+    for (Edge& transition : s->transitions()) {
+      if (transition.symbol == EpsilonTransition) {
+        result.merge(epsilonClosure({transition.state}));
+      }
+    }
+  }
+
+  return result;
+}
+
+StateSet delta(const StateSet& q, Symbol c) {
+  StateSet result;
+  for (State* s : q) {
+    for (Edge& transition: s->transitions()) {
+      if (transition.symbol == EpsilonTransition) {
+        result.merge(delta({transition.state}, c));
+      } else if (transition.symbol == c) {
+        result.insert(transition.state);
+      }
+    }
+  }
+  return result;
+}
+
+static bool containsAcceptingState(const StateSet& Q) {
+  for (State* q : Q)
+    if (q->isAccepting())
+      return true;
+
+  return false;
+}
+
 //! Finds @p t in @p Q and returns its offset (aka configuration number) or -1 if not found.
-int configurationNumber(const std::vector<StateSet>& Q, const StateSet& t) {
+static int configurationNumber(const std::vector<StateSet>& Q, const StateSet& t) {
   int i = 0;
   for (const StateSet& q_i : Q) {
     if (q_i == t) {
@@ -332,12 +332,9 @@ std::string FiniteAutomaton::dot(const std::string_view& label,
 
   // all states and their edges
   for (const std::unique_ptr<State>& state: states) {
-    for (const Edge& edge: state->successors()) {
-      const Symbol input = edge.first;
-      const State* succ = edge.second;
-
-      sstr << "  " << state->label() << " -> " << succ->label();
-      sstr << " [label=\"" << prettySymbol(input) << "\"]";
+    for (const Edge& transition: state->transitions()) {
+      sstr << "  " << state->label() << " -> " << transition.state->label();
+      sstr << " [label=\"" << prettySymbol(transition.symbol) << "\"]";
       sstr << ";\n";
     }
   }
@@ -359,8 +356,8 @@ ThompsonConstruct& ThompsonConstruct::operator=(const ThompsonConstruct& other) 
 
   // map links
   for (const std::unique_ptr<State>& s : other.states_)
-    for (const Edge& t : s->successors())
-      findState(s->label())->linkTo(t.first, findState(t.second->label()));
+    for (const Edge& t : s->transitions())
+      findState(s->label())->linkTo(t.symbol, findState(t.state->label()));
 
   return *this;
 }

@@ -14,9 +14,19 @@
 
 namespace lexer::fa {
 
-using Symbol = char;
 class State;
-using Edge = std::pair<Symbol, State*>;
+
+// input symbol as used for transitions
+using Symbol = char;
+
+// an edge for transitions
+struct Edge {
+  Symbol symbol;
+  State* state;
+
+  Edge(Symbol _symbol, State* _state) : symbol{_symbol}, state{_state} {}
+};
+
 using EdgeList = std::list<Edge>;
 
 // represents an epsilon-transition
@@ -25,13 +35,13 @@ constexpr Symbol EpsilonTransition = '\0';
 class State {
  public:
   explicit State(std::string label) : State{std::move(label), false} {}
-  State(std::string label, bool accepting) : label_{label}, accepting_{accepting}, successors_{} {}
+  State(std::string label, bool accepting) : label_{label}, accepting_{accepting}, transitions_{} {}
 
   const std::string& label() const noexcept { return label_; }
   void relabel(std::string label) { label_ = std::move(label); }
 
-  EdgeList& successors() noexcept { return successors_; }
-  const EdgeList& successors() const noexcept { return successors_; }
+  EdgeList& transitions() noexcept { return transitions_; }
+  const EdgeList& transitions() const noexcept { return transitions_; }
 
   void linkTo(State* state) { linkTo(EpsilonTransition, state); }
   void linkTo(Symbol condition, State* state);
@@ -44,7 +54,7 @@ class State {
  private:
   std::string label_;
   bool accepting_;
-  EdgeList successors_;
+  EdgeList transitions_;
 };
 
 using OwnedStateSet = std::set<std::unique_ptr<State>>;
