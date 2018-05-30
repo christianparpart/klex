@@ -1,8 +1,10 @@
 #include <lexer/fa.h>
-#include <sstream>
+
+#include <algorithm>
 #include <deque>
 #include <iostream>
-#include <algorithm>
+#include <sstream>
+#include <vector>
 
 #define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
 
@@ -38,13 +40,19 @@ std::list<std::string> State::to_strings() const {
 }
 
 std::string to_string(const StateSet& S) {
+  std::vector<std::string> names;
+  for (const State* s : S)
+    names.push_back(s->label());
+
+  std::sort(names.begin(), names.end());
+
   std::stringstream sstr;
   sstr << "{";
   int i = 0;
-  for (const State* s : S) {
+  for (const std::string& name : names) {
     if (i)
       sstr << ", ";
-    sstr << s->label();
+    sstr << name;
     i++;
   }
   sstr << "}";
@@ -86,7 +94,7 @@ StateSet epsilonClosure(const StateSet& S) {
   StateSet result;
 
   for (State* s : S) {
-    result.insert(s);
+    //result.insert(s);
     for (Edge& edge : s->successors()) {
       if (edge.first == EpsilonTransition) {
         result.insert(edge.second);
@@ -205,7 +213,7 @@ FiniteAutomaton FiniteAutomaton::deterministic() const {
   std::deque<StateSet> workList = {q_0};
   TransitionTable T;
 
-  DEBUG(" {:<8} | {:<14} | {:<14} | {:<}", "set name", "DFA state", "NFA states", "ε-closures(q, *)");
+  DEBUG(" {:<8} | {:<14} | {:<24} | {:<}", "set name", "DFA state", "NFA states", "ε-closures(q, *)");
   DEBUG("{}", "------------------------------------------------------------------------");
 
   while (!workList.empty()) {
@@ -217,9 +225,9 @@ FiniteAutomaton FiniteAutomaton::deterministic() const {
     for (Symbol c : alphabet()) {
       StateSet t = epsilonClosure(delta(q, c));
 
-      [[maybe_unused]] StateSet _delta = delta(q, c);
-      DEBUG("  delta({}, '{}') = {}", q, prettySymbol(c), _delta);
-      DEBUG("  epsilonClosure({}) = {}", _delta, t);
+      // [[maybe_unused]] StateSet _delta = delta(q, c);
+      // DEBUG("  delta({}, '{}') = {}", q, prettySymbol(c), _delta);
+      // DEBUG("  epsilonClosure({}) = {}", _delta, t);
 
       int t_i = configurationNumber(Q, t);
       if (t_i == -1) {
@@ -231,10 +239,10 @@ FiniteAutomaton FiniteAutomaton::deterministic() const {
         dbg << prettySymbol(c) << ": none, ";
       }
 
-      DEBUG("  T[q{}][{}] = q{}", q_i, prettySymbol(c), t_i);
+      //DEBUG("  T[q{}][{}] = q{}", q_i, prettySymbol(c), t_i);
       T.insert(q_i, c, t_i); // T[q][c] = t;
     }
-    DEBUG(" q{:<7} | d{:<13} | {:14} | {}", q_i, q_i, to_string(q), dbg.str());
+    DEBUG(" q{:<7} | d{:<13} | {:24} | {}", q_i, q_i, to_string(q), dbg.str());
   }
   // Q now contains all the valid configurations and T all transitions between them
 
