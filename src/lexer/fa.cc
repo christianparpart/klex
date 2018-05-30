@@ -137,7 +137,7 @@ State* FiniteAutomaton::createState() {
 State* FiniteAutomaton::createState(std::string label) {
   for (State* s : states())
     if (s->label() == label)
-      return s;
+      throw std::invalid_argument{label};
 
   return states_.insert(std::make_unique<State>(label)).first->get();
 }
@@ -264,28 +264,35 @@ FiniteAutomaton FiniteAutomaton::deterministic() const {
   FiniteAutomaton dfa;
 
   // map q_i to d_i and flag accepting states
+  int q_i = 0;
   for (StateSet& q : Q) {
     // d_i represents the corresponding state in the DFA for all states of q from the NFA
-    State* d_i = dfa.createState();
+    std::string id = fmt::format("d{}", q_i);
+    State* d_i = dfa.createState(id);
 
     // if q contains an accepting state, then d is an accepting state in the DFA
     if (containsAcceptingState(q))
       d_i->setAccept(true);
+
+    q_i++;
   }
 
   // observe mapping from q_i to d_i
-  for (const std::pair<TransitionTable::Input, int>& t: T.transitions) {
-    const int q_i = t.first.configurationNumber;
-    const Symbol c = t.first.symbol;
-    const int t_i = t.second;
-    DEBUG("map n{} |--({})--> d{}", q_i, c, t_i);
+  for (const std::pair<TransitionTable::Input, int>& transition: T.transitions) {
+    const int q_i = transition.first.configurationNumber;
+    const Symbol c = transition.first.symbol;
+    const int t_i = transition.second;
+    if (t_i != -1) {
+      DEBUG("map d{} |--({})--> d{}", q_i, c, t_i);
+      State* q = dfa.findState(fmt::format("d{}", q_i));
+      State* t = dfa.findState(fmt::format("d{}", t_i));
 
-    //q->linkTo(c, t);
+      q->linkTo(c, t);
+    }
   }
 
   // q_0 becomes d_0 (initial state)
-  dfa.setInitialState(dfa.findState(initialState_->label()));
-  //dfa.setInitialState("n0");
+  dfa.setInitialState(dfa.findState("d0"));
 
   return dfa;
 }
@@ -343,6 +350,21 @@ std::string FiniteAutomaton::dot(const std::string_view& label,
 // ---------------------------------------------------------------------------
 // ThompsonConstruct
 
+ThompsonConstruct& ThompsonConstruct::operator=(const ThompsonConstruct& other) {
+  states_.clear();
+
+  // clone states
+  for (const std::unique_ptr<State>& s : other.states_)
+    createState(s->label())->setAccept(s->isAccepting());
+
+  // map links
+  for (const std::unique_ptr<State>& s : other.states_)
+    for (const Edge& t : s->successors())
+      findState(s->label())->linkTo(t.first, findState(t.second->label()));
+
+  return *this;
+}
+
 State* ThompsonConstruct::endState() const {
   for (const std::unique_ptr<State>& s : states_)
     if (s->isAccepting())
@@ -364,9 +386,28 @@ FiniteAutomaton ThompsonConstruct::release() {
 
 State* ThompsonConstruct::createState() {
   static unsigned int n = 0;
-  std::string name = fmt::format("n{}", n);
-  n++;
-  return states_.insert(std::make_unique<State>(name)).first->get();
+  for (;;) {
+    std::string name = fmt::format("n{}", n);
+    n++;
+    if (!findState(name)) {
+      return states_.insert(std::make_unique<State>(name)).first->get();
+    }
+  }
+}
+
+State* ThompsonConstruct::createState(std::string name) {
+  if (findState(name) != nullptr)
+    throw std::invalid_argument{name};
+
+  return states_.insert(std::make_unique<State>(std::move(name))).first->get();
+}
+
+State* ThompsonConstruct::findState(std::string_view label) const {
+  for (const std::unique_ptr<State>& s : states_)
+    if (s->label() == label)
+      return s.get();
+
+  return nullptr;
 }
 
 ThompsonConstruct& ThompsonConstruct::concatenate(ThompsonConstruct rhs) {
@@ -394,6 +435,11 @@ ThompsonConstruct& ThompsonConstruct::alternate(ThompsonConstruct other) {
   states_.merge(std::move(other.states_));
 
   return *this;
+}
+
+ThompsonConstruct& ThompsonConstruct::multiply(unsigned factor) {
+  // a{n} = a_1 a_2 ... a_n
+  return *this; // TODO
 }
 
 ThompsonConstruct& ThompsonConstruct::repeat(unsigned minimum, unsigned maximum) {

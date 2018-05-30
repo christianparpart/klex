@@ -133,8 +133,8 @@ class FiniteAutomaton {
  */
 class ThompsonConstruct {
  public:
-  ThompsonConstruct(const ThompsonConstruct&) = delete;
-  ThompsonConstruct& operator=(const ThompsonConstruct&) = delete;
+  ThompsonConstruct(const ThompsonConstruct& other) : ThompsonConstruct{} { *this = other; }
+  ThompsonConstruct& operator=(const ThompsonConstruct& other);
 
   ThompsonConstruct(ThompsonConstruct&&) = default;
   ThompsonConstruct& operator=(ThompsonConstruct&&) = default;
@@ -162,6 +162,9 @@ class ThompsonConstruct {
   //! Reconstructs this FA to alternate between this FA and the @p other FA.
   ThompsonConstruct& alternate(ThompsonConstruct other);
 
+  //! Ensures the given NFA is concatenated @p factor times.
+  ThompsonConstruct& multiply(unsigned factor);
+
   //! Reconstructs this FA with the given @p quantifier factor.
   ThompsonConstruct& repeat(unsigned quantifier);
 
@@ -179,6 +182,8 @@ class ThompsonConstruct {
 
  private:
   State* createState();
+  State* createState(std::string name);
+  State* findState(std::string_view label) const;
 
  private:
   OwnedStateSet states_;
