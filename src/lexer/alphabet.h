@@ -5,9 +5,13 @@
 
 namespace lexer {
 
+/**
+ * Represents the alphabet of a finite automaton or regular expression.
+ */
 class Alphabet {
  public:
-  using set_type = std::set<char>;
+  using Symbol = char;
+  using set_type = std::set<Symbol>;
   using iterator = set_type::iterator;
 
   void insert(char ch) { alphabet_.insert(ch); }
@@ -17,9 +21,8 @@ class Alphabet {
   iterator begin() { return alphabet_.begin(); }
   iterator end() { return alphabet_.end(); }
 
-
  private:
-  std::set<char> alphabet_;
+  set_type alphabet_;
 };
 
 } // namespace lexer

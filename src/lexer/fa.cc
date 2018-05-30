@@ -64,7 +64,9 @@ Alphabet FiniteAutomaton::alphabet() const {
   Alphabet alphabet;
   for (const State* state : states()) {
     for (const Edge& edge : state->successors()) {
-      alphabet.insert(edge.first);
+      if (edge.first != EpsilonTransition) {
+        alphabet.insert(edge.first);
+      }
     }
   }
   return alphabet;
@@ -84,6 +86,7 @@ StateSet epsilonClosure(const StateSet& S) {
   StateSet result;
 
   for (State* s : S) {
+    result.insert(s);
     for (Edge& edge : s->successors()) {
       if (edge.first == EpsilonTransition) {
         result.insert(edge.second);
@@ -180,6 +183,21 @@ struct TransitionTable {
   std::list<std::pair<Input, int>> transitions;
 };
 
+/*
+  REGEX:      a | b
+
+  NFA:        n0 --> n1 --(a)--> n2  --> n3
+               \                     /
+                \--> n4 --(b)--> n5 /
+
+  DFA:        n0 --(a)-----> n1
+               \         /
+                \--(b)--/
+
+  TABLE:
+    set name | DFA state | NFA states | "a" | "b" 
+ */
+
 FiniteAutomaton FiniteAutomaton::deterministic() const {
   StateSet q_0 = epsilonClosure({initialState_});
   DEBUG("q_0 = epsilonClosure({}) = {}", to_string({initialState_}), q_0);
@@ -197,11 +215,10 @@ FiniteAutomaton FiniteAutomaton::deterministic() const {
 
     std::stringstream dbg;
     for (Symbol c : alphabet()) {
-      if (c == EpsilonTransition) continue;
-
-      StateSet _delta = delta(q, c);
-      DEBUG("  delta({}, '{}') = {}", q, prettySymbol(c), _delta);
       StateSet t = epsilonClosure(delta(q, c));
+
+      [[maybe_unused]] StateSet _delta = delta(q, c);
+      DEBUG("  delta({}, '{}') = {}", q, prettySymbol(c), _delta);
       DEBUG("  epsilonClosure({}) = {}", _delta, t);
 
       int t_i = configurationNumber(Q, t);

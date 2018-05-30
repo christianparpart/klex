@@ -8,7 +8,7 @@ std::string Alphabet::to_string() const {
 
   sstr << '{';
 
-  for (char c : alphabet_) {
+  for (Symbol c : alphabet_) {
     if (c == '\0')
       sstr << "ε";
     else

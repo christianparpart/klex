@@ -20,7 +20,8 @@ void dump(std::string regexprStr) {
 
 int main(int argc, const char* argv[]) {
   if (argc == 1) {
-    dump("a|b");
+    //dump("a|b");
+    dump("a(b|c)*");
     return EXIT_SUCCESS;
   }
 
