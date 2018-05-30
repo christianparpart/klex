@@ -56,10 +56,6 @@ add_executable(regexpr_test src/lexer/regexpr_test.cc)
 set_target_properties(regexpr_test PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 target_link_libraries(regexpr_test lexer)
 
-add_executable(dump_nfa src/dump_nfa.cc)
-set_target_properties(dump_nfa PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
-target_link_libraries(dump_nfa lexer)
-
-add_executable(dump_dfa src/dump_dfa.cc)
-set_target_properties(dump_dfa PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
-target_link_libraries(dump_dfa lexer)
+add_executable(ldbg src/ldbg.cc)
+set_target_properties(ldbg  PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+target_link_libraries(ldbg lexer)
