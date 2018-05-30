@@ -65,17 +65,15 @@ class FiniteAutomaton {
   ~FiniteAutomaton() = default;
 
   FiniteAutomaton()
-      : FiniteAutomaton{nullptr, {}, {}} {}
+      : FiniteAutomaton{nullptr, {}} {}
 
-  FiniteAutomaton(State* initialState, OwnedStateSet states, StateSet acceptStates)
+  FiniteAutomaton(State* initialState, OwnedStateSet states)
       : states_{std::move(states)},
-        initialState_{initialState},
-        acceptStates_{std::move(acceptStates)} {}
+        initialState_{initialState} {}
 
-  FiniteAutomaton(std::tuple<OwnedStateSet, State*, State*> thompsonConstruct)
+  FiniteAutomaton(std::tuple<OwnedStateSet, State*> thompsonConstruct)
       : states_{std::move(std::get<0>(thompsonConstruct))},
-        initialState_{std::get<1>(thompsonConstruct)},
-        acceptStates_{{std::get<2>(thompsonConstruct)}} {}
+        initialState_{std::get<1>(thompsonConstruct)} {}
 
   State* createState();
   State* createState(std::string label);
@@ -92,7 +90,7 @@ class FiniteAutomaton {
   auto states() const { return util::unbox(states_); }
 
   //! Retrieves the list of accepting states.
-  const StateSet& acceptStates() const noexcept { return acceptStates_; }
+  StateSet acceptStates() const;
 
   //! Relables all states with given prefix and an monotonically increasing number.
   void relabel(std::string_view prefix);
@@ -109,11 +107,9 @@ class FiniteAutomaton {
    * @param some descriptive label (such as the RE)
    * @param states list of states of the FA to visualize
    * @param initialState special state to be marked as initial state
-   * @param acceptStates special states to be marked as accepting states
    */
   static std::string dot(const std::string_view& label,
-                         const OwnedStateSet& states, State* initialState,
-                         const StateSet& acceptStates);
+                         const OwnedStateSet& states, State* initialState);
 
  private:
   void relabel(State* s, std::string_view prefix, std::set<State*>* registry);
@@ -121,7 +117,6 @@ class FiniteAutomaton {
  private:
   OwnedStateSet states_;
   State* initialState_;
-  StateSet acceptStates_;
 };
 
 /**
@@ -138,25 +133,28 @@ class FiniteAutomaton {
  */
 class ThompsonConstruct {
  public:
-  //! Constructs an empty NFA.
-  ThompsonConstruct()
-      : states_{},
-        startState_{nullptr},
-        endState_{nullptr} {
-  }
-
-  //! Constructs an NFA for a single character transition
-  explicit ThompsonConstruct(Symbol value)
-      : startState_(createState()),
-        endState_(createState()) {
-    startState_->linkTo(value, endState_);
-  }
+  ThompsonConstruct(const ThompsonConstruct&) = delete;
+  ThompsonConstruct& operator=(const ThompsonConstruct&) = delete;
 
   ThompsonConstruct(ThompsonConstruct&&) = default;
   ThompsonConstruct& operator=(ThompsonConstruct&&) = default;
 
-  ThompsonConstruct(const ThompsonConstruct&) = delete;
-  ThompsonConstruct& operator=(const ThompsonConstruct&) = delete;
+  //! Constructs an empty NFA.
+  ThompsonConstruct()
+      : states_{},
+        startState_{nullptr} {
+  }
+
+  //! Constructs an NFA for a single character transition
+  explicit ThompsonConstruct(Symbol value)
+      : startState_{createState()} {
+    State* endState = createState();
+    endState->setAccept(true);
+    startState_->linkTo(value, endState);
+  }
+
+  State* startState() const { return startState_; }
+  State* endState() const;
 
   //! Concatenates the right FA's initial state with this FA's accepting state.
   ThompsonConstruct& concatenate(ThompsonConstruct rhs);
@@ -185,7 +183,6 @@ class ThompsonConstruct {
  private:
   OwnedStateSet states_;
   State* startState_;
-  State* endState_;
 };
 
 /*!

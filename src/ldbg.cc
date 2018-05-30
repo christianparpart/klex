@@ -12,9 +12,10 @@ void dump(std::string regexprStr) {
   std::unique_ptr<lexer::RegExpr> expr = rep.parse(regexprStr);
   lexer::fa::FiniteAutomaton nfa = lexer::fa::Generator{"n"}.generate(expr.get());
   nfa.relabel("n");
+  std::cout << nfa.dot(expr->to_string()) << "\n";
 
-  lexer::fa::FiniteAutomaton dfa = nfa.deterministic();
-  std::cout << dfa.dot(expr->to_string()) << "\n";
+  // lexer::fa::FiniteAutomaton dfa = nfa.deterministic();
+  // std::cout << dfa.dot(expr->to_string()) << "\n";
 }
 
 int main(int argc, const char* argv[]) {

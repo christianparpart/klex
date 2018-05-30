@@ -94,10 +94,9 @@ StateSet epsilonClosure(const StateSet& S) {
   StateSet result;
 
   for (State* s : S) {
-    //result.insert(s);
+    result.insert(s);
     for (Edge& edge : s->successors()) {
       if (edge.first == EpsilonTransition) {
-        result.insert(edge.second);
         result.merge(epsilonClosure({edge.second}));
       }
     }
@@ -157,7 +156,7 @@ void FiniteAutomaton::setInitialState(State* s) {
 }
 
 //! Finds @p t in @p Q and returns its offset (aka configuration number) or -1 if not found.
-int configurationNumber(const std::deque<StateSet>& Q, const StateSet& t) {
+int configurationNumber(const std::vector<StateSet>& Q, const StateSet& t) {
   int i = 0;
   for (const StateSet& q_i : Q) {
     if (q_i == t) {
@@ -192,24 +191,42 @@ struct TransitionTable {
 };
 
 /*
-  REGEX:      a | b
+  REGEX:      a(b|c)*
 
-  NFA:        n0 --> n1 --(a)--> n2  --> n3
-               \                     /
-                \--> n4 --(b)--> n5 /
+  NFA:        n0 --(a)--> n1 --> n2 -----------------------------------> "n7"
+                                  \                                       ^
+                                   \---> n3 <------------------------    /
+                                         \ \                         \  /
+                                          \ \----> n4 --(b)--> n5 --> n6
+                                           \                          ^
+                                            \----> n8 --(c)--> n9 ---/
 
-  DFA:        n0 --(a)-----> n1
-               \         /
-                \--(b)--/
+  DFA:
+                                            <---
+              d0 --(a)--> "d1" ----(b)--> "d2"--(b)
+                             \             |^
+                              \         (c)||(b)
+                               \           v|
+                                \--(c)--> "d3"--(c)
+                                            <---
+
 
   TABLE:
-    set name | DFA state | NFA states | "a" | "b" 
+
+    set   | DFA   | NFA                 |
+    name  | state | state               | 'a'                 | 'b'                 | 'c'
+    --------------------------------------------------------------------------------------------------------
+    q0    | d0    | {n0}                | {n1,n2,n3,n4,n7,n8} | -none-              | -none-
+    q1    | d1    | {n1,n2,n3,n4,n7,n8} | -none-              | {n3,n4,n5,n6,n7,n8} | {n3,n4,n6,n7,n8,n9}
+    q2    | d2    | {n3,n4,n5,n6,n7,n8} | -none-              | q2                  | q3
+    q3    | d3    | {n3,n4,n6,n7,n8,n9} | -none-              | q2                  | q3
+
  */
 
 FiniteAutomaton FiniteAutomaton::deterministic() const {
   StateSet q_0 = epsilonClosure({initialState_});
   DEBUG("q_0 = epsilonClosure({}) = {}", to_string({initialState_}), q_0);
-  std::deque<StateSet> Q = {q_0};          // resulting states
+  std::vector<StateSet> Q = {q_0};          // resulting states
   std::deque<StateSet> workList = {q_0};
   TransitionTable T;
 
@@ -225,21 +242,19 @@ FiniteAutomaton FiniteAutomaton::deterministic() const {
     for (Symbol c : alphabet()) {
       StateSet t = epsilonClosure(delta(q, c));
 
-      // [[maybe_unused]] StateSet _delta = delta(q, c);
-      // DEBUG("  delta({}, '{}') = {}", q, prettySymbol(c), _delta);
-      // DEBUG("  epsilonClosure({}) = {}", _delta, t);
-
       int t_i = configurationNumber(Q, t);
-      if (t_i == -1) {
+
+      if (!dbg.str().empty()) dbg << ", ";
+      if (t_i != -1) {
+        dbg << prettySymbol(c) << ": q" << t_i;
+      } else if (t.empty()) {
+        dbg << prettySymbol(c) << ": none";
+      } else {
         Q.push_back(t);
         workList.push_back(t);
         t_i = configurationNumber(Q, t);
-        dbg << prettySymbol(c) << ": " << to_string(t) << ", ";
-      } else {
-        dbg << prettySymbol(c) << ": none, ";
+        dbg << prettySymbol(c) << ": " << to_string(t);
       }
-
-      //DEBUG("  T[q{}][{}] = q{}", q_i, prettySymbol(c), t_i);
       T.insert(q_i, c, t_i); // T[q][c] = t;
     }
     DEBUG(" q{:<7} | d{:<13} | {:24} | {}", q_i, q_i, to_string(q), dbg.str());
@@ -276,13 +291,22 @@ FiniteAutomaton FiniteAutomaton::deterministic() const {
 }
 
 std::string FiniteAutomaton::dot(const std::string_view& label) const {
-  return dot(label, states_, initialState_, acceptStates_);
+  return dot(label, states_, initialState_);
+}
+
+StateSet FiniteAutomaton::acceptStates() const {
+  StateSet result;
+
+  for (State* s : states())
+    if (s->isAccepting())
+      result.insert(s);
+
+  return result;
 }
 
 std::string FiniteAutomaton::dot(const std::string_view& label,
                                  const OwnedStateSet& states,
-                                 State* initialState,
-                                 const StateSet& acceptStates) {
+                                 State* initialState) {
   std::stringstream sstr;
 
   sstr << "digraph {\n";
@@ -290,8 +314,9 @@ std::string FiniteAutomaton::dot(const std::string_view& label,
   sstr << "  label=\"" << label << "\";\n";
 
   // endState
-  for (State* endState: acceptStates)
-    sstr << "  node [shape=doublecircle]; " << endState->label() << ";\n";
+  for (const std::unique_ptr<State>& s: states)
+    if (s->isAccepting())
+      sstr << "  node [shape=doublecircle]; " << s->label() << ";\n";
 
   // startState
   sstr << "  \"\" [shape=plaintext];\n";
@@ -318,14 +343,22 @@ std::string FiniteAutomaton::dot(const std::string_view& label,
 // ---------------------------------------------------------------------------
 // ThompsonConstruct
 
+State* ThompsonConstruct::endState() const {
+  for (const std::unique_ptr<State>& s : states_)
+    if (s->isAccepting())
+      return s.get();
+
+  fprintf(stderr, "Internal Bug! Thompson's Consruct without an end state.\n");
+  abort();
+}
+
 std::string ThompsonConstruct::dot(const std::string_view& label) const {
-  return FiniteAutomaton::dot(label, states_, startState_, {endState_});
+  return FiniteAutomaton::dot(label, states_, startState_);
 }
 
 FiniteAutomaton ThompsonConstruct::release() {
-  auto t = std::make_tuple(std::move(states_), startState_, endState_);
+  auto t = std::make_tuple(std::move(states_), startState_);
   startState_ = nullptr;
-  endState_ = nullptr;
   return FiniteAutomaton{std::move(t)};
 }
 
@@ -337,8 +370,8 @@ State* ThompsonConstruct::createState() {
 }
 
 ThompsonConstruct& ThompsonConstruct::concatenate(ThompsonConstruct rhs) {
-  endState_->linkTo(rhs.startState_);
-  endState_ = rhs.endState_;
+  endState()->linkTo(rhs.startState_);
+  endState()->setAccept(false);
   states_.merge(std::move(rhs.states_));
 
   return *this;
@@ -350,11 +383,13 @@ ThompsonConstruct& ThompsonConstruct::alternate(ThompsonConstruct other) {
   newStart->linkTo(other.startState_);
 
   State* newEnd = createState();
-  endState_->linkTo(newEnd);
-  other.endState_->linkTo(newEnd);
+  endState()->linkTo(newEnd);
+  other.endState()->linkTo(newEnd);
 
   startState_ = newStart;
-  endState_ = newEnd;
+  endState()->setAccept(false);
+  other.endState()->setAccept(false);
+  newEnd->setAccept(true);
 
   states_.merge(std::move(other.states_));
 
@@ -377,11 +412,12 @@ ThompsonConstruct& ThompsonConstruct::repeat(unsigned minimum, unsigned maximum)
     State* newEnd = createState();
     newStart->linkTo(startState_);
     newStart->linkTo(newEnd);
-    endState_->linkTo(startState_);
-    endState_->linkTo(newEnd);
+    endState()->linkTo(startState_);
+    endState()->linkTo(newEnd);
 
     startState_ = newStart;
-    endState_ = newEnd;
+    endState()->setAccept(false);
+    newEnd->setAccept(true);
   }
 
   // for (unsigned i = 0; i < minimum; ++i) {
