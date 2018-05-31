@@ -123,11 +123,6 @@ int RegExprParser::consume() {
   return ch;
 }
 
-int RegExprParser::nextChar() {
-  consume();
-  return currentChar();
-}
-
 void RegExprParser::consume(int expected) {
   int actual = currentChar();
   consume();
@@ -151,7 +146,7 @@ std::unique_ptr<RegExpr> RegExprParser::parseAlternation() {
   std::unique_ptr<RegExpr> lhs = parseConcatenation();
 
   while (currentChar() == '|') {
-    nextChar();
+    consume();
     std::unique_ptr<RegExpr> rhs = parseConcatenation();
     lhs = std::make_unique<AlternationExpr>(std::move(lhs), std::move(rhs));
   }
@@ -177,19 +172,19 @@ std::unique_ptr<RegExpr> RegExprParser::parseClosure() {
 
   switch (currentChar()) {
     case '?':
-      nextChar();
+      consume();
       return std::make_unique<ClosureExpr>(std::move(subExpr), 0, 1);
     case '*':
-      nextChar();
+      consume();
       return std::make_unique<ClosureExpr>(std::move(subExpr), 0);
     case '+':
-      nextChar();
+      consume();
       return std::make_unique<ClosureExpr>(std::move(subExpr), 1);
     case '{': {
-      nextChar();
+      consume();
       int m = parseInt();
       if (currentChar() == ',') {
-        nextChar();
+        consume();
         int n = parseInt();
         consume('}');
         return std::make_unique<ClosureExpr>(std::move(subExpr), m, n);
@@ -208,7 +203,7 @@ unsigned RegExprParser::parseInt() {
   while (std::isdigit(currentChar())) {
     n *= 10;
     n += currentChar() - '0';
-    nextChar();
+    consume();
   }
   DEBUG("parseInt: {}", n);
   return n;
@@ -217,7 +212,7 @@ unsigned RegExprParser::parseInt() {
 std::unique_ptr<RegExpr> RegExprParser::parseAtom() {
   switch (currentChar()) {
     case '(': {
-      nextChar();
+      consume();
       std::unique_ptr<RegExpr> subExpr = parseExpr();
       consume(')');
       return subExpr;

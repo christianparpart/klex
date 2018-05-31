@@ -126,7 +126,6 @@ class RegExprParser {
 
  private:
   int currentChar() const;
-  int nextChar();
   bool eof() const noexcept { return currentChar() == -1; }
   void consume(int ch);
   int consume();
