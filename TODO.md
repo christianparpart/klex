@@ -6,6 +6,7 @@
 * [x] RE: be able to parse character classes, such as: [a-zA-Z]
 * [ ] RE: invertible character classes ([^abc])
 * [x] RE: support range syntax, such as: a{0,1} as well as a{2}
+- [ ] RE: support named character classes (see https://en.wikipedia.org/wiki/Regular_expression#Character_classes)
 * [x] ThompsonConstruct: {0, 1}
 * [x] ThompsonConstruct: {0, inf}
 * [x] ThompsonConstruct: {1, inf}

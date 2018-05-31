@@ -324,6 +324,9 @@ FiniteAutomaton FiniteAutomaton::minimize() const {
     return result;
   };
 
+  std::list<StateSet> T = {acceptStates(), nonAcceptStates()};
+  std::list<StateSet> P = {};
+
   auto split = [&](const StateSet& S) -> std::list<StateSet> {
     for (Symbol c : alphabet()) {
       // TODO
@@ -334,11 +337,8 @@ FiniteAutomaton FiniteAutomaton::minimize() const {
     return {S};
   };
 
-  std::list<StateSet> T = {acceptStates(), nonAcceptStates()};
-  std::list<StateSet> P = {};
-
   while (P != T) {
-    P = T;
+    P = std::move(T);
     T = {};
 
     for (StateSet& p : P) {
