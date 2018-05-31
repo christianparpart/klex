@@ -306,26 +306,27 @@ FiniteAutomaton FiniteAutomaton::minimize() const {
         result.insert(s);
 
     return result;
-  }
+  };
 
-  auto split = [&](const State& S) -> std::vector<StateSet> {
+  auto split = [&](const StateSet& S) -> std::list<StateSet> {
     for (Symbol c : alphabet()) {
       // TODO
       // if c splits S into s_1 and s_2
+      //      that is, phi(s_1, c) and phi(s_2, c) reside in two different p_i's (partitions)
       // then return {s_1, s_2}
     }
     return {S};
   };
 
-  std::vector<StateSet> T = {acceptStates(), nonAcceptStates()};
-  std::vector<StateSet> P = {};
+  std::list<StateSet> T = {acceptStates(), nonAcceptStates()};
+  std::list<StateSet> P = {};
 
   while (P != T) {
     P = T;
     T = {};
 
     for (StateSet& p : P) {
-      // TODO
+      T.splice(T.end(), split(p));
     }
   }
 
