@@ -10,6 +10,7 @@ void dump(std::string regexprStr) {
   std::cerr << "RE: " << regexprStr << "\n";
   lexer::RegExprParser rep;
   std::unique_ptr<lexer::RegExpr> expr = rep.parse(regexprStr);
+  std::cerr << "RE: " << expr->to_string() << "\n";
   lexer::fa::FiniteAutomaton nfa = lexer::fa::Generator{"n"}.generate(expr.get());
   nfa.relabel("n");
   // std::cout << nfa.dot(expr->to_string()) << "\n";

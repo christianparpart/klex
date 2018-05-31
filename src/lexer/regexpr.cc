@@ -16,8 +16,21 @@ void AlternationExpr::accept(RegExprVisitor& visitor) {
 }
 
 std::string AlternationExpr::to_string() const {
-  // TODO: optimize superfluous ()'s
-  return fmt::format("{}|{}", left_->to_string(), right_->to_string());
+  std::stringstream sstr;
+
+  if (precedence() > left_->precedence()) {
+    sstr << '(' << left_->to_string() << ')';
+  } else
+    sstr << left_->to_string();
+
+  sstr << "|";
+
+  if (precedence() > right_->precedence()) {
+    sstr << '(' << right_->to_string() << ')';
+  } else
+    sstr << right_->to_string();
+
+  return sstr.str();
 }
 
 void ConcatenationExpr::accept(RegExprVisitor& visitor) {
@@ -25,7 +38,19 @@ void ConcatenationExpr::accept(RegExprVisitor& visitor) {
 }
 
 std::string ConcatenationExpr::to_string() const {
-  return left_->to_string() + right_->to_string();
+  std::stringstream sstr;
+
+  if (precedence() > left_->precedence()) {
+    sstr << '(' << left_->to_string() << ')';
+  } else
+    sstr << left_->to_string();
+
+  if (precedence() > right_->precedence()) {
+    sstr << '(' << right_->to_string() << ')';
+  } else
+    sstr << right_->to_string();
+
+  return sstr.str();
 }
 
 void CharacterExpr::accept(RegExprVisitor& visitor) {
@@ -81,6 +106,7 @@ int RegExprParser::consume() {
 
   int ch = *currentChar_;
   ++currentChar_;
+  DEBUG("consume: '{}'", (char)ch);
   return ch;
 }
 
@@ -117,7 +143,7 @@ std::unique_ptr<RegExpr> RegExprParser::parseAlternation() {
     lhs = std::make_unique<AlternationExpr>(std::move(lhs), std::move(rhs));
   }
 
-  return std::move(lhs);
+  return lhs;
 }
 
 std::unique_ptr<RegExpr> RegExprParser::parseConcatenation() {
@@ -156,16 +182,43 @@ std::unique_ptr<RegExpr> RegExprParser::parseAtom() {
       consume(')');
       return subExpr;
     }
-    // case '[': {
-    //   consume(']');
-    //   return subExpr;
-    // }
+    case '[':
+      return parseCharacterClass();
     case '\\':
       consume();
       return std::make_unique<CharacterExpr>(consume());
     default:
       return std::make_unique<CharacterExpr>(consume());
   }
+}
+
+std::unique_ptr<RegExpr> RegExprParser::parseCharacterClass() {
+  consume();
+  std::unique_ptr<RegExpr> e = parseCharacterClassFragment();
+  while (currentChar() != ']')
+    e = std::make_unique<AlternationExpr>(std::move(e), parseCharacterClassFragment());
+  consume(']');
+  return e;
+}
+
+std::unique_ptr<RegExpr> RegExprParser::parseCharacterClassFragment() {
+  if (currentChar() == '\\') {
+    consume();
+    return std::make_unique<CharacterExpr>(consume());
+  }
+
+  char c1 = consume();
+  if (currentChar() != '-')
+    return std::make_unique<CharacterExpr>(c1);
+
+  consume();
+  char c2 = consume();
+
+  std::unique_ptr<RegExpr> e = std::make_unique<CharacterExpr>(c1);
+  for (char c_i = c1 + 1; c_i <= c2; c_i++)
+    e = std::make_unique<AlternationExpr>(std::move(e),
+            std::make_unique<CharacterExpr>(c_i));
+  return e;
 }
 // }}}
 // {{{ RegExprEvaluator

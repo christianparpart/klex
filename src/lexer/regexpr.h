@@ -129,6 +129,8 @@ class RegExprParser {
   std::unique_ptr<RegExpr> parseConcatenation();
   std::unique_ptr<RegExpr> parseClosure();
   std::unique_ptr<RegExpr> parseAtom();
+  std::unique_ptr<RegExpr> parseCharacterClass(); // '[' characterClassFragment+ ']'
+  std::unique_ptr<RegExpr> parseCharacterClassFragment(); // character | character '-' character
 
  private:
   std::string input_;
