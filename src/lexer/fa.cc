@@ -473,9 +473,29 @@ std::string FiniteAutomaton::dot(const std::string_view& label,
 
   // all states and their edges
   for (const std::unique_ptr<State>& state: states) {
-    for (const Edge& transition: state->transitions()) {
-      sstr << "  " << state->label() << " -> " << transition.state->label();
-      sstr << " [label=\"" << prettySymbol(transition.symbol) << "\"]";
+    std::map<State* /*target state*/, std::vector<Symbol> /*transition symbols*/> transitionGroups;
+
+    for (const Edge& transition: state->transitions())
+      transitionGroups[transition.state].emplace_back(transition.symbol);
+
+    for (std::pair<State*, std::vector<Symbol>> tgroup: transitionGroups) {
+      // we took a copy in tgroup here, so I can sort() later
+      std::stringstream label;
+      if (tgroup.second.size() == 1) {
+        label << prettySymbol(tgroup.second[0]);
+      } else {
+        std::sort(tgroup.second.begin(), tgroup.second.end());
+        DEBUG("dot: grouping {} edges together", tgroup.second.size());
+        int i = 0;
+        for (Symbol c : tgroup.second) {
+          if (i) label << ",";
+          label << prettySymbol(c);
+          i++;
+        }
+      }
+      const State* targetState = tgroup.first;
+      sstr << "  " << state->label() << " -> " << targetState->label();
+      sstr << " [label=\"" << label.str() << "\"]";
       sstr << ";\n";
     }
   }
