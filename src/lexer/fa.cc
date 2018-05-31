@@ -1,6 +1,7 @@
 #include <lexer/fa.h>
 
 #include <algorithm>
+#include <cassert>
 #include <deque>
 #include <iostream>
 #include <sstream>
@@ -468,6 +469,15 @@ State* ThompsonConstruct::findState(std::string_view label) const {
 ThompsonConstruct& ThompsonConstruct::concatenate(ThompsonConstruct rhs) {
   acceptState()->linkTo(rhs.initialState_);
   acceptState()->setAccept(false);
+
+  // relabel first with given base
+  if (int n = states_.size(); n != 0) {
+    for (const std::unique_ptr<State>& s : rhs.states_) {
+      s->relabel(fmt::format("n{}", n));
+      n++;
+    }
+  }
+
   states_.merge(std::move(rhs.states_));
 
   return *this;
@@ -487,45 +497,76 @@ ThompsonConstruct& ThompsonConstruct::alternate(ThompsonConstruct other) {
   other.acceptState()->setAccept(false);
   newEnd->setAccept(true);
 
+  // relabel first with given base
+  if (int n = states_.size(); n != 0) {
+    for (const std::unique_ptr<State>& s : other.states_) {
+      s->relabel(fmt::format("n{}", n));
+      n++;
+    }
+  }
+
   states_.merge(std::move(other.states_));
 
   return *this;
 }
 
-ThompsonConstruct& ThompsonConstruct::multiply(unsigned factor) {
-  // a{n} = a_1 a_2 ... a_n
-  return *this; // TODO
+ThompsonConstruct& ThompsonConstruct::optional() {
+  State* newStart = createState();
+  State* newEnd = createState();
+
+  newStart->linkTo(initialState_);
+  newStart->linkTo(newEnd);
+  acceptState()->linkTo(newEnd);
+
+  initialState_ = newStart;
+  acceptState()->setAccept(false);
+  newEnd->setAccept(true);
+
+  return *this;
+}
+
+ThompsonConstruct& ThompsonConstruct::recurring() {
+  // {0, inf}
+  State* newStart = createState();
+  State* newEnd = createState();
+  newStart->linkTo(initialState_);
+  newStart->linkTo(newEnd);
+  acceptState()->linkTo(initialState_);
+  acceptState()->linkTo(newEnd);
+
+  initialState_ = newStart;
+  acceptState()->setAccept(false);
+  newEnd->setAccept(true);
+
+  return *this;
+}
+
+ThompsonConstruct& ThompsonConstruct::positive() {
+  return concatenate(clone().recurring());
+}
+
+ThompsonConstruct& ThompsonConstruct::times(unsigned factor) {
+  assert(factor != 0);
+
+  if (factor > 1) {
+    ThompsonConstruct base = clone();
+    for (unsigned n = 2; n <= factor; ++n) {
+      concatenate(base.clone());
+      std::cerr << dot(fmt::format("{} times factorized", n)) << "\n";
+    }
+  }
+
+  return *this;
 }
 
 ThompsonConstruct& ThompsonConstruct::repeat(unsigned minimum, unsigned maximum) {
-  // TODO
+  assert(minimum <= maximum);
 
-  // cases:
-  //   {0,1}
-  //   {0,inf}
-  //   {1,inf}
-  //   {n,n}
-  //   {m,n} with m < n
+  ThompsonConstruct factor = clone();
 
-  // a* == a{0,inf}
-  if (minimum == 0 && maximum == std::numeric_limits<unsigned>::max()) {
-    State* newStart = createState();
-    State* newEnd = createState();
-    newStart->linkTo(initialState_);
-    newStart->linkTo(newEnd);
-    acceptState()->linkTo(initialState_);
-    acceptState()->linkTo(newEnd);
-
-    initialState_ = newStart;
-    acceptState()->setAccept(false);
-    newEnd->setAccept(true);
-  }
-
-  // for (unsigned i = 0; i < minimum; ++i) {
-  //   // a{2} = aa
-  //   // a{3} = aa
-  //   // a -> a -> a -> s_a
-  // }
+  times(minimum);
+  for (unsigned n = minimum + 1; n <= maximum; n++)
+    alternate(factor.clone().times(n));
 
   return *this;
 }
@@ -558,16 +599,26 @@ void Generator::visit(ConcatenationExpr& concatenationExpr) {
 }
 
 void Generator::visit(CharacterExpr& characterExpr) {
-  ThompsonConstruct fa{characterExpr.value()};
-
-  fa_ = std::move(fa);
+  fa_ = ThompsonConstruct{characterExpr.value()};
 }
 
 void Generator::visit(ClosureExpr& closureExpr) {
-  ThompsonConstruct fa = construct(closureExpr.subExpr());
-  fa.repeat(closureExpr.minimumOccurrences(), closureExpr.maximumOccurrences());
+  const unsigned xmin = closureExpr.minimumOccurrences();
+  const unsigned xmax = closureExpr.maximumOccurrences();
+  constexpr unsigned Infinity = std::numeric_limits<unsigned>::max();
 
-  fa_ = std::move(fa);
+  if (xmin == 0 && xmax == 1)
+    fa_ = construct(closureExpr.subExpr()).optional();
+  else if (xmin == 0 && xmax == Infinity)
+    fa_ = construct(closureExpr.subExpr()).recurring();
+  else if (xmin == 1 && xmax == Infinity)
+    fa_ = construct(closureExpr.subExpr()).positive();
+  else if (xmin < xmax)
+    fa_ = construct(closureExpr.subExpr()).repeat(xmin, xmax);
+  else if (xmin == xmax)
+    fa_ = construct(closureExpr.subExpr()).times(xmin);
+  else
+    throw std::invalid_argument{"closureExpr"};
 }
 
 } // namespace lexer::fa

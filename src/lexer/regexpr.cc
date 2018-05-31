@@ -8,6 +8,19 @@
 
 #define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
 
+/*
+  REGULAR EXPRESSION SYNTAX:
+  --------------------------
+
+  expr                    := alternation
+  alternation             := concatenation ('|' concatenation)*
+  concatenation           := closure (closure)*
+  closure                 := atom ['*' | '?' | '{' NUM [',' NUM] '}']
+  atom                    := character | characterClass | '(' expr ')'
+  characterClass          := '[' ['^'] characterClassFragment+ ']'
+  characterClassFragment  := character | character '-' character
+*/
+
 namespace lexer {
 
 // {{{ AST
@@ -168,10 +181,37 @@ std::unique_ptr<RegExpr> RegExprParser::parseClosure() {
       return std::make_unique<ClosureExpr>(std::move(subExpr), 0, 1);
     case '*':
       nextChar();
-      return std::make_unique<ClosureExpr>(std::move(subExpr));
+      return std::make_unique<ClosureExpr>(std::move(subExpr), 0);
+    case '+':
+      nextChar();
+      return std::make_unique<ClosureExpr>(std::move(subExpr), 1);
+    case '{': {
+      nextChar();
+      int m = parseInt();
+      if (currentChar() == ',') {
+        nextChar();
+        int n = parseInt();
+        consume('}');
+        return std::make_unique<ClosureExpr>(std::move(subExpr), m, n);
+      } else {
+        consume('}');
+        return std::make_unique<ClosureExpr>(std::move(subExpr), m, m);
+      }
+    }
     default:
       return subExpr;
   }
+}
+
+unsigned RegExprParser::parseInt() {
+  unsigned n = 0;
+  while (std::isdigit(currentChar())) {
+    n *= 10;
+    n += currentChar() - '0';
+    nextChar();
+  }
+  DEBUG("parseInt: {}", n);
+  return n;
 }
 
 std::unique_ptr<RegExpr> RegExprParser::parseAtom() {

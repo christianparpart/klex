@@ -67,11 +67,18 @@ class ClosureExpr : public RegExpr {
   explicit ClosureExpr(std::unique_ptr<RegExpr> subExpr)
       : ClosureExpr{std::move(subExpr), 0, std::numeric_limits<unsigned>::max()} {}
 
+  explicit ClosureExpr(std::unique_ptr<RegExpr> subExpr, unsigned low)
+      : ClosureExpr{std::move(subExpr), low, std::numeric_limits<unsigned>::max()} {}
+
   explicit ClosureExpr(std::unique_ptr<RegExpr> subExpr, unsigned low, unsigned high)
       : RegExpr{3},
         subExpr_{std::move(subExpr)},
         minimumOccurrences_{low},
-        maximumOccurrences_{high} {}
+        maximumOccurrences_{high} {
+    if (minimumOccurrences_ > maximumOccurrences_) {
+      throw std::invalid_argument{"low,high"};
+    }
+  }
 
   RegExpr* subExpr() const { return subExpr_.get(); }
   unsigned minimumOccurrences() const noexcept { return minimumOccurrences_; }
@@ -123,13 +130,14 @@ class RegExprParser {
   bool eof() const noexcept { return currentChar() == -1; }
   void consume(int ch);
   int consume();
+  unsigned parseInt();
 
-  std::unique_ptr<RegExpr> parseExpr();
-  std::unique_ptr<RegExpr> parseAlternation();
-  std::unique_ptr<RegExpr> parseConcatenation();
-  std::unique_ptr<RegExpr> parseClosure();
-  std::unique_ptr<RegExpr> parseAtom();
-  std::unique_ptr<RegExpr> parseCharacterClass(); // '[' characterClassFragment+ ']'
+  std::unique_ptr<RegExpr> parseExpr();                   // alternation
+  std::unique_ptr<RegExpr> parseAlternation();            // concatenation ('|' concatenation)*
+  std::unique_ptr<RegExpr> parseConcatenation();          // closure (closure)*
+  std::unique_ptr<RegExpr> parseClosure();                // atom ['*' | '?' | '{' NUM [',' NUM] '}']
+  std::unique_ptr<RegExpr> parseAtom();                   // character | characterClass | '(' expr ')'
+  std::unique_ptr<RegExpr> parseCharacterClass();         // '[' characterClassFragment+ ']'
   std::unique_ptr<RegExpr> parseCharacterClassFragment(); // character | character '-' character
 
  private:

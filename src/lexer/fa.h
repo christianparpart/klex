@@ -169,17 +169,25 @@ class ThompsonConstruct {
   State* initialState() const { return initialState_; }
   State* acceptState() const;
 
+  ThompsonConstruct clone() const { return ThompsonConstruct{*this}; }
+
   //! Concatenates the right FA's initial state with this FA's accepting state.
   ThompsonConstruct& concatenate(ThompsonConstruct rhs);
 
   //! Reconstructs this FA to alternate between this FA and the @p other FA.
   ThompsonConstruct& alternate(ThompsonConstruct other);
 
-  //! Ensures the given NFA is concatenated @p factor times.
-  ThompsonConstruct& multiply(unsigned factor);
+  //! Reconstructs this FA to allow optional input. X -> X?
+  ThompsonConstruct& optional();
 
   //! Reconstructs this FA with the given @p quantifier factor.
-  ThompsonConstruct& repeat(unsigned quantifier);
+  ThompsonConstruct& times(unsigned quantifier);
+
+  //! Reconstructs this FA to allow recurring input. X -> X*
+  ThompsonConstruct& recurring();
+
+  //! Reconstructs this FA to be recurring at least once. X+ = XX*
+  ThompsonConstruct& positive();
 
   //! Reconstructs this FA to be repeatable between range [minimum, maximum].
   ThompsonConstruct& repeat(unsigned minimum, unsigned maximum);
@@ -212,9 +220,9 @@ class Generator : public RegExprVisitor {
       : prefix_{prefix}, label_{0}, fa_{} {}
 
   FiniteAutomaton generate(const RegExpr* re);
+  ThompsonConstruct construct(const RegExpr* re);
 
  private:
-  ThompsonConstruct construct(const RegExpr* re);
   void visit(AlternationExpr& alternationExpr) override;
   void visit(ConcatenationExpr& concatenationExpr) override;
   void visit(CharacterExpr& characterExpr) override;
