@@ -126,10 +126,6 @@ class FiniteAutomaton {
                          const OwnedStateSet& states, State* initialState);
 
  private:
-  // minimization helper
-  StateSet nonAcceptStates() const;
-  std::vector<StateSet> split(const StateSet& S) const;
-
   void relabel(State* s, std::string_view prefix, std::set<State*>* registry);
 
  private:
