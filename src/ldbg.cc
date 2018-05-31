@@ -15,7 +15,8 @@ void dump(std::string regexprStr) {
   // std::cout << nfa.dot(expr->to_string()) << "\n";
 
   lexer::fa::FiniteAutomaton dfa = nfa.deterministic();
-  std::cout << dfa.dot(expr->to_string()) << "\n";
+  lexer::fa::FiniteAutomaton dfamin = dfa.minimize();
+  std::cout << dfamin.dot(expr->to_string()) << "\n";
 }
 
 int main(int argc, const char* argv[]) {

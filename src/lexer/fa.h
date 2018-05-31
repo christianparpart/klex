@@ -68,8 +68,8 @@ using StateSet = std::set<State*>;
  */
 class FiniteAutomaton {
  public:
-  FiniteAutomaton(const FiniteAutomaton&) = delete;
-  FiniteAutomaton& operator=(const FiniteAutomaton&) = delete;
+  FiniteAutomaton(const FiniteAutomaton& other) : FiniteAutomaton{} { *this = other; }
+  FiniteAutomaton& operator=(const FiniteAutomaton& other);
   FiniteAutomaton(FiniteAutomaton&&) = default;
   FiniteAutomaton& operator=(FiniteAutomaton&&) = default;
   ~FiniteAutomaton() = default;
@@ -155,19 +155,19 @@ class ThompsonConstruct {
   //! Constructs an empty NFA.
   ThompsonConstruct()
       : states_{},
-        startState_{nullptr} {
+        initialState_{nullptr} {
   }
 
   //! Constructs an NFA for a single character transition
   explicit ThompsonConstruct(Symbol value)
-      : startState_{createState()} {
-    State* endState = createState();
-    endState->setAccept(true);
-    startState_->linkTo(value, endState);
+      : initialState_{createState()} {
+    State* acceptState = createState();
+    acceptState->setAccept(true);
+    initialState_->linkTo(value, acceptState);
   }
 
-  State* startState() const { return startState_; }
-  State* endState() const;
+  State* initialState() const { return initialState_; }
+  State* acceptState() const;
 
   //! Concatenates the right FA's initial state with this FA's accepting state.
   ThompsonConstruct& concatenate(ThompsonConstruct rhs);
@@ -200,7 +200,7 @@ class ThompsonConstruct {
 
  private:
   OwnedStateSet states_;
-  State* startState_;
+  State* initialState_;
 };
 
 /*!

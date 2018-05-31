@@ -63,6 +63,21 @@ std::string to_string(const StateSet& S) {
 // ---------------------------------------------------------------------------
 // FiniteAutomaton
 
+FiniteAutomaton& FiniteAutomaton::operator=(const FiniteAutomaton& other) {
+  states_.clear();
+  for (State* s : other.states())
+    createState(s->label())->setAccept(s->isAccepting());
+
+  // map links
+  for (const std::unique_ptr<State>& s : other.states_)
+    for (const Edge& t : s->transitions())
+      findState(s->label())->linkTo(t.symbol, findState(t.state->label()));
+
+  initialState_ = findState(other.initialState()->label());
+
+  return *this;
+}
+
 void FiniteAutomaton::relabel(std::string_view prefix) {
   std::set<State*> registry;
   relabel(initialState_, prefix, &registry);
@@ -335,7 +350,7 @@ FiniteAutomaton FiniteAutomaton::minimize() const {
   // TODO
   // construct states & links out of P
 
-  return dfa;
+  return *this; // dfa;
 }
 
 std::string FiniteAutomaton::dot(const std::string_view& label) const {
@@ -361,12 +376,12 @@ std::string FiniteAutomaton::dot(const std::string_view& label,
   sstr << "  rankdir=LR;\n";
   sstr << "  label=\"" << label << "\";\n";
 
-  // endState
+  // acceptState
   for (const std::unique_ptr<State>& s: states)
     if (s->isAccepting())
       sstr << "  node [shape=doublecircle]; " << s->label() << ";\n";
 
-  // startState
+  // initialState
   sstr << "  \"\" [shape=plaintext];\n";
   sstr << "  node [shape=circle];\n";
   sstr << "  \"\" -> " << initialState->label() << ";\n";
@@ -400,10 +415,12 @@ ThompsonConstruct& ThompsonConstruct::operator=(const ThompsonConstruct& other) 
     for (const Edge& t : s->transitions())
       findState(s->label())->linkTo(t.symbol, findState(t.state->label()));
 
+  initialState_ = findState(other.initialState()->label());
+
   return *this;
 }
 
-State* ThompsonConstruct::endState() const {
+State* ThompsonConstruct::acceptState() const {
   for (const std::unique_ptr<State>& s : states_)
     if (s->isAccepting())
       return s.get();
@@ -413,12 +430,12 @@ State* ThompsonConstruct::endState() const {
 }
 
 std::string ThompsonConstruct::dot(const std::string_view& label) const {
-  return FiniteAutomaton::dot(label, states_, startState_);
+  return FiniteAutomaton::dot(label, states_, initialState_);
 }
 
 FiniteAutomaton ThompsonConstruct::release() {
-  auto t = std::make_tuple(std::move(states_), startState_);
-  startState_ = nullptr;
+  auto t = std::make_tuple(std::move(states_), initialState_);
+  initialState_ = nullptr;
   return FiniteAutomaton{std::move(t)};
 }
 
@@ -449,8 +466,8 @@ State* ThompsonConstruct::findState(std::string_view label) const {
 }
 
 ThompsonConstruct& ThompsonConstruct::concatenate(ThompsonConstruct rhs) {
-  endState()->linkTo(rhs.startState_);
-  endState()->setAccept(false);
+  acceptState()->linkTo(rhs.initialState_);
+  acceptState()->setAccept(false);
   states_.merge(std::move(rhs.states_));
 
   return *this;
@@ -458,16 +475,16 @@ ThompsonConstruct& ThompsonConstruct::concatenate(ThompsonConstruct rhs) {
 
 ThompsonConstruct& ThompsonConstruct::alternate(ThompsonConstruct other) {
   State* newStart = createState();
-  newStart->linkTo(startState_);
-  newStart->linkTo(other.startState_);
+  newStart->linkTo(initialState_);
+  newStart->linkTo(other.initialState_);
 
   State* newEnd = createState();
-  endState()->linkTo(newEnd);
-  other.endState()->linkTo(newEnd);
+  acceptState()->linkTo(newEnd);
+  other.acceptState()->linkTo(newEnd);
 
-  startState_ = newStart;
-  endState()->setAccept(false);
-  other.endState()->setAccept(false);
+  initialState_ = newStart;
+  acceptState()->setAccept(false);
+  other.acceptState()->setAccept(false);
   newEnd->setAccept(true);
 
   states_.merge(std::move(other.states_));
@@ -494,13 +511,13 @@ ThompsonConstruct& ThompsonConstruct::repeat(unsigned minimum, unsigned maximum)
   if (minimum == 0 && maximum == std::numeric_limits<unsigned>::max()) {
     State* newStart = createState();
     State* newEnd = createState();
-    newStart->linkTo(startState_);
+    newStart->linkTo(initialState_);
     newStart->linkTo(newEnd);
-    endState()->linkTo(startState_);
-    endState()->linkTo(newEnd);
+    acceptState()->linkTo(initialState_);
+    acceptState()->linkTo(newEnd);
 
-    startState_ = newStart;
-    endState()->setAccept(false);
+    initialState_ = newStart;
+    acceptState()->setAccept(false);
     newEnd->setAccept(true);
   }
 
