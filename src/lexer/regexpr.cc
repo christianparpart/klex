@@ -6,7 +6,12 @@
 
 #include <fmt/format.h>
 
+#if 0
 #define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
+#else
+#define DEBUG(msg, ...) do { } while (0)
+#endif
+
 
 /*
   REGULAR EXPRESSION SYNTAX:

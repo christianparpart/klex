@@ -113,7 +113,7 @@ class FiniteAutomaton {
   //! applies "Subset Construction", effectively creating an DFA
   FiniteAutomaton deterministic() const;
 
-  //! applies the DFA minimization algorithm
+  //! applies Hopcroft's DFA minimization algorithm
   FiniteAutomaton minimize() const;
 
   /*!

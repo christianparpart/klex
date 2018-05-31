@@ -21,7 +21,7 @@ void dump(std::string regexprStr) {
 
   lexer::fa::FiniteAutomaton dfamin = dfa.minimize();
   dfamin.relabel("p");
-  std::cout << dfamin.dot(expr->to_string()) << "\n";
+  std::cout << dfamin.dot(regexprStr) << "\n";
 }
 
 int main(int argc, const char* argv[]) {

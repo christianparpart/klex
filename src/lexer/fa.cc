@@ -2,13 +2,18 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <deque>
 #include <functional>
 #include <iostream>
 #include <sstream>
 #include <vector>
 
+#if 0
 #define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
+#else
+#define DEBUG(msg, ...) do { } while (0)
+#endif
 
 namespace lexer::fa {
 
@@ -452,6 +457,42 @@ StateSet FiniteAutomaton::acceptStates() const {
   return result;
 }
 
+std::string groupCharacterClassRanges(std::vector<Symbol> chars) {
+  // we took a copy in tgroup here, so I can sort() later
+  std::sort(chars.begin(), chars.end());
+
+  // {1,3,5,a,b,c,d,e,f,z]
+  // ->
+  // {{1}, {3}, {5}, {a-f}, {z}}
+
+  std::stringstream sstr;
+  Symbol ymin = '\0';
+  Symbol ymax = ymin;
+  int i = 0;
+
+  for (Symbol c : chars) {
+    if (c == ymax + 1) {  // range growing
+      ymax = c;
+    }
+    else { // gap found
+      if (i) {
+        if (ymin != ymax)
+          sstr << prettySymbol(ymin) << '-' << prettySymbol(ymax);
+        else
+          sstr << prettySymbol(ymin);
+      }
+      ymin = ymax = c;
+    }
+    i++;
+  }
+  if (ymin != ymax)
+    sstr << prettySymbol(ymin) << '-' << prettySymbol(ymax);
+  else
+    sstr << prettySymbol(ymin);
+
+  return sstr.str();
+}
+
 std::string FiniteAutomaton::dot(const std::string_view& label,
                                  const OwnedStateSet& states,
                                  State* initialState) {
@@ -478,24 +519,11 @@ std::string FiniteAutomaton::dot(const std::string_view& label,
     for (const Edge& transition: state->transitions())
       transitionGroups[transition.state].emplace_back(transition.symbol);
 
-    for (std::pair<State*, std::vector<Symbol>> tgroup: transitionGroups) {
-      // we took a copy in tgroup here, so I can sort() later
-      std::stringstream label;
-      if (tgroup.second.size() == 1) {
-        label << prettySymbol(tgroup.second[0]);
-      } else {
-        std::sort(tgroup.second.begin(), tgroup.second.end());
-        DEBUG("dot: grouping {} edges together", tgroup.second.size());
-        int i = 0;
-        for (Symbol c : tgroup.second) {
-          if (i) label << ",";
-          label << prettySymbol(c);
-          i++;
-        }
-      }
+    for (const std::pair<State*, std::vector<Symbol>>& tgroup: transitionGroups) {
+      std::string label = groupCharacterClassRanges(tgroup.second);
       const State* targetState = tgroup.first;
       sstr << "  " << state->label() << " -> " << targetState->label();
-      sstr << " [label=\"" << label.str() << "\"]";
+      sstr << " [label=\"" << label << "\"]";
       sstr << ";\n";
     }
   }
