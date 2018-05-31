@@ -297,6 +297,46 @@ FiniteAutomaton FiniteAutomaton::deterministic() const {
   return dfa;
 }
 
+StateSet FiniteAutomaton::nonAcceptStates() const {
+  StateSet result;
+
+  for (State* s : states())
+    if (!s->isAccepting())
+      result.insert(s);
+
+  return result;
+}
+
+std::vector<StateSet> FiniteAutomaton::split(const StateSet& S) const {
+  for (Symbol c : alphabet()) {
+    // TODO
+    // if c splits S into s_1 and s_2
+    // then return {s_1, s_2}
+  }
+  return {S};
+}
+
+FiniteAutomaton FiniteAutomaton::minimize() const {
+  std::vector<StateSet> T = {acceptStates(), nonAcceptStates()};
+  std::vector<StateSet> P = {};
+
+  while (P != T) {
+    P = T;
+    T = {};
+
+    for (StateSet& p : P) {
+      // TODO
+    }
+  }
+
+  FiniteAutomaton dfa;
+
+  // TODO
+  // construct states & links out of P
+
+  return dfa;
+}
+
 std::string FiniteAutomaton::dot(const std::string_view& label) const {
   return dot(label, states_, initialState_);
 }

@@ -11,6 +11,7 @@
 #include <set>
 #include <string_view>
 #include <tuple>
+#include <vector>
 
 namespace lexer::fa {
 
@@ -111,6 +112,9 @@ class FiniteAutomaton {
   //! applies "Subset Construction", effectively creating an DFA
   FiniteAutomaton deterministic() const;
 
+  //! applies the DFA minimization algorithm
+  FiniteAutomaton minimize() const;
+
   /*!
    * Creates a dot-file that can be visualized with dot/xdot CLI tools.
    *
@@ -122,6 +126,10 @@ class FiniteAutomaton {
                          const OwnedStateSet& states, State* initialState);
 
  private:
+  // minimization helper
+  StateSet nonAcceptStates() const;
+  std::vector<StateSet> split(const StateSet& S) const;
+
   void relabel(State* s, std::string_view prefix, std::set<State*>* registry);
 
  private:
