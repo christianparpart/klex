@@ -43,6 +43,8 @@ class State {
   EdgeList& transitions() noexcept { return transitions_; }
   const EdgeList& transitions() const noexcept { return transitions_; }
 
+  State* transition(Symbol input) const;
+
   void linkTo(State* state) { linkTo(EpsilonTransition, state); }
   void linkTo(Symbol condition, State* state);
 
@@ -146,8 +148,8 @@ class FiniteAutomaton {
  */
 class ThompsonConstruct {
  public:
-  ThompsonConstruct(const ThompsonConstruct& other) : ThompsonConstruct{} { *this = other; }
-  ThompsonConstruct& operator=(const ThompsonConstruct& other);
+  ThompsonConstruct(const ThompsonConstruct& other) = delete;
+  ThompsonConstruct& operator=(const ThompsonConstruct& other) = delete;
 
   ThompsonConstruct(ThompsonConstruct&&) = default;
   ThompsonConstruct& operator=(ThompsonConstruct&&) = default;
@@ -169,7 +171,7 @@ class ThompsonConstruct {
   State* initialState() const { return initialState_; }
   State* acceptState() const;
 
-  ThompsonConstruct clone() const { return ThompsonConstruct{*this}; }
+  ThompsonConstruct clone() const;
 
   //! Concatenates the right FA's initial state with this FA's accepting state.
   ThompsonConstruct& concatenate(ThompsonConstruct rhs);
@@ -233,21 +235,6 @@ class Generator : public RegExprVisitor {
   unsigned label_;
   ThompsonConstruct fa_;
 };
-
-/**
- * Builds a list of states that can be exclusively reached from S via epsilon-transitions.
- */
-StateSet epsilonClosure(const StateSet& S);
-
-/**
- * Computes a valid configuration the FA can reach with the given input @p q and @p c.
- *
- * @param q valid input configuration of the original NFA.
- * @param c the input character that the FA would consume next
- *
- * @return set of states that the FA can reach from @p c given the input @p c.
- */
-StateSet delta(const StateSet& q, Symbol c);
 
 std::string to_string(const StateSet& S);
 

@@ -82,10 +82,9 @@ std::string ClosureExpr::to_string() const {
   std::stringstream sstr;
 
   // TODO: optimize superfluous ()'s
-  if (precedence() > subExpr_->precedence()) {
+  if (precedence() > subExpr_->precedence())
     sstr << '(' << subExpr_->to_string() << ')';
-    DEBUG("closure.precedence: {}, subExpr's: {}", precedence(), subExpr_->precedence());
-  } else
+  else
     sstr << subExpr_->to_string();
 
   if (minimumOccurrences_ == 0 && maximumOccurrences_ == 1)
@@ -119,7 +118,7 @@ int RegExprParser::consume() {
 
   int ch = *currentChar_;
   ++currentChar_;
-  DEBUG("consume: '{}'", (char)ch);
+  //DEBUG("consume: '{}'", (char)ch);
   return ch;
 }
 
@@ -205,7 +204,6 @@ unsigned RegExprParser::parseInt() {
     n += currentChar() - '0';
     consume();
   }
-  DEBUG("parseInt: {}", n);
   return n;
 }
 

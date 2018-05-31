@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <deque>
+#include <functional>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -13,6 +14,14 @@ namespace lexer::fa {
 
 // ---------------------------------------------------------------------------
 // State
+
+State* State::transition(Symbol input) const {
+  for (const Edge& transition : transitions_)
+    if (input == transition.symbol)
+      return transition.state;
+
+  return nullptr;
+}
 
 void State::linkTo(Symbol input, State* state) {
   transitions_.emplace_back(input, state);
@@ -134,56 +143,6 @@ void FiniteAutomaton::setInitialState(State* s) {
   initialState_ = s;
 }
 
-StateSet epsilonClosure(const StateSet& S) {
-  StateSet result;
-
-  for (State* s : S) {
-    result.insert(s);
-    for (Edge& transition : s->transitions()) {
-      if (transition.symbol == EpsilonTransition) {
-        result.merge(epsilonClosure({transition.state}));
-      }
-    }
-  }
-
-  return result;
-}
-
-StateSet delta(const StateSet& q, Symbol c) {
-  StateSet result;
-  for (State* s : q) {
-    for (Edge& transition: s->transitions()) {
-      if (transition.symbol == EpsilonTransition) {
-        result.merge(delta({transition.state}, c));
-      } else if (transition.symbol == c) {
-        result.insert(transition.state);
-      }
-    }
-  }
-  return result;
-}
-
-static bool containsAcceptingState(const StateSet& Q) {
-  for (State* q : Q)
-    if (q->isAccepting())
-      return true;
-
-  return false;
-}
-
-//! Finds @p t in @p Q and returns its offset (aka configuration number) or -1 if not found.
-static int configurationNumber(const std::vector<StateSet>& Q, const StateSet& t) {
-  int i = 0;
-  for (const StateSet& q_i : Q) {
-    if (q_i == t) {
-      return i;
-    }
-    i++;
-  }
-
-  return -1;
-}
-
 struct TransitionTable {
   struct Input {
     int configurationNumber;
@@ -240,6 +199,64 @@ struct TransitionTable {
  */
 
 FiniteAutomaton FiniteAutomaton::deterministic() const {
+  // Builds a list of states that can be exclusively reached from S via epsilon-transitions.
+  std::function<StateSet(const StateSet&)> epsilonClosure = [&epsilonClosure](const StateSet& S) -> StateSet {
+    StateSet result;
+
+    for (State* s : S) {
+      result.insert(s);
+      for (Edge& transition : s->transitions()) {
+        if (transition.symbol == EpsilonTransition) {
+          result.merge(epsilonClosure({transition.state}));
+        }
+      }
+    }
+
+    return result;
+  };
+
+  // Computes a valid configuration the FA can reach with the given input @p q and @p c.
+  // 
+  // @param q valid input configuration of the original NFA.
+  // @param c the input character that the FA would consume next
+  //
+  // @return set of states that the FA can reach from @p c given the input @p c.
+  //
+  std::function<StateSet(const StateSet&, Symbol)> delta = [&delta](const StateSet& q, Symbol c) -> StateSet {
+    StateSet result;
+    for (State* s : q) {
+      for (Edge& transition: s->transitions()) {
+        if (transition.symbol == EpsilonTransition) {
+          result.merge(delta({transition.state}, c));
+        } else if (transition.symbol == c) {
+          result.insert(transition.state);
+        }
+      }
+    }
+    return result;
+  };
+
+  // Finds @p t in @p Q and returns its offset (aka configuration number) or -1 if not found.
+  auto configurationNumber = [](const std::vector<StateSet>& Q, const StateSet& t) -> int {
+    int i = 0;
+    for (const StateSet& q_i : Q) {
+      if (q_i == t) {
+        return i;
+      }
+      i++;
+    }
+
+    return -1;
+  };
+
+  auto containsAcceptingState = [](const StateSet& Q) -> bool {
+    for (State* q : Q)
+      if (q->isAccepting())
+        return true;
+
+    return false;
+  };
+
   StateSet q_0 = epsilonClosure({initialState_});
   DEBUG("q_0 = epsilonClosure({}) = {}", to_string({initialState_}), q_0);
   std::vector<StateSet> Q = {q_0};          // resulting states
@@ -327,12 +344,48 @@ FiniteAutomaton FiniteAutomaton::minimize() const {
   std::list<StateSet> T = {acceptStates(), nonAcceptStates()};
   std::list<StateSet> P = {};
 
+  auto partitionId = [&](State* s) -> int {
+    if (s != nullptr) {
+      int i = 0;
+      for (const StateSet& p : P) {
+        if (p.find(s) != p.end())
+          return i;
+        else
+          i++;
+      }
+    }
+    return -1;
+  };
+
+  auto containsInitialState = [this](const StateSet& S) -> bool {
+    for (State* s : S)
+      if (s == initialState_)
+        return true;
+    return false;
+  };
+
   auto split = [&](const StateSet& S) -> std::list<StateSet> {
+    DEBUG("split: {}", to_string(S));
+
     for (Symbol c : alphabet()) {
-      // TODO
       // if c splits S into s_1 and s_2
       //      that is, phi(s_1, c) and phi(s_2, c) reside in two different p_i's (partitions)
       // then return {s_1, s_2}
+
+      std::map<int /*target partition set*/ , StateSet /*source states*/> t_i;
+      for (State* s : S) {
+        State* t = s->transition(c);
+        int p_i = partitionId(t);
+        t_i[p_i].insert(s);
+      }
+      if (t_i.size() != 1) {
+        DEBUG("  split: on character '{}' into {} sets", (char)c, t_i.size());
+        std::list<StateSet> result;
+        for (const std::pair<int, StateSet>& t : t_i) {
+          result.emplace_back(std::move(t.second));
+        }
+        return result;
+      }
     }
     return {S};
   };
@@ -346,12 +399,43 @@ FiniteAutomaton FiniteAutomaton::minimize() const {
     }
   }
 
-  FiniteAutomaton dfa;
+  // -------------------------------------------------------------------------
+  DEBUG("minimization terminated with {} unique partition sets", P.size());
+  FiniteAutomaton dfamin;
+
+  // instanciate states
+  int p_i = 0;
+  for (const StateSet& p : P) {
+    State* s = *p.begin();
+    State* q = dfamin.createState(fmt::format("p{}", p_i));
+    q->setAccept(s->isAccepting());
+    DEBUG("Creating p{}: {} {}", p_i, s->isAccepting() ? "accepting" : "rejecting",
+                                      containsInitialState(p) ? "initial" : "");
+    if (containsInitialState(p)) {
+      dfamin.setInitialState(q);
+    }
+    p_i++;
+  }
+
+  // setup transitions
+  p_i = 0;
+  for (const StateSet& p : P) {
+    State* s = *p.begin();
+    State* t0 = dfamin.findState(fmt::format("p{}", p_i));
+    for (const Edge& transition : s->transitions()) {
+      if (int t_i = partitionId(transition.state); t_i != -1) {
+        DEBUG("map p{} --({})--> p{}", p_i, transition.symbol, t_i);
+        State* t1 = dfamin.findState(fmt::format("p{}", t_i));
+        t0->linkTo(transition.symbol, t1);
+      }
+    }
+    p_i++;
+  }
 
   // TODO
   // construct states & links out of P
 
-  return *this; // dfa;
+  return dfamin;
 }
 
 std::string FiniteAutomaton::dot(const std::string_view& label) const {
@@ -404,21 +488,29 @@ std::string FiniteAutomaton::dot(const std::string_view& label,
 // ---------------------------------------------------------------------------
 // ThompsonConstruct
 
-ThompsonConstruct& ThompsonConstruct::operator=(const ThompsonConstruct& other) {
-  states_.clear();
+ThompsonConstruct ThompsonConstruct::clone() const {
+  ThompsonConstruct output;
 
   // clone states
-  for (const std::unique_ptr<State>& s : other.states_)
-    createState(s->label())->setAccept(s->isAccepting());
+  for (const std::unique_ptr<State>& s : states_) {
+    State* u = output.createState(s->label());
+    u->setAccept(s->isAccepting());
+    if (s.get() == initialState()) {
+      output.initialState_ = u;
+    }
+  }
 
   // map links
-  for (const std::unique_ptr<State>& s : other.states_)
-    for (const Edge& t : s->transitions())
-      findState(s->label())->linkTo(t.symbol, findState(t.state->label()));
+  for (const std::unique_ptr<State>& s : states_) {
+    State* u = output.findState(s->label());
+    for (const Edge& transition : s->transitions()) {
+      State* v = output.findState(transition.state->label());
+      u->linkTo(transition.symbol, v);
+      // findState(s->label())->linkTo(t.symbol, findState(t.state->label()));
+    }
+  }
 
-  initialState_ = findState(other.initialState()->label());
-
-  return *this;
+  return output;
 }
 
 State* ThompsonConstruct::acceptState() const {
@@ -542,7 +634,7 @@ ThompsonConstruct& ThompsonConstruct::recurring() {
 }
 
 ThompsonConstruct& ThompsonConstruct::positive() {
-  return concatenate(clone().recurring());
+  return concatenate(std::move(clone().recurring()));
 }
 
 ThompsonConstruct& ThompsonConstruct::times(unsigned factor) {
@@ -566,7 +658,7 @@ ThompsonConstruct& ThompsonConstruct::repeat(unsigned minimum, unsigned maximum)
 
   times(minimum);
   for (unsigned n = minimum + 1; n <= maximum; n++)
-    alternate(factor.clone().times(n));
+    alternate(std::move(factor.clone().times(n)));
 
   return *this;
 }
@@ -608,15 +700,15 @@ void Generator::visit(ClosureExpr& closureExpr) {
   constexpr unsigned Infinity = std::numeric_limits<unsigned>::max();
 
   if (xmin == 0 && xmax == 1)
-    fa_ = construct(closureExpr.subExpr()).optional();
+    fa_ = std::move(construct(closureExpr.subExpr()).optional());
   else if (xmin == 0 && xmax == Infinity)
-    fa_ = construct(closureExpr.subExpr()).recurring();
+    fa_ = std::move(construct(closureExpr.subExpr()).recurring());
   else if (xmin == 1 && xmax == Infinity)
-    fa_ = construct(closureExpr.subExpr()).positive();
+    fa_ = std::move(construct(closureExpr.subExpr()).positive());
   else if (xmin < xmax)
-    fa_ = construct(closureExpr.subExpr()).repeat(xmin, xmax);
+    fa_ = std::move(construct(closureExpr.subExpr()).repeat(xmin, xmax));
   else if (xmin == xmax)
-    fa_ = construct(closureExpr.subExpr()).times(xmin);
+    fa_ = std::move(construct(closureExpr.subExpr()).times(xmin));
   else
     throw std::invalid_argument{"closureExpr"};
 }

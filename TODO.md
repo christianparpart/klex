@@ -1,6 +1,7 @@
 ### The very incomplete TODO checklist
 
-* [ ] FA: DFA minimization
+- [ ] FA: dot(), merge character cases into one edge per state when they all go to the same target state
+* [x] FA: DFA minimization
 * [ ] FA: rename label() to id() or name(), whatever, but be consistent with other vars reflecting this field
 * [ ] RE: be able to parse "(a|)", which is either "a" or ""
 * [x] RE: be able to parse character classes, such as: [a-zA-Z]
