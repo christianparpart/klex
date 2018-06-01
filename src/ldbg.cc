@@ -6,9 +6,6 @@
 #include <iostream>
 #include <string>
 
-void dump(std::string regexprStr) {
-}
-
 int main(int argc, const char* argv[]) {
   lexer::util::Flags flags;
   flags.enableParameters("REGEX", "Regular expression");
@@ -24,10 +21,20 @@ int main(int argc, const char* argv[]) {
     return EXIT_SUCCESS;
   }
 
-  std::string regexprStr = flags.parameters()[0];
+  if (flags.parameters().empty()) {
+    std::cerr << "Error. No REGEX provided.\n";
+    return EXIT_FAILURE;
+  }
 
-  lexer::RegExprParser rep;
-  std::unique_ptr<lexer::RegExpr> expr = rep.parse(regexprStr);
+  const std::string regexprStr = flags.parameters()[0];
+  const bool showNfa = flags.getBool("nfa");
+  const bool showDfa = flags.getBool("dfa");
+  const bool showMfa = flags.getBool("dfa-min") || (!showDfa && !showNfa);
+
+  std::list<lexer::fa::DotGraph> dg;
+
+  std::unique_ptr<lexer::RegExpr> expr = lexer::RegExprParser{}.parse(regexprStr);
+
   if (flags.getBool("verbose")) {
     std::cerr << fmt::format("RE input str   : {}\n", regexprStr);
     std::cerr << fmt::format("RE AST print   : {}\n", expr->to_string());
@@ -35,25 +42,26 @@ int main(int argc, const char* argv[]) {
 
   lexer::fa::FiniteAutomaton nfa = lexer::fa::Generator{}.generate(expr.get());
   nfa.renumber();
+  if (showNfa)
+    dg.emplace_back(lexer::fa::DotGraph{nfa, "n", "NFA"});
   if (flags.getBool("verbose"))
     std::cerr << fmt::format("NFA states     : {}\n", nfa.states().size());
 
-  lexer::fa::FiniteAutomaton dfa = nfa.deterministic();
-  if (flags.getBool("verbose"))
-    std::cerr << fmt::format("DFA states     : {}\n", dfa.states().size());
+  if (showDfa || showMfa) {
+    lexer::fa::FiniteAutomaton dfa = nfa.deterministic();
+    if (showDfa)
+      dg.emplace_back(lexer::fa::DotGraph{dfa, "d", "DFA"});
+    if (flags.getBool("verbose"))
+      std::cerr << fmt::format("DFA states     : {}\n", dfa.states().size());
 
-  lexer::fa::FiniteAutomaton dfamin = dfa.minimize();
-  dfamin.renumber();
-  if (flags.getBool("verbose"))
-    std::cerr << fmt::format("DFA-min states : {}\n", dfamin.states().size());
-
-  std::list<lexer::fa::DotGraph> dg;
-  if (flags.getBool("nfa"))
-    dg.emplace_back(lexer::fa::DotGraph{nfa, "n", "NFA"});
-  if (flags.getBool("dfa"))
-    dg.emplace_back(lexer::fa::DotGraph{dfa, "d", "DFA"});
-  if (flags.getBool("dfa-min") || dg.empty())
-    dg.emplace_back(lexer::fa::DotGraph{dfamin, "p", "minimal DFA"});
+    if (showMfa) {
+      lexer::fa::FiniteAutomaton dfamin = dfa.minimize();
+      dfamin.renumber();
+      dg.emplace_back(lexer::fa::DotGraph{dfamin, "p", "minimal DFA"});
+      if (flags.getBool("verbose"))
+        std::cerr << fmt::format("DFA-min states : {}\n", dfamin.states().size());
+    }
+  }
 
   std::cout << lexer::fa::dot(dg, regexprStr);
 
