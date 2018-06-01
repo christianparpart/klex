@@ -32,6 +32,7 @@ add_library(lexer STATIC
     src/lexer/alphabet.cc
     src/lexer/fa.cc
     src/lexer/regexpr.cc
+    src/lexer/util/Flags.cc
     )
 
 target_link_libraries(lexer PUBLIC fmt::fmt-header-only)

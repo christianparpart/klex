@@ -63,13 +63,14 @@ std::string groupCharacterClassRanges(std::vector<Symbol> chars) {
   return sstr.str();
 }
 
-std::string dot(std::list<DotGraph> graphs) {
+std::string dot(std::list<DotGraph> graphs, std::string_view label) {
   std::stringstream sstr;
 
   sstr << "digraph {\n";
 
   int clusterId = 0;
   sstr << "  rankdir=LR;\n";
+  sstr << "  label=\"" << "RE here" << "\";\n";
   for (const DotGraph& graph : graphs) {
     sstr << "  subgraph cluster_" << clusterId << " {\n";
     sstr << "    label=\"" << graph.graphLabel << "\";\n";

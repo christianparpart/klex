@@ -282,7 +282,7 @@ struct DotGraph {
 /**
  * Creates a dot-file for multiple FiniteAutomaton in one graph (each FA represent one sub-graph).
  */
-std::string dot(std::list<DotGraph> list);
+std::string dot(std::list<DotGraph> list, std::string_view label);
 
 } // namespace lexer::fa
 
