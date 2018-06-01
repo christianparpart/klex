@@ -47,19 +47,24 @@ int main(int argc, const char* argv[]) {
   if (flags.getBool("verbose"))
     std::cerr << fmt::format("NFA states     : {}\n", nfa.states().size());
 
+  lexer::fa::FiniteAutomaton dfa;
   if (showDfa || showMfa) {
-    lexer::fa::FiniteAutomaton dfa = nfa.deterministic();
-    if (showDfa)
+    dfa = nfa.deterministic();
+    if (showDfa) {
       dg.emplace_back(lexer::fa::DotGraph{dfa, "d", "DFA"});
-    if (flags.getBool("verbose"))
-      std::cerr << fmt::format("DFA states     : {}\n", dfa.states().size());
+      if (flags.getBool("verbose")) {
+        std::cerr << fmt::format("DFA states     : {}\n", dfa.states().size());
+      }
+    }
+  }
 
-    if (showMfa) {
-      lexer::fa::FiniteAutomaton dfamin = dfa.minimize();
-      dfamin.renumber();
-      dg.emplace_back(lexer::fa::DotGraph{dfamin, "p", "minimal DFA"});
-      if (flags.getBool("verbose"))
-        std::cerr << fmt::format("DFA-min states : {}\n", dfamin.states().size());
+  lexer::fa::FiniteAutomaton dfamin;
+  if (showMfa) {
+    dfamin = dfa.minimize();
+    dfamin.renumber();
+    dg.emplace_back(lexer::fa::DotGraph{dfamin, "p", "minimal DFA"});
+    if (flags.getBool("verbose")) {
+      std::cerr << fmt::format("DFA-min states : {}\n", dfamin.states().size());
     }
   }
 
