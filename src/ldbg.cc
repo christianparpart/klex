@@ -9,22 +9,28 @@
 void dump(std::string regexprStr) {
   lexer::RegExprParser rep;
   std::unique_ptr<lexer::RegExpr> expr = rep.parse(regexprStr);
-
-  lexer::fa::FiniteAutomaton nfa = lexer::fa::Generator{"n"}.generate(expr.get());
-  //nfa.relabel("n");
-  // std::cout << nfa.dot(expr->to_string()) << "\n";
-
-  lexer::fa::FiniteAutomaton dfa = nfa.deterministic();
-  // std::cout << dfa.dot(expr->to_string()) << "\n";
-
-  lexer::fa::FiniteAutomaton dfamin = dfa.minimize();
-  dfamin.relabel("p");
   std::cerr << fmt::format("RE input str   : {}\n", regexprStr);
   std::cerr << fmt::format("RE AST print   : {}\n", expr->to_string());
+
+  lexer::fa::FiniteAutomaton nfa = lexer::fa::Generator{}.generate(expr.get());
+  nfa.renumber();
   std::cerr << fmt::format("NFA states     : {}\n", nfa.states().size());
+  // std::cout << nfa.dot(expr->to_string(), "n") << "\n";
+
+  lexer::fa::FiniteAutomaton dfa = nfa.deterministic();
   std::cerr << fmt::format("DFA states     : {}\n", dfa.states().size());
-  std::cerr << fmt::format("DFA-min states : {}\n", dfamin.states().size());
-  std::cout << dfamin.dot(regexprStr) << "\n";
+  std::cout << dfa.dot(expr->to_string(), "d") << "\n";
+
+  // lexer::fa::FiniteAutomaton dfamin = dfa.minimize();
+  // dfamin.renumber();
+  // std::cerr << fmt::format("DFA-min states : {}\n", dfamin.states().size());
+  // std::cout << dfamin.dot(regexprStr, "p") << "\n";
+
+  // std::cout << lexer::fa::dot({
+  //     {"n", nfa},
+  //     {"d", dfa},
+  //     {"p", dfamin}
+  // });
 }
 
 int main(int argc, const char* argv[]) {

@@ -11,6 +11,7 @@
 #include <set>
 #include <string_view>
 #include <tuple>
+#include <vector>
 
 namespace lexer::fa {
 
@@ -32,13 +33,15 @@ using EdgeList = std::list<Edge>;
 // represents an epsilon-transition
 constexpr Symbol EpsilonTransition = '\0';
 
+using StateId = unsigned int;
+
 class State {
  public:
-  explicit State(std::string label) : State{std::move(label), false} {}
-  State(std::string label, bool accepting) : label_{label}, accepting_{accepting}, transitions_{} {}
+  explicit State(StateId id) : State{id, false} {}
+  State(StateId id, bool accepting) : id_{id}, accepting_{accepting}, transitions_{} {}
 
-  const std::string& label() const noexcept { return label_; }
-  void relabel(std::string label) { label_ = std::move(label); }
+  StateId id() const noexcept { return id_; }
+  void setId(StateId id) { id_ = id; }
 
   EdgeList& transitions() noexcept { return transitions_; }
   const EdgeList& transitions() const noexcept { return transitions_; }
@@ -51,10 +54,8 @@ class State {
   void setAccept(bool accepting) { accepting_ = accepting; }
   bool isAccepting() const noexcept { return accepting_; }
 
-  std::list<std::string> to_strings() const;
-
  private:
-  std::string label_;
+  StateId id_;
   bool accepting_;
   EdgeList transitions_;
 };
@@ -88,8 +89,8 @@ class FiniteAutomaton {
         initialState_{std::get<1>(thompsonConstruct)} {}
 
   State* createState();
-  State* createState(std::string label);
-  State* findState(std::string_view label) const;
+  State* createState(StateId id);
+  State* findState(StateId id) const;
 
   //! Retrieves the alphabet of this finite automaton.
   Alphabet alphabet() const;
@@ -104,11 +105,14 @@ class FiniteAutomaton {
   //! Retrieves the list of accepting states.
   StateSet acceptStates() const;
 
-  //! Relables all states with given prefix and an monotonically increasing number.
-  void relabel(std::string_view prefix);
+  /**
+   * Rewrites all indices so that the initial state starts with ID 0,
+   * following the transitions counting upwards
+   */
+  void renumber();
 
   //! Creates a dot-file that can be visualized with dot/xdot CLI tools.
-  std::string dot(const std::string_view& label) const;
+  std::string dot(std::string_view graphLabel, std::string_view stateLabelPrefix) const;
 
   //! applies "Subset Construction", effectively creating an DFA
   FiniteAutomaton deterministic() const;
@@ -119,15 +123,19 @@ class FiniteAutomaton {
   /*!
    * Creates a dot-file that can be visualized with dot/xdot CLI tools.
    *
-   * @param some descriptive label (such as the RE)
+   * @param graphLabel some descriptive label for the graph (such as the RE)
+   * @param stateLabelPrefix prefix for the state labels, such as "n", so that the initial state
+   *                         gets labelled "n0", etc.
    * @param states list of states of the FA to visualize
    * @param initialState special state to be marked as initial state
    */
-  static std::string dot(const std::string_view& label,
-                         const OwnedStateSet& states, State* initialState);
+  static std::string dot(std::string_view graphLabel,
+                         std::string_view stateLabelPrefix,
+                         const OwnedStateSet& states,
+                         State* initialState);
 
  private:
-  void relabel(State* s, std::string_view prefix, std::set<State*>* registry);
+  void renumber(State* s, std::set<State*>* registry);
 
  private:
   OwnedStateSet states_;
@@ -198,15 +206,15 @@ class ThompsonConstruct {
   auto states() const { return util::unbox(states_); }
 
   //! Creates a dot-file that can be visualized with dot/xdot CLI tools.
-  std::string dot(const std::string_view& label) const;
+  std::string dot(std::string_view graphLabel, std::string_view stateLabelPrefix) const;
 
   //! Moves internal structures into a FiniteAutomaton and returns that.
   FiniteAutomaton release();
 
  private:
   State* createState();
-  State* createState(std::string name);
-  State* findState(std::string_view label) const;
+  State* createState(StateId id);
+  State* findState(StateId id) const;
 
  private:
   OwnedStateSet states_;
@@ -218,8 +226,8 @@ class ThompsonConstruct {
  */
 class Generator : public RegExprVisitor {
  public:
-  explicit Generator(std::string prefix)
-      : prefix_{prefix}, label_{0}, fa_{} {}
+  explicit Generator()
+      : fa_{} {}
 
   FiniteAutomaton generate(const RegExpr* re);
   ThompsonConstruct construct(const RegExpr* re);
@@ -231,12 +239,38 @@ class Generator : public RegExprVisitor {
   void visit(ClosureExpr& closureExpr) override;
 
  private:
-  std::string prefix_; 
-  unsigned label_;
   ThompsonConstruct fa_;
 };
 
-std::string to_string(const StateSet& S);
+/**
+ * Returns a human readable string of the StateSet @p S, such as "{n0, n1, n2}".
+ */
+std::string to_string(const StateSet& S, std::string_view stateLabelPrefix = "n");
+
+/**
+ * Builds a list of states that can be exclusively reached from S via epsilon-transitions.
+ */
+StateSet epsilonClosure(const StateSet& S);
+
+/**
+ * Returns whether or not the StateSet @p Q contains at least one State that is also "accepting".
+ */
+bool containsAcceptingState(const StateSet& Q);
+
+/**
+ * Finds @p t in @p Q and returns its offset (aka configuration number) or -1 if not found.
+ */
+int configurationNumber(const std::vector<StateSet>& Q, const StateSet& t);
+
+/**
+ * Computes a valid configuration the FA can reach with the given input @p q and @p c.
+ * 
+ * @param q valid input configuration of the original NFA.
+ * @param c the input character that the FA would consume next
+ *
+ * @return set of states that the FA can reach from @p c given the input @p c.
+ */
+StateSet delta(const StateSet& q, Symbol c);
 
 } // namespace lexer::fa
 
