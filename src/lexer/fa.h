@@ -272,6 +272,18 @@ int configurationNumber(const std::vector<StateSet>& Q, const StateSet& t);
  */
 StateSet delta(const StateSet& q, Symbol c);
 
+//! Helper struct for the dot(std::list<DotGraph>) utility function.
+struct DotGraph {
+  const FiniteAutomaton& fa;
+  std::string_view stateLabelPrefix;
+  std::string_view graphLabel;
+};
+
+/**
+ * Creates a dot-file for multiple FiniteAutomaton in one graph (each FA represent one sub-graph).
+ */
+std::string dot(std::list<DotGraph> list);
+
 } // namespace lexer::fa
 
 namespace fmt {

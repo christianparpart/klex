@@ -18,6 +18,99 @@
 namespace lexer::fa {
 
 // ---------------------------------------------------------------------------
+// utils
+
+std::string prettySymbol(Symbol input) {
+  if (input == EpsilonTransition)
+    return "ε";
+  else
+    return fmt::format("{}", input);
+}
+
+std::string groupCharacterClassRanges(std::vector<Symbol> chars) {
+  // we took a copy in tgroup here, so I can sort() later
+  std::sort(chars.begin(), chars.end());
+
+  // {1,3,5,a,b,c,d,e,f,z]
+  // ->
+  // {{1}, {3}, {5}, {a-f}, {z}}
+
+  std::stringstream sstr;
+  Symbol ymin = '\0';
+  Symbol ymax = ymin;
+  int i = 0;
+
+  for (Symbol c : chars) {
+    if (c == ymax + 1) {  // range growing
+      ymax = c;
+    }
+    else { // gap found
+      if (i) {
+        if (ymin != ymax)
+          sstr << prettySymbol(ymin) << '-' << prettySymbol(ymax);
+        else
+          sstr << prettySymbol(ymin);
+      }
+      ymin = ymax = c;
+    }
+    i++;
+  }
+  if (ymin != ymax)
+    sstr << prettySymbol(ymin) << '-' << prettySymbol(ymax);
+  else
+    sstr << prettySymbol(ymin);
+
+  return sstr.str();
+}
+
+std::string dot(std::list<DotGraph> graphs) {
+  std::stringstream sstr;
+
+  sstr << "digraph {\n";
+
+  int clusterId = 0;
+  sstr << "  rankdir=LR;\n";
+  for (const DotGraph& graph : graphs) {
+    sstr << "  subgraph cluster_" << clusterId << " {\n";
+    sstr << "    label=\"" << graph.graphLabel << "\";\n";
+    clusterId++;
+
+    // acceptState
+    for (const State* s: graph.fa.states())
+      if (s->isAccepting())
+        sstr << "    node [shape=doublecircle]; " << graph.stateLabelPrefix << s->id() << ";\n";
+
+    // initialState
+    sstr << "    \"\" [shape=plaintext];\n";
+    sstr << "    node [shape=circle];\n";
+    sstr << "    " << graph.stateLabelPrefix << graph.fa.initialState()->id() << ";\n";
+
+    // all states and their edges
+    for (const State* state: graph.fa.states()) {
+      std::map<State* /*target state*/, std::vector<Symbol> /*transition symbols*/> transitionGroups;
+
+      for (const Edge& transition: state->transitions())
+        transitionGroups[transition.state].emplace_back(transition.symbol);
+
+      for (const std::pair<State*, std::vector<Symbol>>& tgroup: transitionGroups) {
+        std::string label = groupCharacterClassRanges(tgroup.second);
+        const State* targetState = tgroup.first;
+        sstr << "    " << graph.stateLabelPrefix << state->id()
+             << " -> " << graph.stateLabelPrefix << targetState->id();
+        sstr << "   [label=\"" << label << "\"]";
+        sstr << ";\n";
+      }
+    }
+
+    sstr << "  }\n";
+  }
+
+  sstr << "}\n";
+
+  return sstr.str();
+}
+
+// ---------------------------------------------------------------------------
 // State
 
 State* State::transition(Symbol input) const {
@@ -30,13 +123,6 @@ State* State::transition(Symbol input) const {
 
 void State::linkTo(Symbol input, State* state) {
   transitions_.emplace_back(input, state);
-}
-
-std::string prettySymbol(Symbol input) {
-  if (input == EpsilonTransition)
-    return "ε";
-  else
-    return fmt::format("{}", input);
 }
 
 std::string to_string(const StateSet& S, std::string_view stateLabelPrefix) {
@@ -439,42 +525,6 @@ StateSet FiniteAutomaton::acceptStates() const {
       result.insert(s);
 
   return result;
-}
-
-std::string groupCharacterClassRanges(std::vector<Symbol> chars) {
-  // we took a copy in tgroup here, so I can sort() later
-  std::sort(chars.begin(), chars.end());
-
-  // {1,3,5,a,b,c,d,e,f,z]
-  // ->
-  // {{1}, {3}, {5}, {a-f}, {z}}
-
-  std::stringstream sstr;
-  Symbol ymin = '\0';
-  Symbol ymax = ymin;
-  int i = 0;
-
-  for (Symbol c : chars) {
-    if (c == ymax + 1) {  // range growing
-      ymax = c;
-    }
-    else { // gap found
-      if (i) {
-        if (ymin != ymax)
-          sstr << prettySymbol(ymin) << '-' << prettySymbol(ymax);
-        else
-          sstr << prettySymbol(ymin);
-      }
-      ymin = ymax = c;
-    }
-    i++;
-  }
-  if (ymin != ymax)
-    sstr << prettySymbol(ymin) << '-' << prettySymbol(ymax);
-  else
-    sstr << prettySymbol(ymin);
-
-  return sstr.str();
 }
 
 std::string FiniteAutomaton::dot(std::string_view graphLabel,
