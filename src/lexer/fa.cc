@@ -70,7 +70,7 @@ std::string dot(std::list<DotGraph> graphs, std::string_view label) {
 
   int clusterId = 0;
   sstr << "  rankdir=LR;\n";
-  sstr << "  label=\"" << "RE here" << "\";\n";
+  sstr << "  label=\"" << label << "\";\n";
   for (const DotGraph& graph : graphs) {
     sstr << "  subgraph cluster_" << clusterId << " {\n";
     sstr << "    label=\"" << graph.graphLabel << "\";\n";
@@ -514,10 +514,6 @@ FiniteAutomaton FiniteAutomaton::minimize() const {
   return dfamin;
 }
 
-std::string FiniteAutomaton::dot(std::string_view graphLabel, std::string_view stateLabelPrefix) const {
-  return dot(std::move(graphLabel), std::move(stateLabelPrefix), states_, initialState_);
-}
-
 StateSet FiniteAutomaton::acceptStates() const {
   StateSet result;
 
@@ -526,48 +522,6 @@ StateSet FiniteAutomaton::acceptStates() const {
       result.insert(s);
 
   return result;
-}
-
-std::string FiniteAutomaton::dot(std::string_view graphLabel,
-                                 std::string_view stateLabelPrefix,
-                                 const OwnedStateSet& states,
-                                 State* initialState) {
-  std::stringstream sstr;
-
-  sstr << "digraph {\n";
-  sstr << "  rankdir=LR;\n";
-  sstr << "  label=\"" << graphLabel << "\";\n";
-
-  // acceptState
-  for (const std::unique_ptr<State>& s: states)
-    if (s->isAccepting())
-      sstr << "  node [shape=doublecircle]; " << stateLabelPrefix << s->id() << ";\n";
-
-  // initialState
-  sstr << "  \"\" [shape=plaintext];\n";
-  sstr << "  node [shape=circle];\n";
-  sstr << "  \"\" -> " << stateLabelPrefix << initialState->id() << ";\n";
-
-  // all states and their edges
-  for (const std::unique_ptr<State>& state: states) {
-    std::map<State* /*target state*/, std::vector<Symbol> /*transition symbols*/> transitionGroups;
-
-    for (const Edge& transition: state->transitions())
-      transitionGroups[transition.state].emplace_back(transition.symbol);
-
-    for (const std::pair<State*, std::vector<Symbol>>& tgroup: transitionGroups) {
-      std::string label = groupCharacterClassRanges(tgroup.second);
-      const State* targetState = tgroup.first;
-      sstr << "  " << stateLabelPrefix << state->id()
-           << " -> " << stateLabelPrefix << targetState->id();
-      sstr << " [label=\"" << label << "\"]";
-      sstr << ";\n";
-    }
-  }
-
-  sstr << "}\n";
-
-  return sstr.str();
 }
 
 // ---------------------------------------------------------------------------
@@ -605,10 +559,6 @@ State* ThompsonConstruct::acceptState() const {
 
   fprintf(stderr, "Internal Bug! Thompson's Consruct without an end state.\n");
   abort();
-}
-
-std::string ThompsonConstruct::dot(std::string_view graphLabel, std::string_view stateLabelPrefix) const {
-  return FiniteAutomaton::dot(std::move(graphLabel), std::move(stateLabelPrefix), states_, initialState_);
 }
 
 FiniteAutomaton ThompsonConstruct::release() {

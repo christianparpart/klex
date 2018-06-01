@@ -111,28 +111,11 @@ class FiniteAutomaton {
    */
   void renumber();
 
-  //! Creates a dot-file that can be visualized with dot/xdot CLI tools.
-  std::string dot(std::string_view graphLabel, std::string_view stateLabelPrefix) const;
-
   //! applies "Subset Construction", effectively creating an DFA
   FiniteAutomaton deterministic() const;
 
   //! applies Hopcroft's DFA minimization algorithm
   FiniteAutomaton minimize() const;
-
-  /*!
-   * Creates a dot-file that can be visualized with dot/xdot CLI tools.
-   *
-   * @param graphLabel some descriptive label for the graph (such as the RE)
-   * @param stateLabelPrefix prefix for the state labels, such as "n", so that the initial state
-   *                         gets labelled "n0", etc.
-   * @param states list of states of the FA to visualize
-   * @param initialState special state to be marked as initial state
-   */
-  static std::string dot(std::string_view graphLabel,
-                         std::string_view stateLabelPrefix,
-                         const OwnedStateSet& states,
-                         State* initialState);
 
  private:
   void renumber(State* s, std::set<State*>* registry);
@@ -204,9 +187,6 @@ class ThompsonConstruct {
 
   //! Retrieves the list of states this FA contains.
   auto states() const { return util::unbox(states_); }
-
-  //! Creates a dot-file that can be visualized with dot/xdot CLI tools.
-  std::string dot(std::string_view graphLabel, std::string_view stateLabelPrefix) const;
 
   //! Moves internal structures into a FiniteAutomaton and returns that.
   FiniteAutomaton release();
