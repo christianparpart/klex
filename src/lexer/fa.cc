@@ -9,7 +9,7 @@
 #include <sstream>
 #include <vector>
 
-#if 0
+#if 1
 #define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
 #else
 #define DEBUG(msg, ...) do { } while (0)
@@ -114,6 +114,17 @@ std::string dot(std::list<DotGraph> graphs, std::string_view label) {
 // ---------------------------------------------------------------------------
 // State
 
+#define VERIFY_STATE_AVAILABILITY(freeId, set)                                  \
+  do {                                                                          \
+    if (std::find_if((set).begin(), (set).end(),                                \
+          [&](const auto& s) { return s->id() == freeId; }) != (set).end()) {   \
+      std::cerr << fmt::format(                                                 \
+          "VERIFY_STATE_AVAILABILITY({0}) failed. Id {0} is already in use.\n", \
+          (freeId));                                                            \
+      abort();                                                                  \
+    }                                                                           \
+  } while (0)
+
 State* State::transition(Symbol input) const {
   for (const Edge& transition : transitions_)
     if (input == transition.symbol)
@@ -124,6 +135,27 @@ State* State::transition(Symbol input) const {
 
 void State::linkTo(Symbol input, State* state) {
   transitions_.emplace_back(input, state);
+}
+
+std::string to_string(const OwnedStateSet& S, std::string_view stateLabelPrefix) {
+  std::vector<StateId> names;
+  for (const std::unique_ptr<State>& s : S)
+    names.push_back(s->id());
+
+  std::sort(names.begin(), names.end());
+
+  std::stringstream sstr;
+  sstr << "{";
+  int i = 0;
+  for (StateId name : names) {
+    if (i)
+      sstr << ", ";
+    sstr << stateLabelPrefix << name;
+    i++;
+  }
+  sstr << "}";
+
+  return sstr.str();
 }
 
 std::string to_string(const StateSet& S, std::string_view stateLabelPrefix) {
@@ -184,6 +216,7 @@ Alphabet FiniteAutomaton::alphabet() const {
 
 void FiniteAutomaton::renumber(State* s, std::set<State*>* registry) {
   StateId id = registry->size();
+  VERIFY_STATE_AVAILABILITY(id, *registry);
   s->setId(id);
   registry->insert(s);
   for (const Edge& transition : s->transitions()) {
@@ -191,13 +224,6 @@ void FiniteAutomaton::renumber(State* s, std::set<State*>* registry) {
       renumber(transition.state, registry);
     }
   }
-}
-
-State* FiniteAutomaton::createState() {
-  static unsigned int n = 10000;
-  StateId id = n;
-  n++;
-  return createState(id);
 }
 
 State* FiniteAutomaton::createState(StateId id) {
@@ -529,12 +555,15 @@ StateSet FiniteAutomaton::acceptStates() const {
 
 ThompsonConstruct ThompsonConstruct::clone() const {
   ThompsonConstruct output;
+  DEBUG("clone: {} states", states_.size());
 
   // clone states
-  for (const std::unique_ptr<State>& s : states_) {
+  for (const std::unique_ptr<State>& _s : states_) {
+    State* s = _s.get();
+    DEBUG(" state {}", s->id());
     State* u = output.createState(s->id());
     u->setAccept(s->isAccepting());
-    if (s.get() == initialState()) {
+    if (s == initialState()) {
       output.initialState_ = u;
     }
   }
@@ -568,14 +597,7 @@ FiniteAutomaton ThompsonConstruct::release() {
 }
 
 State* ThompsonConstruct::createState() {
-  static StateId n = 0;
-  for (;;) {
-    const StateId id = n;
-    n++;
-    if (!findState(id)) {
-      return states_.insert(std::make_unique<State>(id)).first->get();
-    }
-  }
+  return createState(nextId_++);
 }
 
 State* ThompsonConstruct::createState(StateId id) {
@@ -594,15 +616,19 @@ State* ThompsonConstruct::findState(StateId id) const {
 }
 
 ThompsonConstruct& ThompsonConstruct::concatenate(ThompsonConstruct rhs) {
+  DEBUG("ThompsonConstruct({}).concatenate({})", states_, rhs.states_);
+
   acceptState()->linkTo(rhs.initialState_);
   acceptState()->setAccept(false);
 
   // renumber first with given base
-  if (int n = states_.size(); n != 0)
-    for (const std::unique_ptr<State>& s : rhs.states_)
-      s->setId(n++);
+  for (const std::unique_ptr<State>& s : rhs.states_) {
+    VERIFY_STATE_AVAILABILITY(nextId_, states_);
+    s->setId(nextId_++);
+  }
 
   states_.merge(std::move(rhs.states_));
+  DEBUG("ThompsonConstruct.concatenate: {}", states_);
 
   return *this;
 }
@@ -621,12 +647,16 @@ ThompsonConstruct& ThompsonConstruct::alternate(ThompsonConstruct other) {
   other.acceptState()->setAccept(false);
   newEnd->setAccept(true);
 
+  DEBUG("ThompsonConstruct({}).alternate({})", states_, other.states_);
+
   // renumber first with given base
-  if (int n = states_.size(); n != 0)
-    for (const std::unique_ptr<State>& s : other.states_)
-      s->setId(n++);
+  for (const std::unique_ptr<State>& s : other.states_) {
+    VERIFY_STATE_AVAILABILITY(nextId_, states_);
+    s->setId(nextId_++);
+  }
 
   states_.merge(std::move(other.states_));
+  DEBUG("ThompsonConstruct.alternate: {}", states_);
 
   return *this;
 }

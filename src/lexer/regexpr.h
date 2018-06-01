@@ -112,7 +112,7 @@ class RegExprParser {
  public:
   RegExprParser();
 
-  std::unique_ptr<RegExpr> parse(const std::string& expr);
+  std::unique_ptr<RegExpr> parse(std::string_view expr);
 
   class UnexpectedToken : public std::runtime_error {
    public:
@@ -140,8 +140,8 @@ class RegExprParser {
   std::unique_ptr<RegExpr> parseCharacterClassFragment(); // character | character '-' character
 
  private:
-  std::string input_;
-  std::string::iterator currentChar_;
+  std::string_view input_;
+  std::string_view::iterator currentChar_;
 };
 
 class RegExprVisitor {

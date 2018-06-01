@@ -88,8 +88,6 @@ class FiniteAutomaton {
       : states_{std::move(std::get<0>(thompsonConstruct))},
         initialState_{std::get<1>(thompsonConstruct)} {}
 
-  State* createState();
-  State* createState(StateId id);
   State* findState(StateId id) const;
 
   //! Retrieves the alphabet of this finite automaton.
@@ -118,6 +116,7 @@ class FiniteAutomaton {
   FiniteAutomaton minimize() const;
 
  private:
+  State* createState(StateId id);
   void renumber(State* s, std::set<State*>* registry);
 
  private:
@@ -147,17 +146,22 @@ class ThompsonConstruct {
 
   //! Constructs an empty NFA.
   ThompsonConstruct()
-      : states_{},
+      : nextId_{0},
+        states_{},
         initialState_{nullptr} {
   }
 
   //! Constructs an NFA for a single character transition
   explicit ThompsonConstruct(Symbol value)
-      : initialState_{createState()} {
+      : nextId_{0},
+        states_{},
+        initialState_{createState()} {
     State* acceptState = createState();
     acceptState->setAccept(true);
     initialState_->linkTo(value, acceptState);
   }
+
+  bool empty() const noexcept { return states_.empty(); }
 
   State* initialState() const { return initialState_; }
   State* acceptState() const;
@@ -197,6 +201,7 @@ class ThompsonConstruct {
   State* findState(StateId id) const;
 
  private:
+  StateId nextId_;
   OwnedStateSet states_;
   State* initialState_;
 };
@@ -226,6 +231,7 @@ class Generator : public RegExprVisitor {
  * Returns a human readable string of the StateSet @p S, such as "{n0, n1, n2}".
  */
 std::string to_string(const StateSet& S, std::string_view stateLabelPrefix = "n");
+std::string to_string(const OwnedStateSet& S, std::string_view stateLabelPrefix = "n");
 
 /**
  * Builds a list of states that can be exclusively reached from S via epsilon-transitions.
@@ -262,7 +268,7 @@ struct DotGraph {
 /**
  * Creates a dot-file for multiple FiniteAutomaton in one graph (each FA represent one sub-graph).
  */
-std::string dot(std::list<DotGraph> list, std::string_view label);
+std::string dot(std::list<DotGraph> list, std::string_view label = "");
 
 } // namespace lexer::fa
 
@@ -274,6 +280,17 @@ namespace fmt {
 
     template <typename FormatContext>
     constexpr auto format(const lexer::fa::StateSet& v, FormatContext &ctx) {
+      return format_to(ctx.begin(), "{}", lexer::fa::to_string(v));
+    }
+  };
+
+  template<>
+  struct formatter<lexer::fa::OwnedStateSet> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    constexpr auto format(const lexer::fa::OwnedStateSet& v, FormatContext &ctx) {
       return format_to(ctx.begin(), "{}", lexer::fa::to_string(v));
     }
   };

@@ -30,7 +30,9 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/lexer/sysconfig.h.cmake
 # ----------------------------------------------------------------------------
 add_library(lexer STATIC
     src/lexer/alphabet.cc
+    src/lexer/builder.cc
     src/lexer/fa.cc
+    src/lexer/lexer.cc
     src/lexer/regexpr.cc
     src/lexer/util/Flags.cc
     )
@@ -53,6 +55,10 @@ target_include_directories(lexer PUBLIC
   $<INSTALL_INTERFACE:include>)
 
 # ----------------------------------------------------------------------------
+add_executable(mklex src/mklex.cc)
+set_target_properties(mklex PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+target_link_libraries(mklex lexer)
+
 add_executable(regexpr_test src/lexer/regexpr_test.cc)
 set_target_properties(regexpr_test PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 target_link_libraries(regexpr_test lexer)

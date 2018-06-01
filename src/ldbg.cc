@@ -1,6 +1,6 @@
-#include <lexer/util/Flags.h>
-#include <lexer/regexpr.h>
 #include <lexer/fa.h>
+#include <lexer/regexpr.h>
+#include <lexer/util/Flags.h>
 
 #include <cstdlib>
 #include <iostream>

@@ -2,12 +2,13 @@
 
 #include <iostream>
 #include <string_view>
+#include <memory>
 
 namespace lexer {
 
 class Lexer {
  public:
-  Lexer(CharacterClassTable, TransitionTable);
+  // Lexer(CharacterClassTable, TransitionTable);
 
   void open(std::unique_ptr<std::istream> input);
 
@@ -19,16 +20,6 @@ class Lexer {
 
  private:
   // ...
-};
-
-class Builder {
- public:
-  void declare(int id, std::string_view pattern);
-
-  Lexer compile();
-
- private:
-  fa::ThompsonConstruct fa_;
 };
 
 } // namespace lexer

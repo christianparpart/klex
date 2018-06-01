@@ -135,8 +135,8 @@ void RegExprParser::consume(int expected) {
   }
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parse(const std::string& expr) {
-  input_ = expr;
+std::unique_ptr<RegExpr> RegExprParser::parse(std::string_view expr) {
+  input_ = std::move(expr);
   currentChar_ = input_.begin();
 
   return parseExpr();
