@@ -18,8 +18,8 @@ class Alphabet {
 
   std::string to_string() const;
 
-  iterator begin() { return alphabet_.begin(); }
-  iterator end() { return alphabet_.end(); }
+  const iterator begin() const { return alphabet_.begin(); }
+  const iterator end() const { return alphabet_.end(); }
 
  private:
   set_type alphabet_;

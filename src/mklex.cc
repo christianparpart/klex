@@ -1,9 +1,11 @@
 #include <lexer/builder.h>
+#include <lexer/lexer.h>
 #include <lexer/fa.h>
 #include <lexer/util/Flags.h>
 
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 #include <string>
 
 int main(int argc, const char* argv[]) {
@@ -14,17 +16,47 @@ int main(int argc, const char* argv[]) {
   flags.defineBool("dfa-min", 'm', "Prints minimized DFA");
   flags.defineBool("verbose", 'v', "Prints some more verbose output");
   flags.defineBool("help", 'h', "Prints this help and exits");
+  flags.defineBool("no-group-edges", 'G', "No grouped edges in dot graph output");
+  flags.defineNumber("print-fa", 'p', "NUMBER", "Prints FA (0=none, 1=ThompsonConstruct, 2=DFA, 3=DFA-min)", 0);
   flags.parse(argc, argv);
 
+  if (flags.getBool("help")) {
+    std::cout << flags.helpText();
+    return EXIT_SUCCESS;
+  }
+
   lexer::Builder builder;
-  builder.declare(1, "0|[1-9][0-9]*"); // NUMBER
-  builder.declare(2, "if");
-  builder.declare(3, "iff");
-  builder.declare(4, "then");
+  for (const std::string& pattern : flags.parameters())
+    builder.declare(0, pattern);
 
-  lexer::fa::FiniteAutomaton fa = builder.buildAutomaton();
+  if (flags.parameters().empty()) {
+    builder.declare(0, " "); // " \t\n");
+    builder.declare(3, "if");
+    builder.declare(4, "else");
+    builder.declare(5, "0|[1-9][0-9]*"); // NUMBER
+    // builder.declare(5, "0|[1-9]|[1-9][0-9]|[01][0-9][0-9]|2[0-4][0-9]|25[0-5]");
+    //builder.declare(6, "[0-9]|1[0-9]|2[0-9]|3[012]"); // CIDR mask
+  }
 
-  std::cout << lexer::fa::dot({lexer::fa::DotGraph{fa, "n", ""}});
+  if (int n = flags.getNumber("print-fa"); n >= 1 && n <= 3) {
+    lexer::fa::FiniteAutomaton fa = builder.buildAutomaton(static_cast<lexer::Builder::Stage>(n));
+    fa.renumber();
+
+    std::cout << lexer::fa::dot({lexer::fa::DotGraph{fa, "n", ""}}, "", !flags.getBool("no-group-edges"));
+  } else {
+    lexer::Lexer lexer = builder.compile();
+    lexer.open(std::make_unique<std::ifstream>("test.txt"));
+    for (int t = lexer.recognize(); t != -1; t = lexer.recognize()) {
+      switch (t) {
+        case 1:
+          printf("token %d\n", t);
+          break;
+        default:
+          printf("token %d\n", t);
+          break;
+      }
+    }
+  }
 
   return EXIT_SUCCESS;
 }

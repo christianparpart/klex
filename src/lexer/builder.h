@@ -11,7 +11,12 @@ class Builder {
  public:
   void declare(int id, std::string_view pattern);
 
-  fa::FiniteAutomaton buildAutomaton();
+  enum class Stage {
+    ThompsonConstruct = 1,
+    Deterministic,
+    Minimized,
+  };
+  fa::FiniteAutomaton buildAutomaton(Stage stage);
 
   Lexer compile();
 

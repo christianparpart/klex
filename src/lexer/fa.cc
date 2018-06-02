@@ -9,7 +9,7 @@
 #include <sstream>
 #include <vector>
 
-#if 1
+#if 0
 #define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
 #else
 #define DEBUG(msg, ...) do { } while (0)
@@ -25,6 +25,14 @@ std::string prettySymbol(Symbol input) {
     return "ε";
   else
     return fmt::format("{}", input);
+}
+
+std::string _groupCharacterClassRanges(std::vector<Symbol> chars) {
+  std::sort(chars.begin(), chars.end());
+  std::stringstream sstr;
+  for (Symbol c : chars)
+    sstr << prettySymbol(c);
+  return sstr.str();
 }
 
 std::string groupCharacterClassRanges(std::vector<Symbol> chars) {
@@ -63,7 +71,7 @@ std::string groupCharacterClassRanges(std::vector<Symbol> chars) {
   return sstr.str();
 }
 
-std::string dot(std::list<DotGraph> graphs, std::string_view label) {
+std::string dot(std::list<DotGraph> graphs, std::string_view label, bool groupEdges) {
   std::stringstream sstr;
 
   sstr << "digraph {\n";
@@ -84,22 +92,36 @@ std::string dot(std::list<DotGraph> graphs, std::string_view label) {
     // initialState
     sstr << "    \"\" [shape=plaintext];\n";
     sstr << "    node [shape=circle];\n";
-    sstr << "    " << graph.stateLabelPrefix << graph.fa.initialState()->id() << ";\n";
+    sstr << "    ";
+    if (graphs.size() == 1)
+      sstr << "\"\" -> ";
+    sstr << graph.stateLabelPrefix << graph.fa.initialState()->id() << ";\n";
 
     // all states and their edges
     for (const State* state: graph.fa.states()) {
-      std::map<State* /*target state*/, std::vector<Symbol> /*transition symbols*/> transitionGroups;
+      if (groupEdges) {
+        std::map<State* /*target state*/, std::vector<Symbol> /*transition symbols*/> transitionGroups;
 
-      for (const Edge& transition: state->transitions())
-        transitionGroups[transition.state].emplace_back(transition.symbol);
+        for (const Edge& transition: state->transitions())
+          transitionGroups[transition.state].emplace_back(transition.symbol);
 
-      for (const std::pair<State*, std::vector<Symbol>>& tgroup: transitionGroups) {
-        std::string label = groupCharacterClassRanges(tgroup.second);
-        const State* targetState = tgroup.first;
-        sstr << "    " << graph.stateLabelPrefix << state->id()
-             << " -> " << graph.stateLabelPrefix << targetState->id();
-        sstr << "   [label=\"" << label << "\"]";
-        sstr << ";\n";
+        for (const std::pair<State*, std::vector<Symbol>>& tgroup: transitionGroups) {
+          std::string label = groupCharacterClassRanges(tgroup.second);
+          const State* targetState = tgroup.first;
+          sstr << "    " << graph.stateLabelPrefix << state->id()
+               << " -> " << graph.stateLabelPrefix << targetState->id();
+          sstr << "   [label=\"" << label << "\"]";
+          sstr << ";\n";
+        }
+      } else {
+        for (const Edge& transition : state->transitions()) {
+          std::string label = prettySymbol(transition.symbol);
+          const State* targetState = transition.state;
+          sstr << "    " << graph.stateLabelPrefix << state->id()
+               << " -> " << graph.stateLabelPrefix << targetState->id();
+          sstr << "   [label=\"" << label << "\"]";
+          sstr << ";\n";
+        }
       }
     }
 
@@ -555,15 +577,12 @@ StateSet FiniteAutomaton::acceptStates() const {
 
 ThompsonConstruct ThompsonConstruct::clone() const {
   ThompsonConstruct output;
-  DEBUG("clone: {} states", states_.size());
 
   // clone states
-  for (const std::unique_ptr<State>& _s : states_) {
-    State* s = _s.get();
-    DEBUG(" state {}", s->id());
+  for (const std::unique_ptr<State>& s : states_) {
     State* u = output.createState(s->id());
     u->setAccept(s->isAccepting());
-    if (s == initialState()) {
+    if (s.get() == initialState()) {
       output.initialState_ = u;
     }
   }
@@ -616,8 +635,6 @@ State* ThompsonConstruct::findState(StateId id) const {
 }
 
 ThompsonConstruct& ThompsonConstruct::concatenate(ThompsonConstruct rhs) {
-  DEBUG("ThompsonConstruct({}).concatenate({})", states_, rhs.states_);
-
   acceptState()->linkTo(rhs.initialState_);
   acceptState()->setAccept(false);
 
@@ -628,7 +645,6 @@ ThompsonConstruct& ThompsonConstruct::concatenate(ThompsonConstruct rhs) {
   }
 
   states_.merge(std::move(rhs.states_));
-  DEBUG("ThompsonConstruct.concatenate: {}", states_);
 
   return *this;
 }
@@ -647,8 +663,6 @@ ThompsonConstruct& ThompsonConstruct::alternate(ThompsonConstruct other) {
   other.acceptState()->setAccept(false);
   newEnd->setAccept(true);
 
-  DEBUG("ThompsonConstruct({}).alternate({})", states_, other.states_);
-
   // renumber first with given base
   for (const std::unique_ptr<State>& s : other.states_) {
     VERIFY_STATE_AVAILABILITY(nextId_, states_);
@@ -656,7 +670,6 @@ ThompsonConstruct& ThompsonConstruct::alternate(ThompsonConstruct other) {
   }
 
   states_.merge(std::move(other.states_));
-  DEBUG("ThompsonConstruct.alternate: {}", states_);
 
   return *this;
 }
