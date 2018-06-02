@@ -12,6 +12,7 @@ namespace lexer {
 using CharCatId = unsigned int;
 constexpr CharCatId ErrorCharCat = static_cast<CharCatId>(-1);
 constexpr fa::StateId ErrorState = static_cast<fa::StateId>(-1);
+constexpr fa::StateId BadState = static_cast<fa::StateId>(-2);
 
 class TransitionMap {
  public:

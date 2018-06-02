@@ -14,11 +14,11 @@ Lexer::Lexer(TransitionMap transitions, fa::StateId initialStateId, std::vector<
       line_{},
       column_{} {
   for (fa::StateId s : transitions_.states()) {
-    fmt::print("s{}:", s);
+    std::cerr << fmt::format("n{}: (", s);
     for (std::pair<fa::Symbol, fa::StateId> p : transitions_.map(s)) {
-      fmt::print(" '{}': s{};", p.first, p.second);
+      std::cerr << fmt::format(" '{}': n{};", p.first, p.second);
     }
-    fmt::print("\n");
+    std::cerr << fmt::format(")\n");
   }
 }
 
@@ -34,7 +34,7 @@ int Lexer::recognize() {
   lexeme_.clear();
   fa::StateId state = initialStateId_;
   std::deque<fa::StateId> stack;
-  stack.push_front(ErrorState);
+  stack.push_front(BadState);
 
   // advance
   while (state != ErrorState) {
@@ -49,7 +49,7 @@ int Lexer::recognize() {
   }
 
   // trackback
-  while (state != ErrorState && !isAcceptState(state)) {
+  while (state != BadState && !isAcceptState(state)) {
     state = stack.front();
     stack.pop_front();
     rollback();
@@ -64,7 +64,7 @@ int Lexer::recognize() {
 
 int Lexer::type(fa::StateId acceptState) const {
   if (acceptState != ErrorState)
-    return 1; // TODO: map state to actual input enum
+    return acceptState; // TODO: map state to actual input enum
 
   return -1;
 }
@@ -78,11 +78,15 @@ int Lexer::nextChar() {
   if (!buffered_.empty()) {
     int ch = buffered_.back();
     buffered_.resize(buffered_.size() - 1);
-    fmt::print("Lexer:{}: advance '{}'\n", offset_, (char)ch);
+    std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, (char)ch);
     return ch;
   }
+
+  if (!stream_->good()) // EOF
+    return -1;
+
   int ch = stream_->get();
-  fmt::print("Lexer:{}: advance '{}'\n", offset_, (char)ch);
+  std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, (char)ch);
   return ch;
 }
 

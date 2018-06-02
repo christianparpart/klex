@@ -18,6 +18,7 @@ int main(int argc, const char* argv[]) {
   flags.defineBool("help", 'h', "Prints this help and exits");
   flags.defineBool("no-group-edges", 'G', "No grouped edges in dot graph output");
   flags.defineNumber("print-fa", 'p', "NUMBER", "Prints FA (0=none, 1=ThompsonConstruct, 2=DFA, 3=DFA-min)", 0);
+  flags.defineString("file", 'f', "FILE", "Input file with lexer rules");
   flags.parse(argc, argv);
 
   if (flags.getBool("help")) {
@@ -30,11 +31,14 @@ int main(int argc, const char* argv[]) {
     builder.declare(0, pattern);
 
   if (flags.parameters().empty()) {
+    //builder.declareHelper("IP4_OCTET", "0|[1-9]|[1-9][0-9]|[01][0-9][0-9]|2[0-4][0-9]|25[0-5]");
+
     builder.declare(0, " "); // " \t\n");
-    builder.declare(3, "if");
-    builder.declare(4, "else");
-    builder.declare(5, "0|[1-9][0-9]*"); // NUMBER
-    // builder.declare(5, "0|[1-9]|[1-9][0-9]|[01][0-9][0-9]|2[0-4][0-9]|25[0-5]");
+    builder.declare(1, "if");
+    builder.declare(2, "then");
+    builder.declare(3, "else");
+    builder.declare(4, "0|[1-9][0-9]*"); // NUMBER
+    //builder.declare(5, "0|[1-9]|[1-9][0-9]|[01][0-9][0-9]|2[0-4][0-9]|25[0-5]"); // IPv4 octet
     //builder.declare(6, "[0-9]|1[0-9]|2[0-9]|3[012]"); // CIDR mask
   }
 
@@ -43,16 +47,13 @@ int main(int argc, const char* argv[]) {
     fa.renumber();
 
     std::cout << lexer::fa::dot({lexer::fa::DotGraph{fa, "n", ""}}, "", !flags.getBool("no-group-edges"));
-  } else {
+  } else if (std::string filename = flags.getString("file"); !filename.empty()) {
     lexer::Lexer lexer = builder.compile();
-    lexer.open(std::make_unique<std::ifstream>("test.txt"));
+    lexer.open(std::make_unique<std::ifstream>(filename));
     for (int t = lexer.recognize(); t != -1; t = lexer.recognize()) {
       switch (t) {
-        case 1:
-          printf("token %d\n", t);
-          break;
         default:
-          printf("token %d\n", t);
+          fprintf(stderr, "token %d \"%s\"\n", t, lexer.lexeme().c_str());
           break;
       }
     }

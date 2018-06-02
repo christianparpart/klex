@@ -1,5 +1,9 @@
 ### The very incomplete TODO checklist
 
+- [ ] FA: DFA-minimization also merges accept states, hence, it'll be hard to return the recognized
+      token. The idea is to not get accept-states grouped, but give each accept states its own
+      partition-set (since they only split and never merge).
+      Also, we need to "tag" accept states with the input tag given to `Lexer.declare(tag, RE)`
 - [ ] FA: create RE pattern out of FA
 - [ ] RE: support named character classes (see https://en.wikipedia.org/wiki/Regular_expression#Character_classes)
 * [ ] RE: invertible character classes ([^abc])
