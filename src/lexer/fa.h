@@ -38,8 +38,8 @@ using Tag = int;
 
 class State {
  public:
-  explicit State(StateId id) : State{id, false} {}
-  State(StateId id, bool accepting) : id_{id}, accepting_{accepting},  tag_{0}, transitions_{} {}
+  explicit State(StateId id) : State{id, false, 0} {}
+  State(StateId id, bool accepting, Tag tag) : id_{id}, accepting_{accepting},  tag_{tag}, transitions_{} {}
 
   StateId id() const noexcept { return id_; }
   void setId(StateId id) { id_ = id; }
@@ -120,6 +120,17 @@ class FiniteAutomaton {
   //! applies Hopcroft's DFA minimization algorithm
   FiniteAutomaton minimize() const;
 
+  std::tuple<OwnedStateSet, State*> release() {
+    std::tuple<OwnedStateSet, State*> result { std::move(states_), initialState_ };
+
+    states_.clear();
+    initialState_ = nullptr;
+
+    return result;
+  }
+
+  State* createState();
+
  private:
   State* createState(StateId id);
   void renumber(State* s, std::set<State*>* registry);
@@ -166,10 +177,18 @@ class ThompsonConstruct {
     initialState_->linkTo(value, acceptState);
   }
 
+  /**
+   * Constructs this object with the given input automaton, enforcing Thompson's Construction
+   * properties onto it.
+   */
+  explicit ThompsonConstruct(FiniteAutomaton fa);
+
   bool empty() const noexcept { return states_.empty(); }
 
   State* initialState() const { return initialState_; }
   State* acceptState() const;
+
+  void setTag(Tag tag);
 
   ThompsonConstruct clone() const;
 
@@ -202,7 +221,7 @@ class ThompsonConstruct {
 
  private:
   State* createState();
-  State* createState(StateId id);
+  State* createState(StateId id, bool accepting, Tag tag);
   State* findState(StateId id) const;
 
  private:

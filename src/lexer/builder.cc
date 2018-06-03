@@ -9,9 +9,12 @@ namespace lexer {
 
 void Builder::declare(fa::Tag tag, std::string_view pattern) {
   std::unique_ptr<RegExpr> expr = RegExprParser{}.parse(pattern);
-  fa::ThompsonConstruct tc = fa::Generator{}.construct(expr.get());
+  fa::FiniteAutomaton nfa = fa::Generator{}.generate(expr.get());
+  fa::FiniteAutomaton dfa = nfa.deterministic();
+  fa::FiniteAutomaton mfa = dfa.minimize();
 
-  tc.acceptState()->setTag(tag);
+  fa::ThompsonConstruct tc { std::move(mfa) };
+  tc.setTag(tag);
 
   if (fa_.empty()) {
     fa_ = std::move(tc);
@@ -22,22 +25,19 @@ void Builder::declare(fa::Tag tag, std::string_view pattern) {
 
 fa::FiniteAutomaton Builder::buildAutomaton(Stage stage) {
   fa::FiniteAutomaton nfa = fa_.clone().release();
-  nfa.renumber();
   if (stage == Stage::ThompsonConstruct)
     return std::move(nfa);
 
   fa::FiniteAutomaton dfa = nfa.deterministic();
-  dfa.renumber();
   if (stage == Stage::Deterministic)
     return std::move(dfa);
 
   fa::FiniteAutomaton dfamin = dfa.minimize();
-  dfamin.renumber();
   return std::move(dfamin);
 }
 
 LexerDef Builder::compile() {
-  const fa::FiniteAutomaton dfa = buildAutomaton(Stage::Minimized);
+  const fa::FiniteAutomaton dfa = buildAutomaton(Stage::Deterministic);
   const Alphabet alphabet = dfa.alphabet();
   TransitionMap transitionMap;
 
@@ -56,7 +56,7 @@ LexerDef Builder::compile() {
   for (const fa::State* s : dfa.acceptStates())
     acceptStates.emplace(s->id(), s->tag());
 
-  return LexerDef{std::move(transitionMap), 0, std::move(acceptStates)};
+  return LexerDef{std::move(transitionMap), dfa.initialState()->id(), std::move(acceptStates)};
 }
 
 } // namespace lexer

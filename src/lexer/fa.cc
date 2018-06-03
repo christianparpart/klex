@@ -54,6 +54,28 @@ std::string _groupCharacterClassRanges(std::vector<Symbol> chars) {
   return sstr.str();
 }
 
+static std::string prettyCharRange(Symbol ymin, Symbol ymax, bool dot) {
+  std::stringstream sstr;
+  switch (std::abs(ymax - ymin)) {
+    case 0:
+      sstr << prettySymbol(ymin, dot);
+      break;
+    case 1:
+      sstr << prettySymbol(ymin, dot)
+           << prettySymbol(ymin + 1, dot);
+      break;
+    case 2:
+      sstr << prettySymbol(ymin, dot)
+           << prettySymbol(ymin + 1, dot)
+           << prettySymbol(ymax, dot);
+      break;
+    default:
+      sstr << prettySymbol(ymin, dot) << '-' << prettySymbol(ymax, dot);
+      break;
+  }
+  return sstr.str();
+}
+
 std::string groupCharacterClassRanges(std::vector<Symbol> chars, bool dot) {
   // we took a copy in tgroup here, so I can sort() later
   std::sort(chars.begin(), chars.end());
@@ -73,19 +95,13 @@ std::string groupCharacterClassRanges(std::vector<Symbol> chars, bool dot) {
     }
     else { // gap found
       if (i) {
-        if (ymin != ymax)
-          sstr << prettySymbol(ymin, dot) << '-' << prettySymbol(ymax, dot);
-        else
-          sstr << prettySymbol(ymin, dot);
+        sstr << prettyCharRange(ymin, ymax, dot);
       }
       ymin = ymax = c;
     }
     i++;
   }
-  if (ymin != ymax)
-    sstr << prettySymbol(ymin, dot) << '-' << prettySymbol(ymax, dot);
-  else
-    sstr << prettySymbol(ymin, dot);
+  sstr << prettyCharRange(ymin, ymax, dot);
 
   return sstr.str();
 }
@@ -155,6 +171,16 @@ std::string dot(std::list<DotGraph> graphs, std::string_view label, bool groupEd
   sstr << "}\n";
 
   return sstr.str();
+}
+
+StateId nextId(const OwnedStateSet& states) {
+  StateId id = 0;
+
+  for (const std::unique_ptr<State>& s : states)
+    if (id <= s->id())
+      id = s->id() + 1;
+
+  return id;
 }
 
 // ---------------------------------------------------------------------------
@@ -270,6 +296,10 @@ void FiniteAutomaton::renumber(State* s, std::set<State*>* registry) {
       renumber(transition.state, registry);
     }
   }
+}
+
+State* FiniteAutomaton::createState() {
+  return createState(nextId(states_));
 }
 
 State* FiniteAutomaton::createState(StateId id) {
@@ -398,6 +428,21 @@ FiniteAutomaton FiniteAutomaton::deterministic() const {
     // if q contains an accepting state, then d is an accepting state in the DFA
     if (containsAcceptingState(q))
       d_i->setAccept(true);
+
+    Tag tag = (*q.begin())->tag();
+    bool tagme = true;
+    for (State* s : q) {
+      if (s->tag() != tag) {
+        DEBUG("deterministic: tags should equal for states {} and {} (tags: {} and {})",
+              (*q.begin())->id(), s->id(),
+              (*q.begin())->tag(), s->tag());
+        tagme = false;
+      }
+      //assert(s->tag() == tag && "All tags must equal in q");
+    }
+    if (tagme) {
+      d_i->setTag(tag);
+    }
 
     q_i++;
   }
@@ -599,13 +644,33 @@ StateSet FiniteAutomaton::acceptStates() const {
 // ---------------------------------------------------------------------------
 // ThompsonConstruct
 
+ThompsonConstruct::ThompsonConstruct(FiniteAutomaton fa)
+    : ThompsonConstruct{} {
+  if (StateSet acceptStates = fa.acceptStates(); acceptStates.size() != 1) {
+    State* newEnd = fa.createState();
+    for (State* a : acceptStates)
+      a->linkTo(newEnd);
+  }
+
+  std::tuple<OwnedStateSet, State*> owned = fa.release();
+  states_ = std::move(std::get<0>(owned));
+  initialState_ = std::get<1>(owned);
+  nextId_ = nextId(states_);
+}
+
+void ThompsonConstruct::setTag(Tag tag) {
+  for (const std::unique_ptr<State>& s : states_) {
+    assert(s->tag() == 0 && "State.tag() must not be set more than once");
+    s->setTag(tag);
+  }
+}
+
 ThompsonConstruct ThompsonConstruct::clone() const {
   ThompsonConstruct output;
 
   // clone states
   for (const std::unique_ptr<State>& s : states_) {
-    State* u = output.createState(s->id());
-    u->setAccept(s->isAccepting());
+    State* u = output.createState(s->id(), s->isAccepting(), s->tag());
     if (s.get() == initialState()) {
       output.initialState_ = u;
     }
@@ -642,14 +707,14 @@ FiniteAutomaton ThompsonConstruct::release() {
 }
 
 State* ThompsonConstruct::createState() {
-  return createState(nextId_++);
+  return createState(nextId_++, false, 0);
 }
 
-State* ThompsonConstruct::createState(StateId id) {
+State* ThompsonConstruct::createState(StateId id, bool accepting, Tag tag) {
   if (findState(id) != nullptr)
     throw std::invalid_argument{fmt::format("StateId: {}", id)};
 
-  return states_.insert(std::make_unique<State>(id)).first->get();
+  return states_.insert(std::make_unique<State>(id, accepting, tag)).first->get();
 }
 
 State* ThompsonConstruct::findState(StateId id) const {
@@ -732,12 +797,7 @@ ThompsonConstruct& ThompsonConstruct::recurring() {
 }
 
 ThompsonConstruct& ThompsonConstruct::positive() {
-  ThompsonConstruct base = clone();
-  base.recurring();
-  concatenate(std::move(base));
-  return *this;
-  //return concatenate(std::move(base.recurring()));
-  //return concatenate(std::move(clone().recurring()));
+  return concatenate(std::move(clone().recurring()));
 }
 
 ThompsonConstruct& ThompsonConstruct::times(unsigned factor) {

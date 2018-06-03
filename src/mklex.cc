@@ -28,23 +28,28 @@ int main(int argc, const char* argv[]) {
 
   lexer::Builder builder;
   for (const std::string& pattern : flags.parameters())
-    builder.declare(0, pattern);
+    builder.declare(42, pattern);
 
   if (flags.parameters().empty()) {
     //builder.declareHelper("IP4_OCTET", "0|[1-9]|[1-9][0-9]|[01][0-9][0-9]|2[0-4][0-9]|25[0-5]");
 
-    builder.declare(10, "[ \t\n]+");
+    builder.declare(20, "[a-z][a-z]*");
     builder.declare(11, "if");
-    builder.declare(12, "then");
-    builder.declare(13, "else");
-    //builder.declare(14, "0|[1-9][0-9]*"); // NUMBER
+
+    //builder.declare(10, "[ \t\n]+");
+    // builder.declare(12, "then");
+    // builder.declare(13, "else");
+    // builder.declare(14, "is");
+    // builder.declare(15, "of");
+    // builder.declare(15, "12");
+    // builder.declare(16, "0|[1-9][0-9]*"); // NUMBER
     //builder.declare(5, "0|[1-9]|[1-9][0-9]|[01][0-9][0-9]|2[0-4][0-9]|25[0-5]"); // IPv4 octet
     //builder.declare(6, "[0-9]|1[0-9]|2[0-9]|3[012]"); // CIDR mask
   }
 
   if (int n = flags.getNumber("print-fa"); n >= 1 && n <= 3) {
     lexer::fa::FiniteAutomaton fa = builder.buildAutomaton(static_cast<lexer::Builder::Stage>(n));
-    fa.renumber();
+    //fa.renumber();
 
     std::cout << lexer::fa::dot({lexer::fa::DotGraph{fa, "n", ""}}, "", !flags.getBool("no-group-edges"));
   } else if (std::string filename = flags.getString("file"); !filename.empty()) {
