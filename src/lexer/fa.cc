@@ -408,7 +408,7 @@ FiniteAutomaton FiniteAutomaton::deterministic() const {
     const Symbol c = transition.first.symbol;
     const int t_i = transition.second;
     if (t_i != -1) {
-      DEBUG("map d{} |--({})--> d{}", q_i, c, t_i);
+      DEBUG("map d{} |--({})--> d{}", q_i, prettySymbol(c), t_i);
       State* q = dfa.findState(q_i);
       State* t = dfa.findState(t_i);
 
@@ -572,7 +572,7 @@ FiniteAutomaton FiniteAutomaton::minimize() const {
     State* t0 = dfamin.findState(p_i);
     for (const Edge& transition : s->transitions()) {
       if (int t_i = partitionId(transition.state); t_i != -1) {
-        DEBUG("map p{} --({})--> p{}", p_i, transition.symbol, t_i);
+        DEBUG("map p{} --({})--> p{}", p_i, prettySymbol(transition.symbol), t_i);
         State* t1 = dfamin.findState(t_i);
         t0->linkTo(transition.symbol, t1);
       }
