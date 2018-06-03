@@ -12,7 +12,6 @@
 #define DEBUG(msg, ...) do { } while (0)
 #endif
 
-
 /*
   REGULAR EXPRESSION SYNTAX:
   --------------------------

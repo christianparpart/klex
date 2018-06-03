@@ -1,15 +1,15 @@
 #pragma once
 
 #include <lexer/fa.h>
+#include <lexer/lexerdef.h>
 #include <string_view>
 
 namespace lexer {
 
-class Lexer;
-
 class Builder {
  public:
-  void declare(int id, std::string_view pattern);
+  void ignore(std::string_view pattern); // such as " \t\n" or "#.*$"
+  void declare(fa::Tag tag, std::string_view pattern);
 
   enum class Stage {
     ThompsonConstruct = 1,
@@ -18,7 +18,7 @@ class Builder {
   };
   fa::FiniteAutomaton buildAutomaton(Stage stage);
 
-  Lexer compile();
+  LexerDef compile();
 
  private:
   fa::ThompsonConstruct fa_;

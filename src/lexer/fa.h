@@ -34,11 +34,12 @@ using EdgeList = std::list<Edge>;
 constexpr Symbol EpsilonTransition = '\0';
 
 using StateId = unsigned int;
+using Tag = int;
 
 class State {
  public:
   explicit State(StateId id) : State{id, false} {}
-  State(StateId id, bool accepting) : id_{id}, accepting_{accepting}, transitions_{} {}
+  State(StateId id, bool accepting) : id_{id}, accepting_{accepting},  tag_{0}, transitions_{} {}
 
   StateId id() const noexcept { return id_; }
   void setId(StateId id) { id_ = id; }
@@ -54,9 +55,13 @@ class State {
   void setAccept(bool accepting) { accepting_ = accepting; }
   bool isAccepting() const noexcept { return accepting_; }
 
+  Tag tag() const noexcept { return tag_; }
+  void setTag(Tag tag) { tag_ = tag; }
+
  private:
   StateId id_;
   bool accepting_;
+  Tag tag_;
   EdgeList transitions_;
 };
 

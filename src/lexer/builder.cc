@@ -1,14 +1,17 @@
 #include <lexer/builder.h>
 #include <lexer/fa.h>
 #include <lexer/lexer.h>
+#include <lexer/lexerdef.h>
 #include <lexer/regexpr.h>
 #include <iostream>
 
 namespace lexer {
 
-void Builder::declare(int id, std::string_view pattern) {
+void Builder::declare(fa::Tag tag, std::string_view pattern) {
   std::unique_ptr<RegExpr> expr = RegExprParser{}.parse(pattern);
   fa::ThompsonConstruct tc = fa::Generator{}.construct(expr.get());
+
+  tc.acceptState()->setTag(tag);
 
   if (fa_.empty()) {
     fa_ = std::move(tc);
@@ -33,7 +36,7 @@ fa::FiniteAutomaton Builder::buildAutomaton(Stage stage) {
   return std::move(dfamin);
 }
 
-Lexer Builder::compile() {
+LexerDef Builder::compile() {
   const fa::FiniteAutomaton dfa = buildAutomaton(Stage::Minimized);
   const Alphabet alphabet = dfa.alphabet();
   TransitionMap transitionMap;
@@ -49,11 +52,11 @@ Lexer Builder::compile() {
     }
   }
 
-  std::vector<fa::StateId> acceptStates;
+  std::map<fa::StateId, fa::Tag> acceptStates;
   for (const fa::State* s : dfa.acceptStates())
-    acceptStates.push_back(s->id());
+    acceptStates.emplace(s->id(), s->tag());
 
-  return Lexer{std::move(transitionMap), 0, std::move(acceptStates)};
+  return LexerDef{std::move(transitionMap), 0, std::move(acceptStates)};
 }
 
 } // namespace lexer

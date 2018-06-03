@@ -34,6 +34,7 @@ add_library(lexer STATIC
     src/lexer/fa.cc
     src/lexer/lexer.cc
     src/lexer/regexpr.cc
+    src/lexer/transitionmap.cc
     src/lexer/util/Flags.cc
     )
 

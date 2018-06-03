@@ -3,63 +3,42 @@
 #include <iostream>
 #include <string_view>
 #include <lexer/fa.h>
+#include <lexer/lexerdef.h>
 #include <memory>
 #include <map>
 #include <vector>
 
 namespace lexer {
 
-using CharCatId = unsigned int;
-constexpr CharCatId ErrorCharCat = static_cast<CharCatId>(-1);
-constexpr fa::StateId ErrorState = static_cast<fa::StateId>(-1);
-constexpr fa::StateId BadState = static_cast<fa::StateId>(-2);
-
-class TransitionMap {
- public:
-  void define(fa::StateId currentState, fa::Symbol c, fa::StateId nextState) {
-    mapping_[currentState][c] = nextState;
-  }
-
-  fa::StateId apply(fa::StateId s, fa::Symbol c) const {
-    if (auto i = mapping_.find(s); i != mapping_.end())
-      if (auto k = i->second.find(c); k != i->second.end())
-        return k->second;
-
-    return ErrorState;
-  }
-
-  std::vector<fa::StateId> states() const {
-    std::vector<fa::StateId> v;
-    v.reserve(mapping_.size());
-    for (const auto& i : mapping_)
-      v.push_back(i.first);
-    return v;
-  }
-
-  std::map<fa::Symbol, fa::StateId> map(fa::StateId s) {
-    std::map<fa::Symbol, fa::StateId> m;
-    for (const auto& i : mapping_[s])
-      m[i.first] = i.second;
-    return m;
-  }
-
- private:
-  std::map<fa::StateId, std::map<fa::Symbol, fa::StateId>> mapping_;
-};
-
+/**
+ * Lexer API for recognizing words.
+ */
 class Lexer {
  public:
-  Lexer(TransitionMap transitions, fa::StateId initialStateId, std::vector<fa::StateId> acceptStates);
+  /**
+   * Constructs the Lexer with the given information table.
+   *
+   * @see Builder
+   */
+  explicit Lexer(LexerDef info);
 
   void open(std::unique_ptr<std::istream> input);
 
-  // parses a token and returns its ID (or -1 on lexical error)
-  int recognize();
+  /**
+   * Parses a token and returns its tag (or -1 on lexical error).
+   */
+  fa::Tag recognize();
 
-  // the underlying lexeme of the currently recognized token
-  std::string lexeme() const { return lexeme_; }
+  //! the underlying word of the currently recognized token
+  std::string word() const { return word_; }
 
+  //! @returns the absolute offset of the file the lexer is currently reading from.
+  unsigned offset() const noexcept { return offset_; }
+
+  //! @returns the current line the lexer is reading from.
   unsigned line() const noexcept { return line_; }
+
+  //! @returns the current column of the current line the lexer is reading from.
   unsigned column() const noexcept { return column_; }
 
  private:
@@ -71,8 +50,8 @@ class Lexer {
  private:
   TransitionMap transitions_;
   fa::StateId initialStateId_;
-  std::vector<fa::StateId> acceptStates_;
-  std::string lexeme_;
+  std::map<fa::StateId, fa::Tag> acceptStates_;
+  std::string word_;
   std::unique_ptr<std::istream> stream_;
   std::vector<int> buffered_;
   unsigned offset_;

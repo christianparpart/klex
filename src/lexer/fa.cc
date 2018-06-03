@@ -9,7 +9,7 @@
 #include <sstream>
 #include <vector>
 
-#if 0
+#if 1
 #define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
 #else
 #define DEBUG(msg, ...) do { } while (0)
@@ -22,6 +22,8 @@ namespace lexer::fa {
 
 std::string prettySymbol(Symbol input, bool dot) {
   switch (input) {
+    case -1:
+      return "<EOF>";
     case EpsilonTransition:
       return "ε";
     case ' ':
@@ -116,6 +118,11 @@ std::string dot(std::list<DotGraph> graphs, std::string_view label, bool groupEd
 
     // all states and their edges
     for (const State* state: graph.fa.states()) {
+      if (state->tag() != 0) {
+        sstr << "    " << graph.stateLabelPrefix << state->id() << " ["
+             << "color=blue"
+             << "]\n";
+      }
       if (groupEdges) {
         std::map<State* /*target state*/, std::vector<Symbol> /*transition symbols*/> transitionGroups;
 
@@ -614,6 +621,8 @@ ThompsonConstruct ThompsonConstruct::clone() const {
     }
   }
 
+  output.nextId_ = nextId_;
+
   return output;
 }
 
@@ -723,7 +732,12 @@ ThompsonConstruct& ThompsonConstruct::recurring() {
 }
 
 ThompsonConstruct& ThompsonConstruct::positive() {
-  return concatenate(std::move(clone().recurring()));
+  ThompsonConstruct base = clone();
+  base.recurring();
+  concatenate(std::move(base));
+  return *this;
+  //return concatenate(std::move(base.recurring()));
+  //return concatenate(std::move(clone().recurring()));
 }
 
 ThompsonConstruct& ThompsonConstruct::times(unsigned factor) {

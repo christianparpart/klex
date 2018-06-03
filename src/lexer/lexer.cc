@@ -2,14 +2,21 @@
 #include <algorithm>
 #include <deque>
 #include <iostream>
+#include <sstream>
 
 namespace lexer {
 
-Lexer::Lexer(TransitionMap transitions, fa::StateId initialStateId, std::vector<fa::StateId> acceptStates)
-    : transitions_{std::move(transitions)},
-      initialStateId_{initialStateId},
-      acceptStates_{std::move(acceptStates)},
-      lexeme_{},
+#if 1
+#define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
+#else
+#define DEBUG(msg, ...) do { } while (0)
+#endif
+
+Lexer::Lexer(LexerDef info)
+    : transitions_{std::move(info.transitions)},
+      initialStateId_{info.initialStateId},
+      acceptStates_{std::move(info.acceptStates)},
+      word_{},
       stream_{},
       line_{},
       column_{} {
@@ -29,32 +36,68 @@ void Lexer::open(std::unique_ptr<std::istream> stream) {
   column_ = 0;
 }
 
-int Lexer::recognize() {
+constexpr fa::StateId BadState { 101010 }; //static_cast<fa::StateId>(-2);
+
+static std::string stateName(fa::StateId s) {
+  switch (s) {
+    case BadState:
+      return "Bad";
+    case ErrorState:
+      return "Error";
+    default:
+      return std::to_string(s);
+  }
+}
+
+static std::string toString(std::deque<fa::StateId> stack) {
+  std::stringstream sstr;
+  sstr << "{";
+  int i = 0;
+  for (const auto s : stack) {
+    if (i) sstr << ",";
+    sstr << stateName(s);
+    i++;
+  }
+
+  sstr << "}";
+  return sstr.str();
+}
+
+fa::Tag Lexer::recognize() {
   // init
-  lexeme_.clear();
+  word_.clear();
   fa::StateId state = initialStateId_;
   std::deque<fa::StateId> stack;
-  stack.push_front(BadState);
+  stack.push_back(BadState);
 
   // advance
   while (state != ErrorState) {
     fa::Symbol ch = nextChar();
-    lexeme_.push_back(ch);
+    word_.push_back(ch);
 
     if (isAcceptState(state))
       stack.clear();
 
-    stack.push_front(state);
+    stack.push_back(state);
+    DEBUG("recognize: state {} char '{}' {}", stateName(state), fa::prettySymbol(ch), isAcceptState(state) ? "accepting" : "");
     state = transitions_.apply(state, ch);
   }
 
   // trackback
   while (state != BadState && !isAcceptState(state)) {
-    state = stack.front();
-    stack.pop_front();
-    rollback();
-    lexeme_.resize(lexeme_.size() - 1);
+    DEBUG("recognize: trackback: current state {} {}; stack: {}",
+          stateName(state),
+          isAcceptState(state) ? "accepting" : "non-accepting",
+          toString(stack));
+
+    state = stack.back();
+    stack.pop_back();
+    if (!word_.empty()) {
+      rollback();
+      word_.resize(word_.size() - 1);
+    }
   }
+  DEBUG("recognize: final state {} {}", stateName(state), isAcceptState(state) ? "accepting" : "non-accepting");
 
   if (isAcceptState(state))
     return type(state);
@@ -63,14 +106,14 @@ int Lexer::recognize() {
 }
 
 int Lexer::type(fa::StateId acceptState) const {
-  if (acceptState != ErrorState)
-    return acceptState; // TODO: map state to actual input enum
+  if (auto i = acceptStates_.find(acceptState); i != acceptStates_.end())
+    return i->second;
 
   return -1;
 }
 
 bool Lexer::isAcceptState(fa::StateId id) const {
-  return std::find(acceptStates_.begin(), acceptStates_.end(), id) != acceptStates_.end();
+  return acceptStates_.find(id) != acceptStates_.end();
 }
 
 int Lexer::nextChar() {
@@ -78,24 +121,27 @@ int Lexer::nextChar() {
     offset_++;
     int ch = buffered_.back();
     buffered_.resize(buffered_.size() - 1);
-    std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, fa::prettySymbol(ch));
+    //std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, fa::prettySymbol(ch));
     return ch;
   }
 
-  if (!stream_->good()) { // EOF
-    std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, "EOF");
+  if (!stream_->good()) { // EOF or I/O error
+    //std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, "EOF");
     return -1;
   }
 
   int ch = stream_->get();
-  offset_++;
-  std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, fa::prettySymbol(ch));
+  if (ch >= 0)
+    offset_++;
+  //std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, fa::prettySymbol(ch));
   return ch;
 }
 
 void Lexer::rollback() {
-  offset_--;
-  buffered_.push_back(lexeme_.back());
+  if (word_.back() != -1) {
+    offset_--;
+    buffered_.push_back(word_.back());
+  }
 }
 
 } // namespace lexer
