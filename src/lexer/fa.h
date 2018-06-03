@@ -270,6 +270,9 @@ struct DotGraph {
  */
 std::string dot(std::list<DotGraph> list, std::string_view label = "", bool groupEdges = true);
 
+std::string prettySymbol(Symbol input, bool dot = false);
+std::string groupCharacterClassRanges(std::vector<Symbol> chars, bool dot = false);
+
 } // namespace lexer::fa
 
 namespace fmt {

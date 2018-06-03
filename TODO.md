@@ -1,5 +1,6 @@
 ### The very incomplete TODO checklist
 
+- [ ] FA: how to handle EOF?
 - [ ] FA: DFA-minimization also merges accept states, hence, it'll be hard to return the recognized
       token. The idea is to not get accept-states grouped, but give each accept states its own
       partition-set (since they only split and never merge).

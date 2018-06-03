@@ -20,11 +20,28 @@ namespace lexer::fa {
 // ---------------------------------------------------------------------------
 // utils
 
-std::string prettySymbol(Symbol input) {
-  if (input == EpsilonTransition)
-    return "ε";
-  else
-    return fmt::format("{}", input);
+std::string prettySymbol(Symbol input, bool dot) {
+  switch (input) {
+    case EpsilonTransition:
+      return "ε";
+    case ' ':
+      if (dot)
+        return "\\\\s";
+      else
+        return "\\s";
+    case '\t':
+      if (dot)
+        return "\\\\t";
+      else
+        return "\\t";
+    case '\n':
+      if (dot)
+        return "\\\\n";
+      else
+        return "\\n";
+    default:
+      return fmt::format("{}", input);
+  }
 }
 
 std::string _groupCharacterClassRanges(std::vector<Symbol> chars) {
@@ -35,7 +52,7 @@ std::string _groupCharacterClassRanges(std::vector<Symbol> chars) {
   return sstr.str();
 }
 
-std::string groupCharacterClassRanges(std::vector<Symbol> chars) {
+std::string groupCharacterClassRanges(std::vector<Symbol> chars, bool dot) {
   // we took a copy in tgroup here, so I can sort() later
   std::sort(chars.begin(), chars.end());
 
@@ -55,18 +72,18 @@ std::string groupCharacterClassRanges(std::vector<Symbol> chars) {
     else { // gap found
       if (i) {
         if (ymin != ymax)
-          sstr << prettySymbol(ymin) << '-' << prettySymbol(ymax);
+          sstr << prettySymbol(ymin, dot) << '-' << prettySymbol(ymax, dot);
         else
-          sstr << prettySymbol(ymin);
+          sstr << prettySymbol(ymin, dot);
       }
       ymin = ymax = c;
     }
     i++;
   }
   if (ymin != ymax)
-    sstr << prettySymbol(ymin) << '-' << prettySymbol(ymax);
+    sstr << prettySymbol(ymin, dot) << '-' << prettySymbol(ymax, dot);
   else
-    sstr << prettySymbol(ymin);
+    sstr << prettySymbol(ymin, dot);
 
   return sstr.str();
 }
@@ -106,7 +123,7 @@ std::string dot(std::list<DotGraph> graphs, std::string_view label, bool groupEd
           transitionGroups[transition.state].emplace_back(transition.symbol);
 
         for (const std::pair<State*, std::vector<Symbol>>& tgroup: transitionGroups) {
-          std::string label = groupCharacterClassRanges(tgroup.second);
+          std::string label = groupCharacterClassRanges(tgroup.second, true);
           const State* targetState = tgroup.first;
           sstr << "    " << graph.stateLabelPrefix << state->id()
                << " -> " << graph.stateLabelPrefix << targetState->id();
@@ -115,7 +132,7 @@ std::string dot(std::list<DotGraph> graphs, std::string_view label, bool groupEd
         }
       } else {
         for (const Edge& transition : state->transitions()) {
-          std::string label = prettySymbol(transition.symbol);
+          std::string label = prettySymbol(transition.symbol, true);
           const State* targetState = transition.state;
           sstr << "    " << graph.stateLabelPrefix << state->id()
                << " -> " << graph.stateLabelPrefix << targetState->id();

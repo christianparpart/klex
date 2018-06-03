@@ -33,7 +33,7 @@ int main(int argc, const char* argv[]) {
   if (flags.parameters().empty()) {
     //builder.declareHelper("IP4_OCTET", "0|[1-9]|[1-9][0-9]|[01][0-9][0-9]|2[0-4][0-9]|25[0-5]");
 
-    builder.declare(0, " "); // " \t\n");
+    builder.declare(0, " \t\n");
     builder.declare(1, "if");
     builder.declare(2, "then");
     builder.declare(3, "else");

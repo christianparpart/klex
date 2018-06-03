@@ -16,7 +16,7 @@ Lexer::Lexer(TransitionMap transitions, fa::StateId initialStateId, std::vector<
   for (fa::StateId s : transitions_.states()) {
     std::cerr << fmt::format("n{}: (", s);
     for (std::pair<fa::Symbol, fa::StateId> p : transitions_.map(s)) {
-      std::cerr << fmt::format(" '{}': n{};", p.first, p.second);
+      std::cerr << fmt::format(" '{}': n{};", fa::prettySymbol(p.first), p.second);
     }
     std::cerr << fmt::format(")\n");
   }
@@ -74,19 +74,22 @@ bool Lexer::isAcceptState(fa::StateId id) const {
 }
 
 int Lexer::nextChar() {
-  offset_++;
   if (!buffered_.empty()) {
+    offset_++;
     int ch = buffered_.back();
     buffered_.resize(buffered_.size() - 1);
-    std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, (char)ch);
+    std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, fa::prettySymbol(ch));
     return ch;
   }
 
-  if (!stream_->good()) // EOF
+  if (!stream_->good()) { // EOF
+    std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, "EOF");
     return -1;
+  }
 
   int ch = stream_->get();
-  std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, (char)ch);
+  offset_++;
+  std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, fa::prettySymbol(ch));
   return ch;
 }
 

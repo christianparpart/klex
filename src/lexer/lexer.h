@@ -16,13 +16,13 @@ constexpr fa::StateId BadState = static_cast<fa::StateId>(-2);
 
 class TransitionMap {
  public:
-  void define(fa::StateId currentState, CharCatId currentCharCat, fa::StateId nextState) {
-    mapping_[currentState][currentCharCat] = nextState;
+  void define(fa::StateId currentState, fa::Symbol c, fa::StateId nextState) {
+    mapping_[currentState][c] = nextState;
   }
 
-  fa::StateId apply(fa::StateId currentStateId, CharCatId currentCharCat) const {
-    if (auto i = mapping_.find(currentStateId); i != mapping_.end())
-      if (auto k = i->second.find(currentCharCat); k != i->second.end())
+  fa::StateId apply(fa::StateId s, fa::Symbol c) const {
+    if (auto i = mapping_.find(s); i != mapping_.end())
+      if (auto k = i->second.find(c); k != i->second.end())
         return k->second;
 
     return ErrorState;
@@ -44,7 +44,7 @@ class TransitionMap {
   }
 
  private:
-  std::map<fa::StateId, std::map<CharCatId, fa::StateId>> mapping_;
+  std::map<fa::StateId, std::map<fa::Symbol, fa::StateId>> mapping_;
 };
 
 class Lexer {
