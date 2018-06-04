@@ -44,7 +44,7 @@ LexerDef Builder::compile() {
   std::cout << fa::dot({lexer::fa::DotGraph{dfa, "n", ""}}, "", true);
 
   for (const fa::State* state : dfa.states()) {
-    std::cerr << fmt::format("Walking through state {} (with {} links)\n", state->id(), state->transitions().size());
+    //std::cerr << fmt::format("Walking through state {} (with {} links)\n", state->id(), state->transitions().size());
     for (fa::Symbol c : alphabet) {
       if (const fa::State* nextState = state->transition(c); nextState != nullptr) {
         transitionMap.define(state->id(), c, nextState->id());

@@ -9,7 +9,7 @@
 #include <sstream>
 #include <vector>
 
-#if 1
+#if 0
 #define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
 #else
 #define DEBUG(msg, ...) do { } while (0)
@@ -426,14 +426,15 @@ FiniteAutomaton FiniteAutomaton::deterministic() const {
     State* d_i = dfa.createState(q_i);
 
     // if q contains an accepting state, then d is an accepting state in the DFA
-    if (containsAcceptingState(q))
+    if (containsAcceptingState(q)) {
       d_i->setAccept(true);
+    }
 
     Tag tag = (*q.begin())->tag();
     bool tagme = true;
     for (State* s : q) {
       if (s->tag() != tag) {
-        DEBUG("deterministic: tags should equal for states {} and {} (tags: {} and {})",
+        std::cerr << fmt::format("deterministic: tags should equal for states {} and {} (tags: {} and {})\n",
               (*q.begin())->id(), s->id(),
               (*q.begin())->tag(), s->tag());
         tagme = false;
