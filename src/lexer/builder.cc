@@ -13,8 +13,15 @@ void Builder::declare(fa::Tag tag, std::string_view pattern) {
   fa::FiniteAutomaton dfa = nfa.deterministic();
   fa::FiniteAutomaton mfa = dfa.minimize();
 
+  std::cerr << fmt::format("Builder.declare: prio {}, tag {} RE {}\n", nextPriority_, tag, pattern);
+  for (fa::State* s : mfa.acceptStates()) {
+    s->setTag(tag);
+    s->setPriority(nextPriority_);
+  }
+
+  nextPriority_++;
+
   fa::ThompsonConstruct tc { std::move(mfa) };
-  tc.setTag(tag);
 
   if (fa_.empty()) {
     fa_ = std::move(tc);

@@ -379,6 +379,65 @@ struct TransitionTable {
 
  */
 
+/**
+ * Determines the tag to use for the deterministic set representing @p q from @p fa.
+ *
+ * @param fa the owning finite automaton being operated on
+ * @param q the set of states that reflect a single state in the DFA equal to the input FA
+ * @param tag address to the Tag the resulting will be stored to
+ *
+ * @returns whether or not the tag could be determined.
+ */
+bool determineTag(const FiniteAutomaton& fa, StateSet q, Tag* tag) {
+  // eliminate target-states that originate from epsilon transitions or have no tag set at all
+  for (auto i = q.begin(), e = q.end(); i != e; ) {
+    State* s = *i;
+    if (fa.isReceivingEpsilon(s) || !s->tag()) {
+      i = q.erase(i);
+    } else {
+      i++;
+    }
+  }
+
+  if (q.empty()) {
+    fprintf(stderr, "determineTag: all of q was epsiloned\n");
+    *tag = 0;
+    return false;
+  }
+
+  const int priority = (*std::min_element(
+      q.begin(), q.end(),
+      [](auto x, auto y) { return x->priority() < y->priority(); }))->priority();
+
+  // eliminate lower priorities
+  for (auto i = q.begin(), e = q.end(); i != e; ) {
+    State* s = *i;
+    if (s->priority() != priority) {
+      i = q.erase(i);
+    } else {
+      i++;
+    }
+  }
+  if (q.empty()) {
+    fprintf(stderr, "determineTag: lowest priority found: %d, but no states left?\n", priority);
+    *tag = 0;
+    return true;
+  }
+
+  if (q.size() == 1) {
+    *tag = (*q.begin())->tag();
+    return true;
+  }
+
+  std::cerr << fmt::format("The impossible happened. |q| > 1 with determined priority {}\n", priority);
+  std::cerr << fmt::format("q := {}\n", q);
+  for (State* s : q) {
+    std::cerr << fmt::format("q{} prio {} tag {}\n", s->id(), s->priority(), s->tag());
+  }
+  abort();
+  return false;
+}
+
 FiniteAutomaton FiniteAutomaton::deterministic() const {
   StateSet q_0 = epsilonClosure({initialState_});
   DEBUG("q_0 = epsilonClosure({}) = {}", to_string({initialState_}), q_0);
@@ -424,25 +483,20 @@ FiniteAutomaton FiniteAutomaton::deterministic() const {
   for (StateSet& q : Q) {
     // d_i represents the corresponding state in the DFA for all states of q from the NFA
     State* d_i = dfa.createState(q_i);
+    std::cerr << fmt::format("map q{} to d{} for {} states, {}.\n", q_i, d_i->id(), q.size(), to_string(q, "d"));
 
     // if q contains an accepting state, then d is an accepting state in the DFA
     if (containsAcceptingState(q)) {
       d_i->setAccept(true);
-    }
-
-    Tag tag = (*q.begin())->tag();
-    bool tagme = true;
-    for (State* s : q) {
-      if (s->tag() != tag) {
-        std::cerr << fmt::format("deterministic: tags should equal for states {} and {} (tags: {} and {})\n",
-              (*q.begin())->id(), s->id(),
-              (*q.begin())->tag(), s->tag());
-        tagme = false;
+      Tag tag{};
+      if (determineTag(*this, q, &tag)) {
+        std::cerr << fmt::format("determineTag: q{} tag {} from {}.\n",
+            q_i, tag, q);
+        d_i->setTag(tag);
+      } else {
+        std::cerr << fmt::format("DFA accepting state {} merged from input states with different tags {}.\n",
+            q_i, to_string(q));
       }
-      //assert(s->tag() == tag && "All tags must equal in q");
-    }
-    if (tagme) {
-      d_i->setTag(tag);
     }
 
     q_i++;
@@ -466,6 +520,15 @@ FiniteAutomaton FiniteAutomaton::deterministic() const {
   dfa.setInitialState(dfa.findState(0));
 
   return dfa;
+}
+
+bool FiniteAutomaton::isReceivingEpsilon(const State* t) const {
+  for (const std::unique_ptr<State>& s : states_)
+    for (const Edge& edge : s->transitions())
+      if (edge.state == t && edge.symbol == EpsilonTransition)
+        return true;
+
+  return false;
 }
 
 // Builds a list of states that can be exclusively reached from S via epsilon-transitions.
@@ -649,8 +712,11 @@ ThompsonConstruct::ThompsonConstruct(FiniteAutomaton fa)
     : ThompsonConstruct{} {
   if (StateSet acceptStates = fa.acceptStates(); acceptStates.size() != 1) {
     State* newEnd = fa.createState();
-    for (State* a : acceptStates)
+    for (State* a : acceptStates) {
+      a->setAccept(false);
       a->linkTo(newEnd);
+    }
+    newEnd->setAccept(true);
   }
 
   std::tuple<OwnedStateSet, State*> owned = fa.release();

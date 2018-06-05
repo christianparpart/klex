@@ -39,7 +39,12 @@ using Tag = int;
 class State {
  public:
   explicit State(StateId id) : State{id, false, 0} {}
-  State(StateId id, bool accepting, Tag tag) : id_{id}, accepting_{accepting},  tag_{tag}, transitions_{} {}
+  State(StateId id, bool accepting, Tag tag)
+      : id_{id},
+        accepting_{accepting},
+        tag_{tag},
+        priority_{1},
+        transitions_{} {}
 
   StateId id() const noexcept { return id_; }
   void setId(StateId id) { id_ = id; }
@@ -58,10 +63,14 @@ class State {
   Tag tag() const noexcept { return tag_; }
   void setTag(Tag tag) { tag_ = tag; }
 
+  int priority() const noexcept { return priority_; }
+  void setPriority(int priority) { priority_ = priority; }
+
  private:
   StateId id_;
   bool accepting_;
   Tag tag_;
+  int priority_; //! smallest number reflects the highest priority
   EdgeList transitions_;
 };
 
@@ -128,6 +137,9 @@ class FiniteAutomaton {
 
     return result;
   }
+
+  //! @returns true if @p targetState is only reached via epsilon transition
+  bool isReceivingEpsilon(const State* targetState) const;
 
   State* createState();
 
@@ -303,7 +315,7 @@ namespace fmt {
   template<>
   struct formatter<lexer::fa::StateSet> {
     template <typename ParseContext>
-    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+    constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
 
     template <typename FormatContext>
     constexpr auto format(const lexer::fa::StateSet& v, FormatContext &ctx) {
@@ -314,7 +326,7 @@ namespace fmt {
   template<>
   struct formatter<lexer::fa::OwnedStateSet> {
     template <typename ParseContext>
-    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+    constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
 
     template <typename FormatContext>
     constexpr auto format(const lexer::fa::OwnedStateSet& v, FormatContext &ctx) {

@@ -2,6 +2,7 @@
 
 #include <set>
 #include <string>
+#include <fmt/format.h>
 
 namespace lexer {
 
@@ -26,3 +27,16 @@ class Alphabet {
 };
 
 } // namespace lexer
+
+namespace fmt {
+  template<>
+  struct formatter<lexer::Alphabet> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    constexpr auto format(const lexer::Alphabet& v, FormatContext &ctx) {
+      return format_to(ctx.begin(), "{}", v.to_string());
+    }
+  };
+}
