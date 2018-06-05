@@ -183,32 +183,6 @@ StateId nextId(const OwnedStateSet& states) {
   return id;
 }
 
-// ---------------------------------------------------------------------------
-// State
-
-#define VERIFY_STATE_AVAILABILITY(freeId, set)                                  \
-  do {                                                                          \
-    if (std::find_if((set).begin(), (set).end(),                                \
-          [&](const auto& s) { return s->id() == freeId; }) != (set).end()) {   \
-      std::cerr << fmt::format(                                                 \
-          "VERIFY_STATE_AVAILABILITY({0}) failed. Id {0} is already in use.\n", \
-          (freeId));                                                            \
-      abort();                                                                  \
-    }                                                                           \
-  } while (0)
-
-State* State::transition(Symbol input) const {
-  for (const Edge& transition : transitions_)
-    if (input == transition.symbol)
-      return transition.state;
-
-  return nullptr;
-}
-
-void State::linkTo(Symbol input, State* state) {
-  transitions_.emplace_back(input, state);
-}
-
 std::string to_string(const OwnedStateSet& S, std::string_view stateLabelPrefix) {
   std::vector<StateId> names;
   for (const std::unique_ptr<State>& s : S)
@@ -249,6 +223,32 @@ std::string to_string(const StateSet& S, std::string_view stateLabelPrefix) {
   sstr << "}";
 
   return sstr.str();
+}
+
+// ---------------------------------------------------------------------------
+// State
+
+#define VERIFY_STATE_AVAILABILITY(freeId, set)                                  \
+  do {                                                                          \
+    if (std::find_if((set).begin(), (set).end(),                                \
+          [&](const auto& s) { return s->id() == freeId; }) != (set).end()) {   \
+      std::cerr << fmt::format(                                                 \
+          "VERIFY_STATE_AVAILABILITY({0}) failed. Id {0} is already in use.\n", \
+          (freeId));                                                            \
+      abort();                                                                  \
+    }                                                                           \
+  } while (0)
+
+State* State::transition(Symbol input) const {
+  for (const Edge& transition : transitions_)
+    if (input == transition.symbol)
+      return transition.state;
+
+  return nullptr;
+}
+
+void State::linkTo(Symbol input, State* state) {
+  transitions_.emplace_back(input, state);
 }
 
 // ---------------------------------------------------------------------------
