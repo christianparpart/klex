@@ -6,7 +6,7 @@
 
 namespace lexer {
 
-#if 1
+#if 0
 #define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
 #else
 #define DEBUG(msg, ...) do { } while (0)
@@ -18,19 +18,22 @@ Lexer::Lexer(LexerDef info)
       acceptStates_{std::move(info.acceptStates)},
       word_{},
       stream_{},
+      oldOffset_{},
+      offset_{},
       line_{},
       column_{} {
-  for (fa::StateId s : transitions_.states()) {
-    std::cerr << fmt::format("n{}: (", s);
-    for (std::pair<fa::Symbol, fa::StateId> p : transitions_.map(s)) {
-      std::cerr << fmt::format(" '{}': n{};", fa::prettySymbol(p.first), p.second);
-    }
-    std::cerr << fmt::format(")\n");
-  }
+  // for (fa::StateId s : transitions_.states()) {
+  //   std::cerr << fmt::format("n{}: (", s);
+  //   for (std::pair<fa::Symbol, fa::StateId> p : transitions_.map(s)) {
+  //     std::cerr << fmt::format(" '{}': n{};", fa::prettySymbol(p.first), p.second);
+  //   }
+  //   std::cerr << fmt::format(")\n");
+  // }
 }
 
 void Lexer::open(std::unique_ptr<std::istream> stream) {
   stream_ = std::move(stream);
+  oldOffset_ = 0;
   offset_ = 0;
   line_ = 1;
   column_ = 0;
@@ -65,6 +68,7 @@ static std::string toString(std::deque<fa::StateId> stack) {
 
 fa::Tag Lexer::recognize() {
   // init
+  oldOffset_ = offset_;
   word_.clear();
   fa::StateId state = initialStateId_;
   std::deque<fa::StateId> stack;

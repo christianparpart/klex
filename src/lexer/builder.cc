@@ -13,7 +13,7 @@ void Builder::declare(fa::Tag tag, std::string_view pattern) {
   fa::FiniteAutomaton dfa = nfa.deterministic();
   fa::FiniteAutomaton mfa = dfa.minimize();
 
-  std::cerr << fmt::format("Builder.declare: prio {}, tag {} RE {}\n", nextPriority_, tag, pattern);
+  // std::cerr << fmt::format("Builder.declare: prio {}, tag {} RE {}\n", nextPriority_, tag, pattern);
   for (fa::State* s : mfa.acceptStates()) {
     s->setTag(tag);
     s->setPriority(nextPriority_);
@@ -48,7 +48,7 @@ LexerDef Builder::compile() {
   const Alphabet alphabet = dfa.alphabet();
   TransitionMap transitionMap;
 
-  std::cout << fa::dot({lexer::fa::DotGraph{dfa, "n", ""}}, "", true);
+  //std::cout << fa::dot({lexer::fa::DotGraph{dfa, "n", ""}}, "", true);
 
   for (const fa::State* state : dfa.states()) {
     //std::cerr << fmt::format("Walking through state {} (with {} links)\n", state->id(), state->transitions().size());

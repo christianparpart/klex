@@ -33,7 +33,7 @@ class Lexer {
   std::string word() const { return word_; }
 
   //! @returns the absolute offset of the file the lexer is currently reading from.
-  unsigned offset() const noexcept { return offset_; }
+  std::pair<unsigned, unsigned> offset() const noexcept { return std::make_pair(oldOffset_, offset_); }
 
   //! @returns the current line the lexer is reading from.
   unsigned line() const noexcept { return line_; }
@@ -54,6 +54,7 @@ class Lexer {
   std::string word_;
   std::unique_ptr<std::istream> stream_;
   std::vector<int> buffered_;
+  unsigned oldOffset_;
   unsigned offset_;
   unsigned line_;
   unsigned column_;

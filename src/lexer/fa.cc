@@ -120,9 +120,14 @@ std::string dot(std::list<DotGraph> graphs, std::string_view label, bool groupEd
     clusterId++;
 
     // acceptState
-    for (const State* s: graph.fa.states())
-      if (s->isAccepting())
-        sstr << "    node [shape=doublecircle]; " << graph.stateLabelPrefix << s->id() << ";\n";
+    for (const State* s: graph.fa.states()) {
+      if (s->isAccepting()) {
+        sstr << "    node [shape=doublecircle";
+        sstr << ",label=\"" << fmt::format("{}{}:{}", graph.stateLabelPrefix, s->id(), s->tag()) << "\"";
+        sstr << "]; "
+             << graph.stateLabelPrefix << s->id() << ";\n";
+      }
+    }
 
     // initialState
     sstr << "    \"\" [shape=plaintext];\n";
@@ -380,7 +385,7 @@ struct TransitionTable {
  */
 
 /**
- * Determines the tag to use for the deterministic set representing @p q from @p fa.
+ * Determines the tag to use for the deterministic state representing @p q from non-deterministic FA @p fa.
  *
  * @param fa the owning finite automaton being operated on
  * @param q the set of states that reflect a single state in the DFA equal to the input FA
@@ -400,7 +405,7 @@ bool determineTag(const FiniteAutomaton& fa, StateSet q, Tag* tag) {
   }
 
   if (q.empty()) {
-    fprintf(stderr, "determineTag: all of q was epsiloned\n");
+    // fprintf(stderr, "determineTag: all of q was epsiloned\n");
     *tag = 0;
     return false;
   }
@@ -419,23 +424,17 @@ bool determineTag(const FiniteAutomaton& fa, StateSet q, Tag* tag) {
     }
   }
   if (q.empty()) {
-    fprintf(stderr, "determineTag: lowest priority found: %d, but no states left?\n", priority);
+    // fprintf(stderr, "determineTag: lowest priority found: %d, but no states left?\n", priority);
     *tag = 0;
     return true;
   }
 
-  if (q.size() == 1) {
-    *tag = (*q.begin())->tag();
-    return true;
-  }
+  *tag = (*std::min_element(
+        q.begin(),
+        q.end(),
+        [](auto x, auto y) { return x->tag() < y->tag(); }))->tag();
 
-  std::cerr << fmt::format("The impossible happened. |q| > 1 with determined priority {}\n", priority);
-  std::cerr << fmt::format("q := {}\n", q);
-  for (State* s : q) {
-    std::cerr << fmt::format("q{} prio {} tag {}\n", s->id(), s->priority(), s->tag());
-  }
-  abort();
-  return false;
+  return true;
 }
 
 FiniteAutomaton FiniteAutomaton::deterministic() const {
@@ -483,19 +482,17 @@ FiniteAutomaton FiniteAutomaton::deterministic() const {
   for (StateSet& q : Q) {
     // d_i represents the corresponding state in the DFA for all states of q from the NFA
     State* d_i = dfa.createState(q_i);
-    std::cerr << fmt::format("map q{} to d{} for {} states, {}.\n", q_i, d_i->id(), q.size(), to_string(q, "d"));
+    // std::cerr << fmt::format("map q{} to d{} for {} states, {}.\n", q_i, d_i->id(), q.size(), to_string(q, "d"));
 
     // if q contains an accepting state, then d is an accepting state in the DFA
     if (containsAcceptingState(q)) {
       d_i->setAccept(true);
       Tag tag{};
       if (determineTag(*this, q, &tag)) {
-        std::cerr << fmt::format("determineTag: q{} tag {} from {}.\n",
-            q_i, tag, q);
+        // std::cerr << fmt::format("determineTag: q{} tag {} from {}.\n", q_i, tag, q);
         d_i->setTag(tag);
       } else {
-        std::cerr << fmt::format("DFA accepting state {} merged from input states with different tags {}.\n",
-            q_i, to_string(q));
+        // std::cerr << fmt::format("DFA accepting state {} merged from input states with different tags {}.\n", q_i, to_string(q));
       }
     }
 

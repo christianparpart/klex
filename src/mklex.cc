@@ -33,21 +33,20 @@ int main(int argc, const char* argv[]) {
   if (flags.parameters().empty()) {
     //builder.declareHelper("IP4_OCTET", "0|[1-9]|[1-9][0-9]|[01][0-9][0-9]|2[0-4][0-9]|25[0-5]");
 
-    // builder.declare(11, "if");
-    // builder.declare(12, "when");
-    // builder.declare(13, "then");
-    // builder.declare(20, "[a-z][a-z]*");
+    builder.declare(10, "[ \t\n]+");
+    builder.declare(11, "if");
+    builder.declare(12, "else");
+    builder.declare(13, "then");
+    builder.declare(14, "[a-z][a-z]*"); // identifier
+    builder.declare(15, "0|[1-9][0-9]*"); // NUMBER
 
-    // builder.declare(10, "[ \t\n]+");
     // builder.declare(14, "is");
     // builder.declare(15, "of");
-    builder.declare(15, "12");
-    builder.declare(16, "0|[1-9][0-9]*"); // NUMBER
+    // builder.declare(15, "12");
     // builder.declare(51, "!@#$");
     // builder.declare(5, "0|[1-9]|[1-9][0-9]|[01][0-9][0-9]|2[0-4][0-9]|25[0-5]"); // IPv4 octet
     // builder.declare(6, "[0-9]|1[0-9]|2[0-9]|3[012]"); // CIDR mask
   }
-  fprintf(stderr, "*************************************************************************************\n");
 
   if (int n = flags.getNumber("print-fa"); n >= 1 && n <= 3) {
     lexer::fa::FiniteAutomaton fa = builder.buildAutomaton(static_cast<lexer::Builder::Stage>(n));
@@ -60,8 +59,10 @@ int main(int argc, const char* argv[]) {
     for (int t = lexer.recognize(); t != -1; t = lexer.recognize()) {
       switch (t) {
         default:
-          std::cerr << fmt::format("{}:{}: token {} (\"{}\")\n",
-                                   lexer.line(), lexer.column(), t, lexer.word());
+          std::cerr << fmt::format("[{}-{}]: token {} (\"{}\")\n",
+                                   lexer.offset().first,
+                                   lexer.offset().second,
+                                   t, lexer.word());
           break;
       }
     }
