@@ -1,3 +1,10 @@
+// This file is part of the "klex" project, http://github.com/christianparpart/klex>
+//   (c) 2018 Christian Parpart <christian@parpart.family>
+//
+// Licensed under the MIT License (the "License"); you may not use this
+// file except in compliance with the License. You may obtain a copy of
+// the License at: http://opensource.org/licenses/MIT
+
 #include <klex/lexer.h>
 #include <algorithm>
 #include <deque>
@@ -52,7 +59,7 @@ static std::string stateName(fa::StateId s) {
   }
 }
 
-static std::string toString(std::deque<fa::StateId> stack) {
+[[maybe_unused]] static std::string toString(std::deque<fa::StateId> stack) {
   std::stringstream sstr;
   sstr << "{";
   int i = 0;
