@@ -1,10 +1,10 @@
 #pragma once
 
-#include <lexer/fa.h>
-#include <lexer/transitionmap.h>
+#include <klex/fa.h>
+#include <klex/transitionmap.h>
 #include <map>
 
-namespace lexer {
+namespace klex {
 
 struct LexerDef {
   TransitionMap transitions;
@@ -12,4 +12,4 @@ struct LexerDef {
   std::map<fa::StateId, fa::Tag> acceptStates;
 };
 
-} // namespace lexer
+} // namespace klex

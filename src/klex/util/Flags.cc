@@ -14,7 +14,7 @@
 
 extern char** environ;
 
-namespace lexer::util {
+namespace klex::util {
 
 // {{{ Flags::Error
 Flags::Error::Error(ErrorCode code, std::string arg)
@@ -528,4 +528,4 @@ std::string FlagsErrorCategory::message(int ec) const {
 }
 // }}}
 
-}  // namespace lexer::util
+}  // namespace klex::util

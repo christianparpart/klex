@@ -1,4 +1,4 @@
-#include <lexer/regexpr.h>
+#include <klex/regexpr.h>
 
 #include <sstream>
 #include <limits>
@@ -25,7 +25,7 @@
   characterClassFragment  := character | character '-' character
 */
 
-namespace lexer {
+namespace klex {
 
 // {{{ AST
 void AlternationExpr::accept(RegExprVisitor& visitor) {
@@ -321,4 +321,4 @@ void RegExprEvaluator::visit(ClosureExpr& closureExpr) {
 }
 // }}}
 
-} // namespace lexer
+} // namespace klex

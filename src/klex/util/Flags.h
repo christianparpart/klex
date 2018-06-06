@@ -16,7 +16,7 @@
 #include <string>
 #include <utility>
 
-namespace lexer::util {
+namespace klex::util {
 
 class Flags {
  public:
@@ -188,20 +188,20 @@ class FlagsErrorCategory : public std::error_category {
 
 std::error_code make_error_code(Flags::ErrorCode errc);
 
-}  // namespace lexer::util
+}  // namespace klex::util
 
 namespace std {
-  template<> struct is_error_code_enum<lexer::util::Flags::ErrorCode> : public std::true_type {};
+  template<> struct is_error_code_enum<klex::util::Flags::ErrorCode> : public std::true_type {};
 } // namespace std
 
 namespace fmt {
   template<>
-  struct formatter<lexer::util::Flags> {
+  struct formatter<klex::util::Flags> {
     template <typename ParseContext>
     constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
     template <typename FormatContext>
-    constexpr auto format(const lexer::util::Flags& v, FormatContext &ctx) {
+    constexpr auto format(const klex::util::Flags& v, FormatContext &ctx) {
       return format_to(ctx.begin(), v.to_s());
     }
   };

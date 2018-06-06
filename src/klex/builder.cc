@@ -1,11 +1,11 @@
-#include <lexer/builder.h>
-#include <lexer/fa.h>
-#include <lexer/lexer.h>
-#include <lexer/lexerdef.h>
-#include <lexer/regexpr.h>
+#include <klex/builder.h>
+#include <klex/fa.h>
+#include <klex/lexer.h>
+#include <klex/lexerdef.h>
+#include <klex/regexpr.h>
 #include <iostream>
 
-namespace lexer {
+namespace klex {
 
 void Builder::declare(fa::Tag tag, std::string_view pattern) {
   std::unique_ptr<RegExpr> expr = RegExprParser{}.parse(pattern);
@@ -48,7 +48,7 @@ LexerDef Builder::compile() {
   const Alphabet alphabet = dfa.alphabet();
   TransitionMap transitionMap;
 
-  //std::cout << fa::dot({lexer::fa::DotGraph{dfa, "n", ""}}, "", true);
+  //std::cout << fa::dot({klex::fa::DotGraph{dfa, "n", ""}}, "", true);
 
   for (const fa::State* state : dfa.states()) {
     //std::cerr << fmt::format("Walking through state {} (with {} links)\n", state->id(), state->transitions().size());
@@ -66,4 +66,4 @@ LexerDef Builder::compile() {
   return LexerDef{std::move(transitionMap), dfa.initialState()->id(), std::move(acceptStates)};
 }
 
-} // namespace lexer
+} // namespace klex

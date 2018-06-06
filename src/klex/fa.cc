@@ -1,4 +1,4 @@
-#include <lexer/fa.h>
+#include <klex/fa.h>
 
 #include <algorithm>
 #include <cassert>
@@ -15,7 +15,7 @@
 #define DEBUG(msg, ...) do { } while (0)
 #endif
 
-namespace lexer::fa {
+namespace klex::fa {
 
 // ---------------------------------------------------------------------------
 // utils
@@ -939,4 +939,4 @@ void Generator::visit(ClosureExpr& closureExpr) {
     throw std::invalid_argument{"closureExpr"};
 }
 
-} // namespace lexer::fa
+} // namespace klex::fa

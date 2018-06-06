@@ -4,7 +4,7 @@
 #include <string>
 #include <fmt/format.h>
 
-namespace lexer {
+namespace klex {
 
 /**
  * Represents the alphabet of a finite automaton or regular expression.
@@ -26,16 +26,16 @@ class Alphabet {
   set_type alphabet_;
 };
 
-} // namespace lexer
+} // namespace klex
 
 namespace fmt {
   template<>
-  struct formatter<lexer::Alphabet> {
+  struct formatter<klex::Alphabet> {
     template <typename ParseContext>
     constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
 
     template <typename FormatContext>
-    constexpr auto format(const lexer::Alphabet& v, FormatContext &ctx) {
+    constexpr auto format(const klex::Alphabet& v, FormatContext &ctx) {
       return format_to(ctx.begin(), "{}", v.to_string());
     }
   };

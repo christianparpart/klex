@@ -1,10 +1,10 @@
 #pragma once
 
-#include <lexer/fa.h>
-#include <lexer/lexerdef.h>
+#include <klex/fa.h>
+#include <klex/lexerdef.h>
 #include <string_view>
 
-namespace lexer {
+namespace klex {
 
 class Builder {
  public:
@@ -27,5 +27,5 @@ class Builder {
   int nextPriority_;
 };
 
-} // namespace lexer
+} // namespace klex
 

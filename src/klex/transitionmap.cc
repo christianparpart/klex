@@ -1,8 +1,8 @@
-#include <lexer/transitionmap.h>
-#include <lexer/fa.h>
+#include <klex/transitionmap.h>
+#include <klex/fa.h>
 #include <algorithm>
 
-namespace lexer {
+namespace klex {
 
 void TransitionMap::define(fa::StateId currentState, fa::Symbol charCat, fa::StateId nextState) {
   mapping_[currentState][charCat] = nextState;
@@ -33,5 +33,5 @@ std::map<fa::Symbol, fa::StateId> TransitionMap::map(fa::StateId s) const {
   return m;
 }
 
-} // namespace lexer
+} // namespace klex
 

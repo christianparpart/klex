@@ -8,7 +8,7 @@
 
 #include <iterator>
 
-namespace lexer::util {
+namespace klex::util {
 
 template<typename T>
 class UnboxedRange {
@@ -81,4 +81,4 @@ UnboxedRange<BoxedContainer> unbox(const BoxedContainer& boxedContainer) {
   return UnboxedRange<BoxedContainer>(boxedContainer);
 }
 
-} // namespace lexer::util
+} // namespace klex::util

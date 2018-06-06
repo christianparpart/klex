@@ -1,7 +1,7 @@
-#include <lexer/alphabet.h>
+#include <klex/alphabet.h>
 #include <sstream>
 
-namespace lexer {
+namespace klex {
 
 std::string Alphabet::to_string() const {
   std::stringstream sstr;
@@ -20,4 +20,4 @@ std::string Alphabet::to_string() const {
   return std::move(sstr.str());
 }
 
-} // namespace lexer
+} // namespace klex

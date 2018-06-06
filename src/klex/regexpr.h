@@ -8,7 +8,7 @@
 
 #include <fmt/format.h>
 
-namespace lexer {
+namespace klex {
 
 class RegExprVisitor;
 
@@ -180,4 +180,4 @@ class RegExprEvaluator : protected RegExprVisitor {
   bool result_;
 };
 
-} // namespace lexer
+} // namespace klex

@@ -2,13 +2,13 @@
 
 #include <iostream>
 #include <string_view>
-#include <lexer/fa.h>
-#include <lexer/lexerdef.h>
+#include <klex/fa.h>
+#include <klex/lexerdef.h>
 #include <memory>
 #include <map>
 #include <vector>
 
-namespace lexer {
+namespace klex {
 
 /**
  * Lexer API for recognizing words.
@@ -60,4 +60,4 @@ class Lexer {
   unsigned column_;
 };
 
-} // namespace lexer
+} // namespace klex

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <lexer/alphabet.h>
-#include <lexer/regexpr.h>
-#include <lexer/util/UnboxedRange.h>
+#include <klex/alphabet.h>
+#include <klex/regexpr.h>
+#include <klex/util/UnboxedRange.h>
 
 #include <fmt/format.h>
 #include <list>
@@ -13,7 +13,7 @@
 #include <tuple>
 #include <vector>
 
-namespace lexer::fa {
+namespace klex::fa {
 
 class State;
 
@@ -309,28 +309,28 @@ std::string dot(std::list<DotGraph> list, std::string_view label = "", bool grou
 std::string prettySymbol(Symbol input, bool dot = false);
 std::string groupCharacterClassRanges(std::vector<Symbol> chars, bool dot = false);
 
-} // namespace lexer::fa
+} // namespace klex::fa
 
 namespace fmt {
   template<>
-  struct formatter<lexer::fa::StateSet> {
+  struct formatter<klex::fa::StateSet> {
     template <typename ParseContext>
     constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
 
     template <typename FormatContext>
-    constexpr auto format(const lexer::fa::StateSet& v, FormatContext &ctx) {
-      return format_to(ctx.begin(), "{}", lexer::fa::to_string(v));
+    constexpr auto format(const klex::fa::StateSet& v, FormatContext &ctx) {
+      return format_to(ctx.begin(), "{}", klex::fa::to_string(v));
     }
   };
 
   template<>
-  struct formatter<lexer::fa::OwnedStateSet> {
+  struct formatter<klex::fa::OwnedStateSet> {
     template <typename ParseContext>
     constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
 
     template <typename FormatContext>
-    constexpr auto format(const lexer::fa::OwnedStateSet& v, FormatContext &ctx) {
-      return format_to(ctx.begin(), "{}", lexer::fa::to_string(v));
+    constexpr auto format(const klex::fa::OwnedStateSet& v, FormatContext &ctx) {
+      return format_to(ctx.begin(), "{}", klex::fa::to_string(v));
     }
   };
 }

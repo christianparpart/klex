@@ -1,11 +1,11 @@
-#include <lexer/regexpr.h>
-#include <lexer/fa.h>
+#include <klex/regexpr.h>
+#include <klex/fa.h>
 
 #include <cstdlib>
 #include <iostream>
 #include <string>
 
-using namespace lexer;
+using namespace klex;
 
 void testRegExpr(std::string regexprStr, std::string inputStr) {
   RegExprParser rep;

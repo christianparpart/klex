@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.6)
-project(lexer VERSION "0.0.0" LANGUAGES CXX)
+project(klex VERSION "0.0.0" LANGUAGES CXX)
 
 set(MASTER_PROJECT OFF)
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
@@ -24,33 +24,33 @@ add_definitions(-pedantic)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/src
                     ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/lexer/sysconfig.h.cmake
-               ${CMAKE_CURRENT_BINARY_DIR}/src/lexer/sysconfig.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/klex/sysconfig.h.cmake
+               ${CMAKE_CURRENT_BINARY_DIR}/src/klex/sysconfig.h)
 
 # ----------------------------------------------------------------------------
-add_library(lexer STATIC
-    src/lexer/alphabet.cc
-    src/lexer/builder.cc
-    src/lexer/fa.cc
-    src/lexer/lexer.cc
-    src/lexer/regexpr.cc
-    src/lexer/transitionmap.cc
-    src/lexer/util/Flags.cc
+add_library(klex STATIC
+    src/klex/alphabet.cc
+    src/klex/builder.cc
+    src/klex/fa.cc
+    src/klex/lexer.cc
+    src/klex/regexpr.cc
+    src/klex/transitionmap.cc
+    src/klex/util/Flags.cc
     )
 
-target_link_libraries(lexer PUBLIC fmt::fmt-header-only)
-set_target_properties(lexer PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+target_link_libraries(klex PUBLIC fmt::fmt-header-only)
+set_target_properties(klex PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 if(CLANG_TIDY_EXE)
-  set_target_properties(lexer PROPERTIES CXX_CLANG_TIDY "${DO_CLANG_TIDY}")
+  set_target_properties(klex PROPERTIES CXX_CLANG_TIDY "${DO_CLANG_TIDY}")
 endif()
 
-install(TARGETS lexer DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+install(TARGETS klex DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 install(
-    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/lexer/"
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/include/lexer"
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/klex/"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/include/klex"
     FILES_MATCHING PATTERN "*.h")
 
-target_include_directories(lexer PUBLIC
+target_include_directories(klex PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
   $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
   $<INSTALL_INTERFACE:include>)
@@ -58,12 +58,9 @@ target_include_directories(lexer PUBLIC
 # ----------------------------------------------------------------------------
 add_executable(mklex src/mklex.cc)
 set_target_properties(mklex PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
-target_link_libraries(mklex lexer)
+target_link_libraries(mklex klex)
 
-add_executable(regexpr_test src/lexer/regexpr_test.cc)
-set_target_properties(regexpr_test PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
-target_link_libraries(regexpr_test lexer)
-
-add_executable(ldbg src/ldbg.cc)
-set_target_properties(ldbg  PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
-target_link_libraries(ldbg lexer)
+# ----------------------------------------------------------------------------
+add_executable(klexi src/klexi.cc)
+set_target_properties(klexi PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+target_link_libraries(klexi klex)

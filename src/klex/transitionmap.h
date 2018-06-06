@@ -1,10 +1,10 @@
 #pragma once
 
-#include <lexer/fa.h>
+#include <klex/fa.h>
 #include <map>
 #include <vector>
 
-namespace lexer {
+namespace klex {
 
 using CharCatId = int;
 
@@ -46,4 +46,4 @@ class TransitionMap {
   std::map<fa::StateId, std::map<fa::Symbol, fa::StateId>> mapping_;
 };
 
-} // namespace lexer
+} // namespace klex

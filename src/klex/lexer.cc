@@ -1,10 +1,10 @@
-#include <lexer/lexer.h>
+#include <klex/lexer.h>
 #include <algorithm>
 #include <deque>
 #include <iostream>
 #include <sstream>
 
-namespace lexer {
+namespace klex {
 
 #if 0
 #define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
@@ -148,4 +148,4 @@ void Lexer::rollback() {
   }
 }
 
-} // namespace lexer
+} // namespace klex
