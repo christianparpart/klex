@@ -7,42 +7,23 @@
 
 #include <klex/lexer.h>
 #include <fstream>
-//#include "table.cc"
-#include "token.h"
+
+#include "table.cc"
+#include "token.h" // generated via mklex
+
+//extern klex::LexerDef lexerDef; // generated via mklex
 
 int main(int argc, const char* argv[]) {
-  klex::LexerDef ld{
-    0,
-    std::map<klex::fa::StateId, std::map<klex::fa::Symbol, klex::fa::StateId>> {
-      {1, {{'\t', 1}, {'\n', 1}, {' ', 1}}},
-      {0, {{'a', 2}, {'b', 4} }},
-      {1, {{'=', 47}}},
-    },
-    klex::AcceptStateMap {
-      {   0,   0 }, //
-      {   1, -66 }, // Spacing
-      {   4, -65 }, // Comment
-      {   6,  29 }, // Mod
-      {   7,  37 }, // BitAnd
-      {   8,  41 }, // RndOpen
-      {   9,  42 }, // RndClose
-      {  11,  25 }, // Plus
-      { 132,  49 }, // Unless
-      { 133,  45 }, // Handler
-    }
-  };
-  // klex::TransitionMap t{
-  //   R{ 0, X{T{'\t', 1}, T{'\n', 1}, T{' ', 1}}},
-  //   R{ 1, X{T{'=', 47}}},
-  //   R{ 2, X{T{'.', 88}}},
-  //   R{ 3, X{T{'/', 56}}}
-  // };
 
-  // lexer::Lexer lex{lexerDef, std::ifstream(argv[1])};
+  klex::Lexer lexer {lexerDef};
+  lexer.open(std::make_unique<std::ifstream>(argv[1]));
 
-  // while (lex.recognize() != -1) {
-  //   lex.dump();
-  // }
+  for (int t = lexer.recognize(); t > 0; t = lexer.recognize()) {
+    std::cerr << fmt::format("[{}-{}]: token {} (\"{}\")\n",
+                             lexer.offset().first,
+                             lexer.offset().second,
+                             t, lexer.word());
+  }
 
   return EXIT_SUCCESS;
 }
