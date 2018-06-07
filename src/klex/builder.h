@@ -28,6 +28,7 @@ class Builder {
   fa::FiniteAutomaton buildAutomaton(Stage stage);
 
   LexerDef compile();
+  static LexerDef compile(const fa::FiniteAutomaton& dfa);
 
  private:
   fa::ThompsonConstruct fa_;

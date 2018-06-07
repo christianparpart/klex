@@ -230,7 +230,19 @@ std::unique_ptr<RegExpr> RegExprParser::parseAtom() {
       return parseCharacterClass();
     case '\\':
       consume();
-      return std::make_unique<CharacterExpr>(consume());
+      switch (currentChar()) {
+        case 't':
+          consume();
+          return std::make_unique<CharacterExpr>('\t');
+        case 'n':
+          consume();
+          return std::make_unique<CharacterExpr>('\n');
+        case 'r':
+          consume();
+          return std::make_unique<CharacterExpr>('\r');
+        default:
+          return std::make_unique<CharacterExpr>(consume());
+      }
     default:
       return std::make_unique<CharacterExpr>(consume());
   }
@@ -248,7 +260,19 @@ std::unique_ptr<RegExpr> RegExprParser::parseCharacterClass() {
 std::unique_ptr<RegExpr> RegExprParser::parseCharacterClassFragment() {
   if (currentChar() == '\\') {
     consume();
-    return std::make_unique<CharacterExpr>(consume());
+    switch (currentChar()) {
+      case 't':
+        consume();
+        return std::make_unique<CharacterExpr>('\t');
+      case 'n':
+        consume();
+        return std::make_unique<CharacterExpr>('\n');
+      case 'r':
+        consume();
+        return std::make_unique<CharacterExpr>('\r');
+      default:
+        return std::make_unique<CharacterExpr>(consume());
+    }
   }
 
   char c1 = consume();

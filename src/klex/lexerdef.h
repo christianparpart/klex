@@ -13,10 +13,12 @@
 
 namespace klex {
 
+using AcceptStateMap = std::map<fa::StateId, fa::Tag>;
+
 struct LexerDef {
-  TransitionMap transitions;
   fa::StateId initialStateId;
-  std::map<fa::StateId, fa::Tag> acceptStates;
+  TransitionMap transitions;
+  AcceptStateMap acceptStates;
 };
 
 } // namespace klex

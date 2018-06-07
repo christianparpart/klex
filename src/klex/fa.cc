@@ -130,7 +130,7 @@ std::string dot(std::list<DotGraph> graphs, std::string_view label, bool groupEd
     for (const State* s: graph.fa.states()) {
       if (s->isAccepting()) {
         sstr << "    node [shape=doublecircle";
-        sstr << ",label=\"" << fmt::format("{}{}:{}", graph.stateLabelPrefix, s->id(), s->tag()) << "\"";
+        //(FIXME, BUGGY?) sstr << ",label=\"" << fmt::format("{}{}:{}", graph.stateLabelPrefix, s->id(), s->tag()) << "\"";
         sstr << "]; "
              << graph.stateLabelPrefix << s->id() << ";\n";
       }

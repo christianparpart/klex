@@ -27,6 +27,12 @@ constexpr fa::StateId ErrorState {808080}; // static_cast<fa::StateId>(-1);
  */
 class TransitionMap {
  public:
+  TransitionMap()
+      : mapping_{} {}
+
+  TransitionMap(std::map<fa::StateId, std::map<fa::Symbol, fa::StateId>> mapping)
+      : mapping_{std::move(mapping)} {}
+
   /**
    * Defines a new mapping for (currentState, charCat) to (nextState).
    */

@@ -52,6 +52,10 @@ fa::FiniteAutomaton Builder::buildAutomaton(Stage stage) {
 
 LexerDef Builder::compile() {
   const fa::FiniteAutomaton dfa = buildAutomaton(Stage::Deterministic);
+  return compile(dfa);
+}
+
+LexerDef Builder::compile(const fa::FiniteAutomaton& dfa) {
   const Alphabet alphabet = dfa.alphabet();
   TransitionMap transitionMap;
 
@@ -70,7 +74,7 @@ LexerDef Builder::compile() {
   for (const fa::State* s : dfa.acceptStates())
     acceptStates.emplace(s->id(), s->tag());
 
-  return LexerDef{std::move(transitionMap), dfa.initialState()->id(), std::move(acceptStates)};
+  return LexerDef{dfa.initialState()->id(), std::move(transitionMap), std::move(acceptStates)};
 }
 
 } // namespace klex
