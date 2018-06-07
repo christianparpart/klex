@@ -8,10 +8,9 @@
 #include <klex/lexer.h>
 #include <fstream>
 
-#include "table.cc"
 #include "token.h" // generated via mklex
 
-//extern klex::LexerDef lexerDef; // generated via mklex
+extern klex::LexerDef lexerDef; // generated via mklex
 
 int main(int argc, const char* argv[]) {
 

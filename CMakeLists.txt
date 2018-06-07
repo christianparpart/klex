@@ -40,7 +40,7 @@ add_library(klex STATIC
     src/klex/util/Flags.cc
     )
 
-target_link_libraries(klex PUBLIC fmt::fmt-header-only)
+target_link_libraries(klex PUBLIC fmt::fmt-header-only stdc++fs)
 set_target_properties(klex PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 if(CLANG_TIDY_EXE)
   set_target_properties(klex PROPERTIES CXX_CLANG_TIDY "${DO_CLANG_TIDY}")
@@ -63,19 +63,34 @@ set_target_properties(mklex PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 target_link_libraries(mklex klex)
 
 # ----------------------------------------------------------------------------
-  add_custom_target(
-      OUTPUT table.cc token.h
-      COMMAND ${CMAKE_CURRENT_BINARY_DIR}/mklex
-      ARGS -t table.cc -T token.h -f examples/flow.klex
-      DEPENDS mklex examples/flow.klex
-      COMMEND "Generating lexer table and tokens"
-      VERBATIM)
-  set_source_files_properties(table.cc token.h PROPERTIES GENERATED TRUE)
+function(klex_generate_cpp KLEX_FILE TOKEN_FILE TABLE_FILE)
+  set(${TABLE_FILE} "${CMAKE_CURRENT_BINARY_DIR}/${KLEX_FILE}.table.cc")
+  set(${TABLE_FILE} "${CMAKE_CURRENT_BINARY_DIR}/${KLEX_FILE}.table.cc" PARENT_SCOPE)
 
-  add_executable(example_flowlexer examples/flowlexer.cc)
+  message(STATUS "klex_generate_cpp: klex file: ${KLEX_FILE}")
+  message(STATUS "klex_generate_cpp: token out: ${TOKEN_FILE}")
+  message(STATUS "klex_generate_cpp: table out: ${TABLE_FILE} ${${TABLE_FILE}}")
+
+  add_custom_command(
+      OUTPUT "${TOKEN_FILE}" "${${TABLE_FILE}}"
+      COMMAND ${CMAKE_CURRENT_BINARY_DIR}/mklex
+      ARGS -f "${KLEX_FILE}" -t "${${TABLE_FILE}}" -T "${TOKEN_FILE}"
+      DEPENDS mklex ${KLEX_FILE}
+      COMMENT "Generating lexer table and tokens for ${KLEX_FILE}"
+      VERBATIM)
+  set_source_files_properties(${TOKEN_FILE} PROPERTIES GENERATED TRUE)
+  set_source_files_properties(${${TABLE_FILE}} PROPERTIES GENERATED TRUE)
+endfunction()
+
+# ----------------------------------------------------------------------------
+if(KLEX_EXAMPLES)
+  set(FLOW_TOKEN_SRC "${CMAKE_CURRENT_BINARY_DIR}/examples/token.h")
+  klex_generate_cpp(examples/flow.klex ${FLOW_TOKEN_SRC} FLOW_TABLE_SRC)
+  message(STATUS "example: KLEX_TABLE_SRC: ${FLOW_TABLE_SRC}")
+
+  add_executable(example_flowlexer examples/flowlexer.cc ${FLOW_TABLE_SRC})
   set_target_properties(example_flowlexer PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
   target_link_libraries(example_flowlexer klex)
   target_include_directories(example_flowlexer PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/examples)
   add_dependencies(example_flowlexer mklex)
-if(KLEX_EXAMPLES)
 endif(KLEX_EXAMPLES)
