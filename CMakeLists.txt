@@ -63,9 +63,19 @@ set_target_properties(mklex PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 target_link_libraries(mklex klex)
 
 # ----------------------------------------------------------------------------
-if(KLEX_EXAMPLES)
+  add_custom_target(
+      OUTPUT table.cc token.h
+      COMMAND ${CMAKE_CURRENT_BINARY_DIR}/mklex
+      ARGS -t table.cc -T token.h -f examples/flow.klex
+      DEPENDS mklex examples/flow.klex
+      COMMEND "Generating lexer table and tokens"
+      VERBATIM)
+  set_source_files_properties(table.cc token.h PROPERTIES GENERATED TRUE)
+
   add_executable(example_flowlexer examples/flowlexer.cc)
   set_target_properties(example_flowlexer PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
   target_link_libraries(example_flowlexer klex)
+  target_include_directories(example_flowlexer PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/examples)
   add_dependencies(example_flowlexer mklex)
+if(KLEX_EXAMPLES)
 endif(KLEX_EXAMPLES)
