@@ -67,15 +67,17 @@ function(klex_generate_cpp KLEX_FILE TOKEN_FILE TABLE_FILE)
   set(${TABLE_FILE} "${CMAKE_CURRENT_BINARY_DIR}/${KLEX_FILE}.table.cc")
   set(${TABLE_FILE} "${CMAKE_CURRENT_BINARY_DIR}/${KLEX_FILE}.table.cc" PARENT_SCOPE)
 
-  message(STATUS "klex_generate_cpp: klex file: ${KLEX_FILE}")
+  set(klex_file "${CMAKE_CURRENT_SOURCE_DIR}/${KLEX_FILE}")
+
+  message(STATUS "klex_generate_cpp: klex file: ${klex_file}")
   message(STATUS "klex_generate_cpp: token out: ${TOKEN_FILE}")
   message(STATUS "klex_generate_cpp: table out: ${TABLE_FILE} ${${TABLE_FILE}}")
 
   add_custom_command(
       OUTPUT "${TOKEN_FILE}" "${${TABLE_FILE}}"
       COMMAND ${CMAKE_CURRENT_BINARY_DIR}/mklex
-      ARGS -f "${KLEX_FILE}" -t "${${TABLE_FILE}}" -T "${TOKEN_FILE}"
-      DEPENDS mklex ${KLEX_FILE}
+      ARGS -f "${klex_file}" -t "${${TABLE_FILE}}" -T "${TOKEN_FILE}"
+      DEPENDS mklex ${klex_file}
       COMMENT "Generating lexer table and tokens for ${KLEX_FILE}"
       VERBATIM)
   set_source_files_properties(${TOKEN_FILE} PROPERTIES GENERATED TRUE)
