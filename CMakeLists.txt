@@ -6,10 +6,11 @@ if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   set(MASTER_PROJECT ON)
 endif ()
 
-option(LEXER_EMBEDDED_FMTLIB "Build against embedded fmtlib [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
+option(KLEX_EMBEDDED_FMTLIB "Build against embedded fmtlib [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
+option(KLEX_EXAMPLES "Build examples [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
 
 # fmtlib
-if(LEXER_EMBEDDED_FMTLIB)
+if(KLEX_EMBEDDED_FMTLIB)
   add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fmt" EXCLUDE_FROM_ALL)
   add_definitions(-DFMT_USE_WINDOWS_H=0)
 else()
@@ -34,6 +35,7 @@ add_library(klex STATIC
     src/klex/fa.cc
     src/klex/lexer.cc
     src/klex/regexpr.cc
+    src/klex/ruleparser.cc
     src/klex/transitionmap.cc
     src/klex/util/Flags.cc
     )
@@ -59,3 +61,11 @@ target_include_directories(klex PUBLIC
 add_executable(mklex src/mklex.cc)
 set_target_properties(mklex PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 target_link_libraries(mklex klex)
+
+# ----------------------------------------------------------------------------
+if(KLEX_EXAMPLES)
+  add_executable(example_flowlexer examples/flowlexer.cc)
+  set_target_properties(example_flowlexer PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+  target_link_libraries(example_flowlexer klex)
+  add_dependencies(example_flowlexer mklex)
+endif(KLEX_EXAMPLES)

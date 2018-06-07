@@ -41,16 +41,16 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
   os << "  // initial state\n";
   os << "  " << lexerDef.initialStateId << ",\n";
   os << "  // state transition table \n";
-  os << "  klex::TransitionMap {\n";
+  os << "  klex::TransitionMap::Container {\n";
   for (klex::fa::StateId stateId : lexerDef.transitions.states()) {
-    os << "    { " << stateId << ", {";
+    os << "    { " << fmt::format("{:>3}", stateId) << ", {";
     int c = 0;
     for (std::pair<klex::fa::Symbol, klex::fa::StateId> t : lexerDef.transitions.map(stateId)) {
       if (c) os << ", ";
       os << "{" << charLiteral(t.first) << ", " << t.second << "}";
       c++;
     }
-    os << "},\n";
+    os << "}},\n";
   }
   os << "  },\n";
   os << "  // accept state to action label mappings\n";
@@ -73,7 +73,7 @@ void generateTokenDefCxx(std::ostream& os, const klex::RuleList& rules, const st
   os << "#pragma once\n";
   os << "enum class " << symbol << " {\n";
   for (const klex::Rule& rule : rules) {
-    os << fmt::format("  {:<20} = {}, // {} \n", rule.name, rule.tag, rule.pattern);
+    os << fmt::format("  {:<20} = {:<4}, // {} \n", rule.name, rule.tag, rule.pattern);
   }
   os << "};\n";
 }
@@ -92,23 +92,15 @@ int main(int argc, const char* argv[]) {
   flags.parse(argc, argv);
 
   if (flags.getBool("help")) {
-    std::cout << flags.helpText();
+    std::cout << "mklex - klex lexer generator\n"
+              << "(c) 2018 Christian Parpart <christian@parpart.family>\n"
+              << "\n"
+              << flags.helpText();
     return EXIT_SUCCESS;
   }
 
-#if 0
   klex::RuleParser ruleParser{std::make_unique<std::ifstream>(flags.getString("file"))};
-  RuleList rules = ruleParser.parseRules();
-#else
-  klex::RuleList rules {
-    {1, 10, "Spacing", "[ \\t\\n]+"},
-    {2, 11, "If", "if"},
-    {3, 12, "Then", "then"},
-    {4, 13, "Else", "else"},
-    {5, 14, "Identifier", "[a-z][a-z]*"},
-    {6, 15, "NumberLiteral", "0|[1-9][0-9]*"},
-  };
-#endif
+  klex::RuleList rules = ruleParser.parseRules();
 
   klex::Builder builder;
   for (const klex::Rule& rule : rules)

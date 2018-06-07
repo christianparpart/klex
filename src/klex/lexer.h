@@ -32,9 +32,18 @@ class Lexer {
   void open(std::unique_ptr<std::istream> input);
 
   /**
-   * Parses a token and returns its tag (or -1 on lexical error).
+   * Recognizes one token (ignored patterns are skipped).
+   *
+   * @return -1 on parse error, or Rule tag for recognized pattern.
    */
   fa::Tag recognize();
+
+  /**
+   * Recognizes one token, regardless of it is to be ignored or not.
+   *
+   * @return -1 on parse error, or Rule tag for recognized pattern.
+   */
+  fa::Tag recognizeOne();
 
   //! the underlying word of the currently recognized token
   std::string word() const { return word_; }

@@ -27,10 +27,12 @@ constexpr fa::StateId ErrorState {808080}; // static_cast<fa::StateId>(-1);
  */
 class TransitionMap {
  public:
+  using Container = std::map<fa::StateId, std::map<fa::Symbol, fa::StateId>>;
+
   TransitionMap()
       : mapping_{} {}
 
-  TransitionMap(std::map<fa::StateId, std::map<fa::Symbol, fa::StateId>> mapping)
+  TransitionMap(Container mapping)
       : mapping_{std::move(mapping)} {}
 
   /**
@@ -56,7 +58,7 @@ class TransitionMap {
   std::map<fa::Symbol, fa::StateId> map(fa::StateId inputState) const;
 
  private:
-  std::map<fa::StateId, std::map<fa::Symbol, fa::StateId>> mapping_;
+  Container mapping_;
 };
 
 } // namespace klex

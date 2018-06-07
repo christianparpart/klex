@@ -1,23 +1,15 @@
 # vim:syntax=klex
 # Lexical Grammar for the Flow Language
 
-%pragma c++ namespace flow::lang
-
-# ensures we use `enum class` (instead of `enum`) when generating C++ table and token enum (default)
-# %pragma c++ enum class Token
-
-# capitalizes symbols for tokens
-%pragma token capitalize
-
 # be case insensitive in pattern matching?
-# %pragma input ignorecase
+# %pragma ignorecase
 
-NUMBER            ::= 0|[1-9][0-9]*
-IDENT             ::= [a-zA-Z_][a-zA-Z_0-9]*
-IP4               ::= {IP4Oct}(.{IP4Oct}){3}
-IP4Cidr           ::= {IP4}/{CidrMask}
-
-%%
+# NUMBER            ::= 0|[1-9][0-9]*
+# IDENT             ::= [a-zA-Z_][a-zA-Z_0-9]*
+# IP4               ::= {IP4Oct}(.{IP4Oct}){3}
+# IP4Cidr           ::= {IP4}/{CidrMask}
+# 
+# %%
 
 # symbols
 Assign            ::= =
@@ -86,20 +78,20 @@ NumberType        ::= int
 StringType        ::= string
 
 # misc
-Ident             ::= {IDENT}(.{IDENT})*
+Ident             ::= [a-zA-Z_][a-zA-Z_0-9]*
 RegExpGroup       ::= \$[0-9]+
 Period            ::= .
 DblPeriod         ::= ..
 Ellipsis          ::= ...
-Eof               ::= <<EOF>>
-Comment(ignore)   ::= '#'[^$]*
-Spacing(ignore)   ::= " \t\n"
+Comment(ignore)   ::= "#[^$]*"
+Spacing(ignore)   ::= "[ \t\n]+"
+# Eof               ::= <<EOF>>
 
 # literals
 TrueLiteral       ::= true
 FalseLiteral      ::= false
 StringLiteral     ::= \"[^"]*\"
-NumberLiteral     ::= {NUMBER}
-IPv4Literal       ::= {IP4}
+NumberLiteral     ::= 0|[1-9][0-9]*
+# IPv4Literal       ::= {IP4}
 # IP6             ::= TODO
 # IP4Cidr         ::= TODO

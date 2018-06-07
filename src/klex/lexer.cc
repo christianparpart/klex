@@ -74,6 +74,14 @@ static std::string stateName(fa::StateId s) {
 }
 
 fa::Tag Lexer::recognize() {
+  for (;;) {
+    if (fa::Tag tag = recognizeOne(); tag >= -1) {
+      return tag;
+    }
+  }
+}
+
+fa::Tag Lexer::recognizeOne() {
   // init
   oldOffset_ = offset_;
   word_.clear();

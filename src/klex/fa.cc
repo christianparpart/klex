@@ -113,6 +113,37 @@ std::string groupCharacterClassRanges(std::vector<Symbol> chars, bool dot) {
   return sstr.str();
 }
 
+template<typename StringType>
+static std::string escapeString(const StringType& str) {
+  std::stringstream sstr;
+  for (char ch : str) {
+    switch (ch) {
+      case '\r':
+        sstr << "\\r";
+        break;
+      case '\n':
+        sstr << "\\n";
+        break;
+      case '\t':
+        sstr << "\\t";
+        break;
+      case '"':
+        sstr << "\\\"";
+        break;
+      case ' ':
+        sstr << ' ';
+        break;
+      default:
+        if (std::isprint(ch)) {
+          sstr << ch;
+        } else {
+          sstr << fmt::format("\\x{:02x}", ch);
+        }
+    }
+  }
+  return sstr.str();
+}
+
 std::string dot(std::list<DotGraph> graphs, std::string_view label, bool groupEdges) {
   std::stringstream sstr;
 
@@ -120,10 +151,10 @@ std::string dot(std::list<DotGraph> graphs, std::string_view label, bool groupEd
 
   int clusterId = 0;
   sstr << "  rankdir=LR;\n";
-  sstr << "  label=\"" << label << "\";\n";
+  sstr << "  label=\"" << escapeString(label) << "\";\n";
   for (const DotGraph& graph : graphs) {
     sstr << "  subgraph cluster_" << clusterId << " {\n";
-    sstr << "    label=\"" << graph.graphLabel << "\";\n";
+    sstr << "    label=\"" << escapeString(graph.graphLabel) << "\";\n";
     clusterId++;
 
     // acceptState
@@ -162,7 +193,7 @@ std::string dot(std::list<DotGraph> graphs, std::string_view label, bool groupEd
           const State* targetState = tgroup.first;
           sstr << "    " << graph.stateLabelPrefix << state->id()
                << " -> " << graph.stateLabelPrefix << targetState->id();
-          sstr << "   [label=\"" << label << "\"]";
+          sstr << "   [label=\"" << escapeString(label) << "\"]";
           sstr << ";\n";
         }
       } else {
@@ -171,7 +202,7 @@ std::string dot(std::list<DotGraph> graphs, std::string_view label, bool groupEd
           const State* targetState = transition.state;
           sstr << "    " << graph.stateLabelPrefix << state->id()
                << " -> " << graph.stateLabelPrefix << targetState->id();
-          sstr << "   [label=\"" << label << "\"]";
+          sstr << "   [label=\"" << escapeString(label) << "\"]";
           sstr << ";\n";
         }
       }

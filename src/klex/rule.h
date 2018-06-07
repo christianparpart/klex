@@ -23,3 +23,20 @@ struct Rule {
 using RuleList = std::list<Rule>;
 
 } // namespace klex
+
+namespace fmt {
+  template<>
+  struct formatter<klex::Rule> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    constexpr auto format(const klex::Rule& v, FormatContext &ctx) {
+      return format_to(ctx.begin(), "{{{}, {}, \"{}\", \"{}\"}}",
+          v.priority,
+          v.tag,
+          v.name,
+          v.pattern);
+    }
+  };
+}
