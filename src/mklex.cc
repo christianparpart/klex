@@ -9,6 +9,7 @@
 #include <klex/builder.h>
 #include <klex/lexer.h>
 #include <klex/fa.h>
+#include <klex/rule.h>
 #include <klex/util/Flags.h>
 
 #include <cstdlib>
@@ -22,26 +23,34 @@ int main(int argc, const char* argv[]) {
   flags.defineBool("help", 'h', "Prints this help and exits");
   flags.defineString("file", 'f', "PATTERN_FILE", "Input file with lexer rules");
   flags.defineString("output", 'o', "OUTPUT_FILE", "Output file that will contain the compiled tables");
+  flags.defineString("output-token", 0, "OUTPUT_FILE", "Output file that will contain the compiled tables");
+  flags.defineString("fa-dot", 't', "Writes dot graph of final finite automaton. Use - to represent stdout.");
+  flags.defineNumber("fa-optimize", 'O', "LEVEL", "Finite Automaton's optimization level (0, 1, 2)", 2);
+  flags.defineBool("fa-renumber", 'r', "Renumbers states ordered ascending when generating dot file");
   flags.parse(argc, argv);
 
   if (flags.getBool("help")) {
     std::cout << flags.helpText();
     return EXIT_SUCCESS;
   }
-#if 0
-  // TODO
-  klex::Builder builder;
-  klex::Rule patternParser{std::ifstream(flags.getString("file"))};
-  for (klex::Pattern pattern : patternParser)
-    builder.declare(pattern.tag(), pattern.regex());
 
-  if (int n = flags.getNumber("print-fa"); n >= 1 && n <= 3) {
-    klex::fa::FiniteAutomaton fa = builder.buildAutomaton(static_cast<klex::Builder::Stage>(n));
-    //fa.renumber();
+  klex::Builder builder;
+  klex::Rule ruleParser{std::ifstream(flags.getString("file"))};
+  for (const klex::Rule& rule : ruleParser)
+    builder.declare(rule.tag, rule.pattern);
+
+  int optimizationLevel = flags.getNumber("fa-optimize");
+  if (std::string dotfile = flags.getString("fa-dot"); !dotfile.empty()) {
+    klex::fa::FiniteAutomaton fa = builder.buildAutomaton(
+        static_cast<klex::Builder::Stage>(optimizationLevel));
+
+    if (flags.getBool("fa-renumber"))
+      fa.renumber();
 
     std::cout << klex::fa::dot({klex::fa::DotGraph{fa, "n", ""}}, "", !flags.getBool("no-group-edges"));
   } 
-#endif
+
+  // TODO: generate table-header and token-header file
 
   return EXIT_SUCCESS;
 }

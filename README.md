@@ -1,60 +1,33 @@
-# FUN INCOMING
-
-this is my playground project to learn how lexer generators work.
+# klex - A Scanner Generator
 
 - mklex: CLI tool for compiling regular expressions into state transition tables
 - libklex: C++ library for lexing
-- klexi: testing tool for quick regular expression pattern development and testing
-
-### klexi CLI
-
-```
-Usage:
-    klexi -f SOURCE_FILE [RULE ...]
-
-    -f, --file=PATH         source file to lexically analyze.
-    -t, --dot               prints dot-graph to stdout, suitable for piping into xdot
-    -d, --dump              prints tokenized information from the input file to stderr
-
-        RULE ...            regular expression rules to declare in order
-```
 
 ### mklex CLI
 ```
 Usage:
   mklex [-v] -f RULES_FILE -o OUTPUT_FILE
+
+    -f, --file=PATH           source file containing the lexer rules
+    -o, --output=PATH         generated header file containing tables and token definitions
+        --token-output=PATH   split out token definitions into seperate generated header file.
+    -t, --dot=PATH            writes dot graph of final finite automaton. Use - to represent stdout.
+    -O, --optimization=NUM    level of optimization for the finite automaton.
+                                0 - raw NFA, no tables can be generated.
+                                1 - DFA, input rules will be transformed to DFA but not minimized.
+                                2 - DFA-minimized, like DFA but also compressed.
 ```
 
-### Rules File Format
+### klex grammar
 
 ```
 RuleFile    ::= (SymbolDef* '%%')? RuleDef*
-SymbolDef   ::= '{' IDENT '}' SP+ Expression LF
+SymbolDef   ::= IDENT SP+ Expression LF
 RuleDef     ::= Expression
 Expression  ::= <regular expression> LF
 SP          ::= (\s\t)+
 LF          ::= '\n'
-
-```
-
-```
-%token Token
-%%
-{NUMBER}  0|[1-9][0-9]*
-{IDENT}   [a-zA-Z_][a-zA-Z_0-9]*
-
-%%
-
-" \t\n"
-"if"
-"else"
-"{"
-"}"
-"("
-")"
-{NUMBER}
-{IDENT}
-<<EOF>>
+IDENT       ::= [a-zA-Z_][a-zA-Z0-9_]*
 ```
 
 ### libklex API
