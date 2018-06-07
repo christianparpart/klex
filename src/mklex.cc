@@ -17,6 +17,9 @@
 #include <fstream>
 #include <string>
 
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+
 std::string charLiteral(int ch) {
   if (std::isprint(ch))
     return fmt::format("'{}'", (char)ch);
@@ -99,7 +102,9 @@ int main(int argc, const char* argv[]) {
     return EXIT_SUCCESS;
   }
 
-  klex::RuleParser ruleParser{std::make_unique<std::ifstream>(flags.getString("file"))};
+  fs::path klexFileName = flags.getString("file");
+
+  klex::RuleParser ruleParser{std::make_unique<std::ifstream>(klexFileName.string())};
   klex::RuleList rules = ruleParser.parseRules();
 
   klex::Builder builder;
@@ -120,6 +125,7 @@ int main(int argc, const char* argv[]) {
   }
 
   if (std::string tokenFile = flags.getString("output-token"); tokenFile != "-") {
+    fs::create_directories(fs::path{tokenFile}.remove_filename());
     std::ofstream ofs {tokenFile};
     generateTokenDefCxx(ofs, rules, flags.getString("token-name"));
   } else {
@@ -128,6 +134,7 @@ int main(int argc, const char* argv[]) {
 
   klex::LexerDef lexerDef = klex::Builder::compile(fa);
   if (std::string tableFile = flags.getString("output-table"); tableFile != "-") {
+    fs::create_directories(fs::path{tableFile}.remove_filename());
     std::ofstream ofs {tableFile};
     generateTableDefCxx(ofs, lexerDef, rules, flags.getString("table-name"));
   } else {
