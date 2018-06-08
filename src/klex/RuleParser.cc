@@ -16,7 +16,7 @@ RuleParser::RuleParser(std::unique_ptr<std::istream> input)
     : stream_{std::move(input)},
       currentChar_{0},
       offset_{0},
-      nextPriority_{1} {
+      nextTag_{1} {
   consumeChar();
 }
 
@@ -60,15 +60,12 @@ Rule RuleParser::parseRule() {
   consumeSpace();
   consumeChar('\n');
 
-  // TODO: merge priority into tag and assume smaller tags have higher priority
-  // (they're always equal in auto-generated code)
-  int priority = nextPriority_++;
-  Tag tag = priority;
+  Tag tag = nextTag_++;
 
   if (ignore)
     tag = -tag;
 
-  return Rule{priority, tag, token, pattern};
+  return Rule{tag, token, pattern};
 }
 
 std::string RuleParser::parseExpression() {

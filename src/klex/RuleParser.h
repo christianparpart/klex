@@ -43,7 +43,7 @@ class RuleParser {
   std::unique_ptr<std::istream> stream_;
   char currentChar_;
   unsigned offset_;
-  int nextPriority_;
+  int nextTag_;
 };
 
 class RuleParser::UnexpectedToken : public std::runtime_error {

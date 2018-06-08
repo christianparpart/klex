@@ -48,7 +48,6 @@ class State {
       : id_{id},
         accepting_{accepting},
         tag_{tag},
-        priority_{1},
         transitions_{} {}
 
   StateId id() const noexcept { return id_; }
@@ -68,14 +67,10 @@ class State {
   Tag tag() const noexcept { return tag_; }
   void setTag(Tag tag) { tag_ = tag; }
 
-  int priority() const noexcept { return priority_; }
-  void setPriority(int priority) { priority_ = priority; }
-
  private:
   StateId id_;
   bool accepting_;
-  Tag tag_;
-  int priority_; //! smallest number reflects the highest priority
+  Tag tag_; //! smallest tag reflects the highest priority
   EdgeList transitions_;
 };
 

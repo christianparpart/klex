@@ -1,6 +1,6 @@
 ### The very incomplete TODO checklist
 
-- [ ] FA: merge priority into tag and assume smaller tags have higher priority
+- [ ] RE/FA: detect EOL ('$')
 - [ ] FA: how to handle EOF?
 - [ ] RE: be able to parse "(a|)", which is either "a" or ""
 - [ ] RE: invertible character classes ([^abc])

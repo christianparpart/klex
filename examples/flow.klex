@@ -70,6 +70,7 @@ While             ::= while
 For               ::= for
 Import            ::= import
 From              ::= from
+Var               ::= var
 
 # data types
 VoidType          ::= void

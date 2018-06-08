@@ -16,7 +16,7 @@ namespace klex {
 
 class Builder {
  public:
-  Builder() : fa_{}, nextPriority_{1} {}
+  Builder() : fa_{} {}
 
   void ignore(std::string_view pattern); // such as " \t\n" or "#.*$"
   void declare(Tag tag, std::string_view pattern);
@@ -28,7 +28,6 @@ class Builder {
 
  private:
   ThompsonConstruct fa_;
-  int nextPriority_;
 };
 
 } // namespace klex

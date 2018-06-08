@@ -22,13 +22,10 @@ void Builder::declare(Tag tag, std::string_view pattern) {
   DFA dfa = DFA::construct(std::move(nfa));
   DFA dfamin = dfa.minimize();
 
-  // std::cerr << fmt::format("Builder.declare: prio {}, tag {} RE {}\n", nextPriority_, tag, pattern);
+  // std::cerr << fmt::format("Builder.declare: tag {} RE {}\n", tag, pattern);
   for (State* s : dfamin.acceptStates()) {
     s->setTag(tag);
-    s->setPriority(nextPriority_);
   }
-
-  nextPriority_++;
 
   ThompsonConstruct tc { std::move(dfamin) };
 

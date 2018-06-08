@@ -147,21 +147,21 @@ bool determineTag(const ThompsonConstruct& fa, StateSet q, Tag* tag) {
     return false;
   }
 
-  const int priority = (*std::min_element(
+  const Tag lowestTag = std::abs((*std::min_element(
       q.begin(), q.end(),
-      [](auto x, auto y) { return x->priority() < y->priority(); }))->priority();
+      [](auto x, auto y) { return std::abs(x->tag()) < std::abs(y->tag()); }))->tag());
 
   // eliminate lower priorities
   for (auto i = q.begin(), e = q.end(); i != e; ) {
     State* s = *i;
-    if (s->priority() != priority) {
+    if (s->tag() != lowestTag) {
       i = q.erase(i);
     } else {
       i++;
     }
   }
   if (q.empty()) {
-    // fprintf(stderr, "determineTag: lowest priority found: %d, but no states left?\n", priority);
+    // fprintf(stderr, "determineTag: lowest tag found: %d, but no states left?\n", priority);
     *tag = 0;
     return true;
   }

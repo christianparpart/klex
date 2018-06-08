@@ -13,7 +13,6 @@
 namespace klex {
 
 struct Rule {
-  int priority;
   Tag tag;
   std::string name;
   std::string pattern;
@@ -31,8 +30,7 @@ namespace fmt {
 
     template <typename FormatContext>
     constexpr auto format(const klex::Rule& v, FormatContext &ctx) {
-      return format_to(ctx.begin(), "{{{}, {}, \"{}\", \"{}\"}}",
-          v.priority,
+      return format_to(ctx.begin(), "{{{}, \"{}\", \"{}\"}}",
           v.tag,
           v.name,
           v.pattern);
