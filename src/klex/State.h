@@ -78,8 +78,8 @@ class State {
 using OwnedStateSet = std::set<std::unique_ptr<State>>;
 using StateSet = std::set<State*>;
 #else
-using OwnedStateSet = std::vector<std::unique_ptr<State>>;
-using StateSet = std::vector<State*>;
+using OwnedStateSet = std::list<std::unique_ptr<State>>;
+using StateSet = std::list<State*>;
 #endif
 
 /**

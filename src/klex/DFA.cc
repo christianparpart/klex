@@ -26,11 +26,9 @@ namespace klex {
  * Builds a list of states that can be exclusively reached from S via epsilon-transitions.
  */
 static void epsilonClosure(const State* s, StateSet* result) {
-  if (std::find(result->begin(), result->end(), s) != result->end()) {
-    fprintf(stderr, "The impossible happened. ;-(\n");
-    abort();
-  }
-  result->push_back((State*) s);
+  if (std::find(result->begin(), result->end(), s) == result->end())
+    result->push_back((State*) s);
+
   for (const Edge& transition : s->transitions()) {
     if (transition.symbol == EpsilonTransition) {
       epsilonClosure(transition.state, result);
@@ -56,25 +54,19 @@ static StateSet epsilonClosure(const StateSet& S) {
  * @return set of states that the FA can reach from @p c given the input @p c.
  */
 static void delta(const State* s, Symbol c, StateSet* result) {
-    for (Edge& transition: s->transitions()) {
-      if (transition.symbol == EpsilonTransition) {
-        result.merge(delta({transition.state}, c));
-      } else if (transition.symbol == c) {
-        result.push_back(transition.state);
-      }
+  for (const Edge& transition: s->transitions()) {
+    if (transition.symbol == EpsilonTransition) {
+      delta(transition.state, c, result);
+    } else if (transition.symbol == c) {
+      result->push_back((State*) transition.state);
     }
+  }
 }
 
 static StateSet delta(const StateSet& q, Symbol c) {
   StateSet result;
   for (State* s : q) {
-    for (Edge& transition: s->transitions()) {
-      if (transition.symbol == EpsilonTransition) {
-        result.merge(delta({transition.state}, c));
-      } else if (transition.symbol == c) {
-        result.push_back(transition.state);
-      }
-    }
+    delta(s, c, &result);
   }
   return result;
 }
@@ -211,7 +203,7 @@ DFA DFA::minimize() const {
     if (s != nullptr) {
       int i = 0;
       for (const StateSet& p : P) {
-        if (p.find(s) != p.end())
+        if (std::find(p.begin(), p.end(), s) != p.end())
           return i;
         else
           i++;
@@ -239,7 +231,7 @@ DFA DFA::minimize() const {
       for (State* s : S) {
         State* t = s->transition(c);
         int p_i = partitionId(t);
-        t_i[p_i].insert(s);
+        t_i[p_i].push_back(s);
       }
       if (t_i.size() != 1) {
         DEBUG("  split: on character '{}' into {} sets", (char)c, t_i.size());
@@ -315,9 +307,9 @@ State* DFA::createState(StateId id) {
     if (s->id() == id)
       throw std::invalid_argument{fmt::format("StateId: {}", id)};
 
-  return states_.push_back(std::make_unique<State>(id)).first->get();
+  states_.emplace_back(std::make_unique<State>(id));
+  return states_.back().get();
 }
-
 
 void DFA::setInitialState(State* s) {
   // TODO: assert (s is having no predecessors)

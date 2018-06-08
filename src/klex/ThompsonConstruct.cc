@@ -116,7 +116,8 @@ State* ThompsonConstruct::createState(StateId id, bool accepting, Tag tag) {
   if (findState(id) != nullptr)
     throw std::invalid_argument{fmt::format("StateId: {}", id)};
 
-  return states_.insert(std::make_unique<State>(id, accepting, tag)).first->get();
+  states_.emplace_back(std::make_unique<State>(id, accepting, tag));
+  return states_.back().get();
 }
 
 State* ThompsonConstruct::findState(StateId id) const {
@@ -137,7 +138,8 @@ ThompsonConstruct& ThompsonConstruct::concatenate(ThompsonConstruct rhs) {
     s->setId(nextId_++);
   }
 
-  states_.merge(std::move(rhs.states_));
+  for (std::unique_ptr<State>& s : rhs.states_)
+    states_.emplace_back(std::move(s));
 
   return *this;
 }
@@ -162,7 +164,8 @@ ThompsonConstruct& ThompsonConstruct::alternate(ThompsonConstruct other) {
     s->setId(nextId_++);
   }
 
-  states_.merge(std::move(other.states_));
+  for (std::unique_ptr<State>& s : other.states_)
+    states_.emplace_back(std::move(s));
 
   return *this;
 }
