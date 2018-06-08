@@ -25,17 +25,24 @@ namespace klex {
 /**
  * Builds a list of states that can be exclusively reached from S via epsilon-transitions.
  */
+static void epsilonClosure(const State* s, StateSet* result) {
+  if (std::find(result->begin(), result->end(), s) != result->end()) {
+    fprintf(stderr, "The impossible happened. ;-(\n");
+    abort();
+  }
+  result->push_back((State*) s);
+  for (const Edge& transition : s->transitions()) {
+    if (transition.symbol == EpsilonTransition) {
+      epsilonClosure(transition.state, result);
+    }
+  }
+}
+
 static StateSet epsilonClosure(const StateSet& S) {
   StateSet result;
 
-  for (State* s : S) {
-    result.insert(s);
-    for (Edge& transition : s->transitions()) {
-      if (transition.symbol == EpsilonTransition) {
-        result.merge(epsilonClosure({transition.state}));
-      }
-    }
-  }
+  for (State* s : S)
+    epsilonClosure(s, &result);
 
   return result;
 }
@@ -48,6 +55,16 @@ static StateSet epsilonClosure(const StateSet& S) {
  *
  * @return set of states that the FA can reach from @p c given the input @p c.
  */
+static void delta(const State* s, Symbol c, StateSet* result) {
+    for (Edge& transition: s->transitions()) {
+      if (transition.symbol == EpsilonTransition) {
+        result.merge(delta({transition.state}, c));
+      } else if (transition.symbol == c) {
+        result.push_back(transition.state);
+      }
+    }
+}
+
 static StateSet delta(const StateSet& q, Symbol c) {
   StateSet result;
   for (State* s : q) {
@@ -55,7 +72,7 @@ static StateSet delta(const StateSet& q, Symbol c) {
       if (transition.symbol == EpsilonTransition) {
         result.merge(delta({transition.state}, c));
       } else if (transition.symbol == c) {
-        result.insert(transition.state);
+        result.push_back(transition.state);
       }
     }
   }
@@ -107,7 +124,7 @@ StateSet DFA::acceptStates() const {
 
   for (State* s : states())
     if (s->isAccepting())
-      result.insert(s);
+      result.push_back(s);
 
   return result;
 }
@@ -182,7 +199,7 @@ DFA DFA::minimize() const {
 
     for (State* s : states())
       if (!s->isAccepting())
-        result.insert(s);
+        result.push_back(s);
 
     return result;
   };
@@ -298,7 +315,7 @@ State* DFA::createState(StateId id) {
     if (s->id() == id)
       throw std::invalid_argument{fmt::format("StateId: {}", id)};
 
-  return states_.insert(std::make_unique<State>(id)).first->get();
+  return states_.push_back(std::make_unique<State>(id)).first->get();
 }
 
 

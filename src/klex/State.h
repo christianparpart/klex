@@ -74,8 +74,13 @@ class State {
   EdgeList transitions_;
 };
 
+#if 0
 using OwnedStateSet = std::set<std::unique_ptr<State>>;
 using StateSet = std::set<State*>;
+#else
+using OwnedStateSet = std::vector<std::unique_ptr<State>>;
+using StateSet = std::vector<State*>;
+#endif
 
 /**
  * Returns a human readable string of the StateSet @p S, such as "{n0, n1, n2}".
