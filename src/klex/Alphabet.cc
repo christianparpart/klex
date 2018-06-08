@@ -5,20 +5,26 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#pragma once
-
-#include <klex/fa.h>
-#include <klex/transitionmap.h>
-#include <map>
+#include <klex/Alphabet.h>
+#include <sstream>
 
 namespace klex {
 
-using AcceptStateMap = std::map<fa::StateId, fa::Tag>;
+std::string Alphabet::to_string() const {
+  std::stringstream sstr;
 
-struct LexerDef {
-  fa::StateId initialStateId;
-  TransitionMap transitions;
-  AcceptStateMap acceptStates;
-};
+  sstr << '{';
+
+  for (Symbol c : alphabet_) {
+    if (c == '\0')
+      sstr << "ε";
+    else
+      sstr << c;
+  }
+
+  sstr << '}';
+
+  return std::move(sstr.str());
+}
 
 } // namespace klex

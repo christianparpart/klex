@@ -4,15 +4,14 @@
 // Licensed under the MIT License (the "License"); you may not use this
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
-
 #pragma once
 
+#include <klex/LexerDef.h>
+
 #include <iostream>
-#include <string_view>
-#include <klex/fa.h>
-#include <klex/lexerdef.h>
-#include <memory>
 #include <map>
+#include <memory>
+#include <string_view>
 #include <vector>
 
 namespace klex {
@@ -36,14 +35,14 @@ class Lexer {
    *
    * @return -1 on parse error, or Rule tag for recognized pattern.
    */
-  fa::Tag recognize();
+  Tag recognize();
 
   /**
    * Recognizes one token, regardless of it is to be ignored or not.
    *
    * @return -1 on parse error, or Rule tag for recognized pattern.
    */
-  fa::Tag recognizeOne();
+  Tag recognizeOne();
 
   //! the underlying word of the currently recognized token
   std::string word() const { return word_; }
@@ -60,13 +59,13 @@ class Lexer {
  private:
   int nextChar();
   void rollback();
-  bool isAcceptState(fa::StateId state) const;
-  int type(fa::StateId acceptState) const;
+  bool isAcceptState(StateId state) const;
+  int type(StateId acceptState) const;
 
  private:
   TransitionMap transitions_;
-  fa::StateId initialStateId_;
-  std::map<fa::StateId, fa::Tag> acceptStates_;
+  StateId initialStateId_;
+  std::map<StateId, Tag> acceptStates_;
   std::string word_;
   std::unique_ptr<std::istream> stream_;
   std::vector<int> buffered_;

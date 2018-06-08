@@ -5,7 +5,7 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/lexer.h>
+#include <klex/Lexer.h>
 #include <fstream>
 
 #include "token.h" // generated via mklex

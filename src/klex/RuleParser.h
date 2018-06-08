@@ -6,10 +6,12 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <klex/rule.h>
+#include <klex/Rule.h>
 #include <fmt/format.h>
 #include <stdexcept>
+#include <istream>
 #include <string>
+#include <memory>
 
 namespace klex {
 

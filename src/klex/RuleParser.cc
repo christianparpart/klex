@@ -5,7 +5,7 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/ruleparser.h>
+#include <klex/RuleParser.h>
 #include <sstream>
 #include <iostream>
 #include <cstring>
@@ -63,7 +63,7 @@ Rule RuleParser::parseRule() {
   // TODO: merge priority into tag and assume smaller tags have higher priority
   // (they're always equal in auto-generated code)
   int priority = nextPriority_++;
-  fa::Tag tag = priority;
+  Tag tag = priority;
 
   if (ignore)
     tag = -tag;

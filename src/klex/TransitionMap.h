@@ -4,10 +4,9 @@
 // Licensed under the MIT License (the "License"); you may not use this
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
-
 #pragma once
 
-#include <klex/fa.h>
+#include <klex/State.h>
 #include <map>
 #include <vector>
 
@@ -20,14 +19,14 @@ constexpr CharCatId ErrorCharCat = static_cast<CharCatId>(-1);
 /**
  * Represents an error-state, such as invalid input character or unexpected EOF.
  */
-constexpr fa::StateId ErrorState {808080}; // static_cast<fa::StateId>(-1);
+constexpr StateId ErrorState {808080}; // static_cast<StateId>(-1);
 
 /**
  * Transition mapping API to map the input (currentState, charCat) to (newState).
  */
 class TransitionMap {
  public:
-  using Container = std::map<fa::StateId, std::map<fa::Symbol, fa::StateId>>;
+  using Container = std::map<StateId, std::map<Symbol, StateId>>;
 
   TransitionMap()
       : mapping_{} {}
@@ -38,24 +37,24 @@ class TransitionMap {
   /**
    * Defines a new mapping for (currentState, charCat) to (nextState).
    */
-  void define(fa::StateId currentState, fa::Symbol charCat, fa::StateId nextState);
+  void define(StateId currentState, Symbol charCat, StateId nextState);
 
   /**
    * Retrieves the next state for the input (currentState, charCat).
    *
    * @returns the transition from (currentState, charCat) to (nextState) or ErrorState if not defined.
    */
-  fa::StateId apply(fa::StateId currentState, fa::Symbol charCat) const;
+  StateId apply(StateId currentState, Symbol charCat) const;
 
   /**
    * Retrieves a list of all available states.
    */
-  std::vector<fa::StateId> states() const;
+  std::vector<StateId> states() const;
 
   /**
    * Retrieves a map of all transitions from given state @p inputState.
    */
-  std::map<fa::Symbol, fa::StateId> map(fa::StateId inputState) const;
+  std::map<Symbol, StateId> map(StateId inputState) const;
 
  private:
   Container mapping_;

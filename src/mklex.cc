@@ -5,11 +5,13 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/builder.h>
-#include <klex/lexer.h>
-#include <klex/fa.h>
-#include <klex/rule.h>
-#include <klex/ruleparser.h>
+#include <klex/Builder.h>
+#include <klex/DFA.h>
+#include <klex/Lexer.h>
+#include <klex/Rule.h>
+#include <klex/RuleParser.h>
+#include <klex/ThompsonConstruct.h>
+#include <klex/dot.h>
 #include <klex/util/Flags.h>
 
 #include <cstdlib>
@@ -38,17 +40,17 @@ std::string charLiteral(int ch) {
 
 void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const klex::RuleList& rules,
                          const std::string& symbolName) {
-  os << "#include <klex/lexerdef.h>\n";
+  os << "#include <klex/LexerDef.h>\n";
   os << "\n";
   os << "klex::LexerDef " << symbolName << " {\n";
   os << "  // initial state\n";
   os << "  " << lexerDef.initialStateId << ",\n";
   os << "  // state transition table \n";
   os << "  klex::TransitionMap::Container {\n";
-  for (klex::fa::StateId stateId : lexerDef.transitions.states()) {
+  for (klex::StateId stateId : lexerDef.transitions.states()) {
     os << "    { " << fmt::format("{:>3}", stateId) << ", {";
     int c = 0;
-    for (std::pair<klex::fa::Symbol, klex::fa::StateId> t : lexerDef.transitions.map(stateId)) {
+    for (std::pair<klex::Symbol, klex::StateId> t : lexerDef.transitions.map(stateId)) {
       if (c) os << ", ";
       os << "{" << charLiteral(t.first) << ", " << t.second << "}";
       c++;
@@ -58,7 +60,7 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
   os << "  },\n";
   os << "  // accept state to action label mappings\n";
   os << "  klex::AcceptStateMap {\n";
-  for (const std::pair<klex::fa::StateId, klex::fa::Tag>& accept : lexerDef.acceptStates) {
+  for (const std::pair<klex::StateId, klex::Tag>& accept : lexerDef.acceptStates) {
     os << fmt::format("    {{ {:>3}, {:>3} }}, //", accept.first, accept.second);
     for (const klex::Rule& rule : rules) {
       if (accept.second == rule.tag) {
@@ -111,16 +113,16 @@ int main(int argc, const char* argv[]) {
   for (const klex::Rule& rule : rules)
     builder.declare(rule.tag, rule.pattern);
 
-  klex::fa::FiniteAutomaton fa = builder.buildAutomaton(klex::Builder::Stage::Deterministic);
+  klex::DFA dfa = builder.compileDFA();
 
   if (std::string dotfile = flags.getString("fa-dot"); !dotfile.empty()) {
     if (flags.getBool("fa-renumber")) {
-      fa.renumber();
+      // TODO dfa.renumber();
     }
     if (dotfile == "-") {
-      std::cout << klex::fa::dot({klex::fa::DotGraph{fa, "n", ""}}, "", true);
+      std::cout << klex::dot({klex::DotGraph{dfa.initialState(), dfa.ownedStates(), "n", ""}}, "", true);
     } else {
-      std::ofstream{dotfile} << klex::fa::dot({klex::fa::DotGraph{fa, "n", ""}}, "", true);
+      std::ofstream{dotfile} << klex::dot({klex::DotGraph{dfa.initialState(), dfa.ownedStates(), "n", ""}}, "", true);
     }
   }
 
@@ -132,7 +134,7 @@ int main(int argc, const char* argv[]) {
     generateTokenDefCxx(std::cerr, rules, flags.getString("token-name"));
   }
 
-  klex::LexerDef lexerDef = klex::Builder::compile(fa);
+  klex::LexerDef lexerDef = klex::Builder::compile(dfa);
   if (std::string tableFile = flags.getString("output-table"); tableFile != "-") {
     fs::create_directories(fs::path{tableFile}.remove_filename());
     std::ofstream ofs {tableFile};

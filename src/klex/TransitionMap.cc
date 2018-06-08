@@ -5,17 +5,17 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/transitionmap.h>
-#include <klex/fa.h>
+#include <klex/TransitionMap.h>
+#include <klex/State.h>
 #include <algorithm>
 
 namespace klex {
 
-void TransitionMap::define(fa::StateId currentState, fa::Symbol charCat, fa::StateId nextState) {
+void TransitionMap::define(StateId currentState, Symbol charCat, StateId nextState) {
   mapping_[currentState][charCat] = nextState;
 }
 
-fa::StateId TransitionMap::apply(fa::StateId currentState, fa::Symbol charCat) const {
+StateId TransitionMap::apply(StateId currentState, Symbol charCat) const {
   if (auto i = mapping_.find(currentState); i != mapping_.end())
     if (auto k = i->second.find(charCat); k != i->second.end())
       return k->second;
@@ -23,8 +23,8 @@ fa::StateId TransitionMap::apply(fa::StateId currentState, fa::Symbol charCat) c
   return ErrorState;
 }
 
-std::vector<fa::StateId> TransitionMap::states() const {
-  std::vector<fa::StateId> v;
+std::vector<StateId> TransitionMap::states() const {
+  std::vector<StateId> v;
   v.reserve(mapping_.size());
   for (const auto& i : mapping_)
     v.push_back(i.first);
@@ -32,8 +32,8 @@ std::vector<fa::StateId> TransitionMap::states() const {
   return v;
 }
 
-std::map<fa::Symbol, fa::StateId> TransitionMap::map(fa::StateId s) const {
-  std::map<fa::Symbol, fa::StateId> m;
+std::map<Symbol, StateId> TransitionMap::map(StateId s) const {
+  std::map<Symbol, StateId> m;
   if (auto mapping = mapping_.find(s); mapping != mapping_.end())
     for (const auto& i : mapping->second)
       m[i.first] = i.second;

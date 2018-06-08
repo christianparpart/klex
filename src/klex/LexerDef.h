@@ -4,27 +4,20 @@
 // Licensed under the MIT License (the "License"); you may not use this
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
+#pragma once
 
-#include <klex/alphabet.h>
-#include <sstream>
+#include <klex/TransitionMap.h>
+#include <klex/State.h>
+#include <map>
 
 namespace klex {
 
-std::string Alphabet::to_string() const {
-  std::stringstream sstr;
+using AcceptStateMap = std::map<StateId, Tag>;
 
-  sstr << '{';
-
-  for (Symbol c : alphabet_) {
-    if (c == '\0')
-      sstr << "ε";
-    else
-      sstr << c;
-  }
-
-  sstr << '}';
-
-  return std::move(sstr.str());
-}
+struct LexerDef {
+  StateId initialStateId;
+  TransitionMap transitions;
+  AcceptStateMap acceptStates;
+};
 
 } // namespace klex

@@ -30,13 +30,17 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/klex/sysconfig.h.cmake
 
 # ----------------------------------------------------------------------------
 add_library(klex STATIC
-    src/klex/alphabet.cc
-    src/klex/builder.cc
-    src/klex/fa.cc
-    src/klex/lexer.cc
-    src/klex/regexpr.cc
-    src/klex/ruleparser.cc
-    src/klex/transitionmap.cc
+    src/klex/Alphabet.cc
+    src/klex/Builder.cc
+    src/klex/DFA.cc
+    src/klex/dot.cc
+    src/klex/Lexer.cc
+    src/klex/RegExpr.cc
+    src/klex/RegExprExporter.cc
+    src/klex/RuleParser.cc
+    src/klex/State.cc
+    src/klex/ThompsonConstruct.cc
+    src/klex/TransitionMap.cc
     src/klex/util/Flags.cc
     )
 

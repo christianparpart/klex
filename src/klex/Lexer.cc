@@ -5,7 +5,7 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/lexer.h>
+#include <klex/Lexer.h>
 #include <algorithm>
 #include <deque>
 #include <iostream>
@@ -29,10 +29,10 @@ Lexer::Lexer(LexerDef info)
       offset_{},
       line_{},
       column_{} {
-  // for (fa::StateId s : transitions_.states()) {
+  // for (StateId s : transitions_.states()) {
   //   std::cerr << fmt::format("n{}: (", s);
-  //   for (std::pair<fa::Symbol, fa::StateId> p : transitions_.map(s)) {
-  //     std::cerr << fmt::format(" '{}': n{};", fa::prettySymbol(p.first), p.second);
+  //   for (std::pair<Symbol, StateId> p : transitions_.map(s)) {
+  //     std::cerr << fmt::format(" '{}': n{};", prettySymbol(p.first), p.second);
   //   }
   //   std::cerr << fmt::format(")\n");
   // }
@@ -46,9 +46,9 @@ void Lexer::open(std::unique_ptr<std::istream> stream) {
   column_ = 0;
 }
 
-constexpr fa::StateId BadState { 101010 }; //static_cast<fa::StateId>(-2);
+constexpr StateId BadState { 101010 }; //static_cast<StateId>(-2);
 
-static std::string stateName(fa::StateId s) {
+static std::string stateName(StateId s) {
   switch (s) {
     case BadState:
       return "Bad";
@@ -59,7 +59,7 @@ static std::string stateName(fa::StateId s) {
   }
 }
 
-[[maybe_unused]] static std::string toString(std::deque<fa::StateId> stack) {
+[[maybe_unused]] static std::string toString(std::deque<StateId> stack) {
   std::stringstream sstr;
   sstr << "{";
   int i = 0;
@@ -73,32 +73,32 @@ static std::string stateName(fa::StateId s) {
   return sstr.str();
 }
 
-fa::Tag Lexer::recognize() {
+Tag Lexer::recognize() {
   for (;;) {
-    if (fa::Tag tag = recognizeOne(); tag >= -1) {
+    if (Tag tag = recognizeOne(); tag >= -1) {
       return tag;
     }
   }
 }
 
-fa::Tag Lexer::recognizeOne() {
+Tag Lexer::recognizeOne() {
   // init
   oldOffset_ = offset_;
   word_.clear();
-  fa::StateId state = initialStateId_;
-  std::deque<fa::StateId> stack;
+  StateId state = initialStateId_;
+  std::deque<StateId> stack;
   stack.push_back(BadState);
 
   // advance
   while (state != ErrorState) {
-    fa::Symbol ch = nextChar();
+    Symbol ch = nextChar();
     word_.push_back(ch);
 
     if (isAcceptState(state))
       stack.clear();
 
     stack.push_back(state);
-    DEBUG("recognize: state {} char '{}' {}", stateName(state), fa::prettySymbol(ch), isAcceptState(state) ? "accepting" : "");
+    DEBUG("recognize: state {} char '{}' {}", stateName(state), prettySymbol(ch), isAcceptState(state) ? "accepting" : "");
     state = transitions_.apply(state, ch);
   }
 
@@ -124,14 +124,14 @@ fa::Tag Lexer::recognizeOne() {
   return -1;
 }
 
-int Lexer::type(fa::StateId acceptState) const {
+int Lexer::type(StateId acceptState) const {
   if (auto i = acceptStates_.find(acceptState); i != acceptStates_.end())
     return i->second;
 
   return -1;
 }
 
-bool Lexer::isAcceptState(fa::StateId id) const {
+bool Lexer::isAcceptState(StateId id) const {
   return acceptStates_.find(id) != acceptStates_.end();
 }
 
@@ -140,7 +140,7 @@ int Lexer::nextChar() {
     offset_++;
     int ch = buffered_.back();
     buffered_.resize(buffered_.size() - 1);
-    //std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, fa::prettySymbol(ch));
+    //std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, prettySymbol(ch));
     return ch;
   }
 
@@ -152,7 +152,7 @@ int Lexer::nextChar() {
   int ch = stream_->get();
   if (ch >= 0)
     offset_++;
-  //std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, fa::prettySymbol(ch));
+  //std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, prettySymbol(ch));
   return ch;
 }
 
