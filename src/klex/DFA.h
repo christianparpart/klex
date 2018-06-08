@@ -53,7 +53,10 @@ class DFA {
   //! Releases ownership of internal data structures to the callers responsibility.
   std::tuple<OwnedStateSet, State*> release();
 
+  void renumber();
+
  private:
+  void renumber(State* s, std::set<State*>* registry);
   State* createState(StateId expectedId);
   void setInitialState(State* state);
 

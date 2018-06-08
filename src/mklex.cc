@@ -117,7 +117,7 @@ int main(int argc, const char* argv[]) {
 
   if (std::string dotfile = flags.getString("fa-dot"); !dotfile.empty()) {
     if (flags.getBool("fa-renumber")) {
-      // TODO dfa.renumber();
+      dfa.renumber();
     }
     if (dotfile == "-") {
       std::cout << klex::dot({klex::DotGraph{dfa.initialState(), dfa.ownedStates(), "n", ""}}, "", true);

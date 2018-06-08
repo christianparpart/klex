@@ -316,6 +316,23 @@ void DFA::setInitialState(State* s) {
   initialState_ = s;
 }
 
+void DFA::renumber() {
+  std::set<State*> registry;
+  renumber(initialState_, &registry);
+}
+
+void DFA::renumber(State* s, std::set<State*>* registry) {
+  StateId id = registry->size();
+  VERIFY_STATE_AVAILABILITY(id, *registry);
+  s->setId(id);
+  registry->insert(s);
+  for (const Edge& transition : s->transitions()) {
+    if (registry->find(transition.state) == registry->end()) {
+      renumber(transition.state, registry);
+    }
+  }
+}
+
 struct TransitionTable { // {{{
   struct Input {
     int configurationNumber;
