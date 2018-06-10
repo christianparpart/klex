@@ -37,7 +37,7 @@ DFA Compiler::compileDFA() {
 
 LexerDef Compiler::compile() {
   DFA dfa = DFABuilder{}.construct(std::move(fa_));
-  DFA dfamin = DFAMinimizer{}.construct(dfa);
+  DFA dfamin = DFAMinimizer{dfa}.construct();
   return compile(dfamin);
   //return compile(MinDFABuilder::construct(DFABuilder{}.construct(std::move(fa_))));
   //return compile(DFABuilder{}.construct(std::move(fa_)));

@@ -21,89 +21,91 @@ namespace klex {
 #define DEBUG(msg, ...) do { } while (0)
 #endif
 
-DFA DFAMinimizer::construct(const DFA& dfa) {
-  std::list<std::vector<const State*>> T;
-  std::list<std::vector<const State*>> P;
+DFAMinimizer::DFAMinimizer(const DFA& dfa) : dfa_{dfa} {
+}
 
-  auto nonAcceptStates = [&]() -> std::vector<const State*> {
-    std::vector<const State*> result;
+std::vector<const State*> DFAMinimizer::nonAcceptStates() const {
+  std::vector<const State*> result;
 
-    for (const State* s : dfa.states())
-      if (!s->isAccepting())
-        result.push_back(s);
+  for (const State* s : dfa_.states())
+    if (!s->isAccepting())
+      result.push_back(s);
 
-    return result;
-  };
+  return result;
+}
 
-  auto findGroup = [&](const State* s) -> std::list<std::vector<const State*>>::iterator {
-    for (auto i = T.begin(), e = T.end(); i != e; ++i) {
-      std::vector<const State*>& group = *i;
-      if (group.front()->tag() == s->tag())
+bool DFAMinimizer::containsInitialState(const std::vector<const State*>& S) const {
+  for (const State* s : S)
+    if (s == dfa_.initialState())
+      return true;
+
+  return false;
+}
+
+std::list<std::vector<const State*>>::iterator DFAMinimizer::findGroup(const State* s) {
+  for (auto i = T.begin(), e = T.end(); i != e; ++i) {
+    std::vector<const State*>& group = *i;
+    if (group.front()->tag() == s->tag())
+      return i;
+  }
+
+  return T.end();
+}
+
+int DFAMinimizer::partitionId(State* s) const {
+  if (s != nullptr) {
+    int i = 0;
+    for (const std::vector<const State*>& p : P) {
+      if (std::find(p.begin(), p.end(), s) != p.end())
         return i;
+      else
+        i++;
     }
-    return T.end();
-  };
+  }
+  return -1;
+}
 
+std::list<std::vector<const State*>> DFAMinimizer::split(const std::vector<const State*>& S) const {
+  DEBUG("split: {}", to_string(S));
+
+  for (Symbol c : dfa_.alphabet()) {
+    // if c splits S into s_1 and s_2
+    //      that is, phi(s_1, c) and phi(s_2, c) reside in two different p_i's (partitions)
+    // then return {s_1, s_2}
+
+    std::map<int /*target partition set*/ , std::vector<const State*> /*source states*/> t_i;
+    for (const State* s : S) {
+      State* t = s->transition(c);
+      int p_i = partitionId(t);
+      t_i[p_i].push_back(s);
+    }
+    if (t_i.size() != 1) {
+      DEBUG("  split: on character '{}' into {} sets", (char)c, t_i.size());
+      std::list<std::vector<const State*>> result;
+      for (const std::pair<int, std::vector<const State*>>& t : t_i) {
+        result.emplace_back(std::move(t.second));
+      }
+      return result;
+    }
+  }
+  return {S};
+}
+
+DFA DFAMinimizer::construct() {
   // group all accept states by their tag
-  for (const State* s : dfa.acceptStates()) {
-    if (auto groupIterator = findGroup(s); groupIterator != T.end())
-      groupIterator->push_back(s);
+  for (const State* s : dfa_.acceptStates()) {
+    if (auto group = findGroup(s); group != T.end())
+      group->push_back(s);
     else
       T.push_back({s});
   }
 
   // add another group for all non-accept states
-  T.emplace_back(nonAcceptStates());
-
-  auto partitionId = [&](State* s) -> int {
-    if (s != nullptr) {
-      int i = 0;
-      for (const std::vector<const State*>& p : P) {
-        if (std::find(p.begin(), p.end(), s) != p.end())
-          return i;
-        else
-          i++;
-      }
-    }
-    return -1;
-  };
-
-  auto containsInitialState = [&](const std::vector<const State*>& S) -> bool {
-    for (const State* s : S)
-      if (s == dfa.initialState())
-        return true;
-    return false;
-  };
-
-  auto split = [&](const std::vector<const State*>& S) -> std::list<std::vector<const State*>> {
-    DEBUG("split: {}", to_string(S));
-
-    for (Symbol c : dfa.alphabet()) {
-      // if c splits S into s_1 and s_2
-      //      that is, phi(s_1, c) and phi(s_2, c) reside in two different p_i's (partitions)
-      // then return {s_1, s_2}
-
-      std::map<int /*target partition set*/ , std::vector<const State*> /*source states*/> t_i;
-      for (const State* s : S) {
-        State* t = s->transition(c);
-        int p_i = partitionId(t);
-        t_i[p_i].push_back(s);
-      }
-      if (t_i.size() != 1) {
-        DEBUG("  split: on character '{}' into {} sets", (char)c, t_i.size());
-        std::list<std::vector<const State*>> result;
-        for (const std::pair<int, std::vector<const State*>>& t : t_i) {
-          result.emplace_back(std::move(t.second));
-        }
-        return result;
-      }
-    }
-    return {S};
-  };
+  T.emplace_front(nonAcceptStates());
 
   while (P != T) {
-    P = std::move(T);
-    T = {};
+    std::swap(P, T);
+    T.clear();
 
     for (std::vector<const State*>& p : P) {
       T.splice(T.end(), split(p));
@@ -140,9 +142,6 @@ DFA DFAMinimizer::construct(const DFA& dfa) {
     }
     p_i++;
   }
-
-  // TODO
-  // construct states & links out of P
 
   return dfamin;
 }

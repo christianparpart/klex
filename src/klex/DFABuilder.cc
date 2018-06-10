@@ -21,138 +21,7 @@ namespace klex {
 #define DEBUG(msg, ...) do { } while (0)
 #endif
 
-// {{{ helper
-/**
- * Builds a list of states that can be exclusively reached from S via epsilon-transitions.
- */
-static void epsilonClosure(const State* s, std::vector<const State*>* result) {
-  if (std::find(result->begin(), result->end(), s) == result->end())
-    result->push_back((State*) s);
-
-  for (const Edge& transition : s->transitions()) {
-    if (transition.symbol == EpsilonTransition) {
-      epsilonClosure(transition.state, result);
-    }
-  }
-}
-
-static std::vector<const State*> epsilonClosure(const std::vector<const State*>& S) {
-  std::vector<const State*> result;
-
-  for (const State* s : S)
-    epsilonClosure(s, &result);
-
-  return result;
-}
-
-/**
- * Computes a valid configuration the FA can reach with the given input @p q and @p c.
- * 
- * @param q valid input configuration of the original NFA.
- * @param c the input character that the FA would consume next
- *
- * @return set of states that the FA can reach from @p c given the input @p c.
- */
-static void delta(const State* s, Symbol c, std::vector<const State*>* result) {
-  for (const Edge& transition: s->transitions()) {
-    if (transition.symbol == EpsilonTransition) {
-      delta(transition.state, c, result);
-    } else if (transition.symbol == c) {
-      result->push_back((State*) transition.state);
-    }
-  }
-}
-
-static std::vector<const State*> delta(const std::vector<const State*>& q, Symbol c) {
-  std::vector<const State*> result;
-  for (const State* s : q) {
-    delta(s, c, &result);
-  }
-  return result;
-}
-
-/**
- * Finds @p t in @p Q and returns its offset (aka configuration number) or -1 if not found.
- */
-static int configurationNumber(const std::vector<std::vector<const State*>>& Q, const std::vector<const State*>& t) {
-  int i = 0;
-  for (const std::vector<const State*>& q_i : Q) {
-    if (q_i == t) {
-      return i;
-    }
-    i++;
-  }
-
-  return -1;
-}
-
-/**
- * Returns whether or not the StateSet @p Q contains at least one State that is also "accepting".
- */
-static bool containsAcceptingState(const std::vector<const State*>& Q) {
-  for (const State* q : Q)
-    if (q->isAccepting())
-      return true;
-
-  return false;
-}
-
-/**
- * Determines the tag to use for the deterministic state representing @p q from non-deterministic FA @p fa.
- *
- * @param fa the owning finite automaton being operated on
- * @param q the set of states that reflect a single state in the DFA equal to the input FA
- * @param tag address to the Tag the resulting will be stored to
- *
- * @returns whether or not the tag could be determined.
- */
-bool determineTag(const NFA& fa, std::vector<const State*> q, Tag* tag) {
-  // eliminate target-states that originate from epsilon transitions or have no tag set at all
-  for (auto i = q.begin(), e = q.end(); i != e; ) {
-    const State* s = *i;
-    if (fa.isReceivingEpsilon(s) || !s->tag()) {
-      i = q.erase(i);
-    } else {
-      i++;
-    }
-  }
-
-  if (q.empty()) {
-    // fprintf(stderr, "determineTag: all of q was epsiloned\n");
-    *tag = 0;
-    return false;
-  }
-
-  const Tag lowestTag = std::abs((*std::min_element(
-      q.begin(), q.end(),
-      [](auto x, auto y) { return std::abs(x->tag()) < std::abs(y->tag()); }))->tag());
-
-  // eliminate lower priorities
-  for (auto i = q.begin(), e = q.end(); i != e; ) {
-    const State* s = *i;
-    if (s->tag() != lowestTag) {
-      i = q.erase(i);
-    } else {
-      i++;
-    }
-  }
-  if (q.empty()) {
-    // fprintf(stderr, "determineTag: lowest tag found: %d, but no states left?\n", priority);
-    *tag = 0;
-    return true;
-  }
-
-  *tag = (*std::min_element(
-        q.begin(),
-        q.end(),
-        [](auto x, auto y) { return x->tag() < y->tag(); }))->tag();
-
-  return true;
-}
-
-// }}}
-
-struct TransitionTable { // {{{
+struct DFABuilder::TransitionTable { // {{{
   struct Input {
     int configurationNumber;
     Symbol symbol;
@@ -286,6 +155,108 @@ DFA DFABuilder::construct(NFA nfa) {
   dfa.setInitialState(dfa.findState(0));
 
   return dfa;
+}
+
+void DFABuilder::epsilonClosure(const State* s, std::vector<const State*>* result) {
+  if (std::find(result->begin(), result->end(), s) == result->end())
+    result->push_back((State*) s);
+
+  for (const Edge& transition : s->transitions()) {
+    if (transition.symbol == EpsilonTransition) {
+      epsilonClosure(transition.state, result);
+    }
+  }
+}
+
+std::vector<const State*> DFABuilder::epsilonClosure(const std::vector<const State*>& S) {
+  std::vector<const State*> result;
+
+  for (const State* s : S)
+    epsilonClosure(s, &result);
+
+  return result;
+}
+
+void DFABuilder::delta(const State* s, Symbol c, std::vector<const State*>* result) {
+  for (const Edge& transition: s->transitions()) {
+    if (transition.symbol == EpsilonTransition) {
+      delta(transition.state, c, result);
+    } else if (transition.symbol == c) {
+      result->push_back((State*) transition.state);
+    }
+  }
+}
+
+std::vector<const State*> DFABuilder::delta(const std::vector<const State*>& q, Symbol c) {
+  std::vector<const State*> result;
+  for (const State* s : q) {
+    delta(s, c, &result);
+  }
+  return result;
+}
+
+int DFABuilder::configurationNumber(const std::vector<std::vector<const State*>>& Q, const std::vector<const State*>& t) {
+  int i = 0;
+  for (const std::vector<const State*>& q_i : Q) {
+    if (q_i == t) {
+      return i;
+    }
+    i++;
+  }
+
+  return -1;
+}
+
+bool DFABuilder::containsAcceptingState(const std::vector<const State*>& Q) {
+  for (const State* q : Q)
+    if (q->isAccepting())
+      return true;
+
+  return false;
+}
+
+bool DFABuilder::determineTag(const NFA& fa, std::vector<const State*> q, Tag* tag) {
+  // eliminate target-states that originate from epsilon transitions or have no tag set at all
+  for (auto i = q.begin(), e = q.end(); i != e; ) {
+    const State* s = *i;
+    if (fa.isReceivingEpsilon(s) || !s->tag()) {
+      i = q.erase(i);
+    } else {
+      i++;
+    }
+  }
+
+  if (q.empty()) {
+    // fprintf(stderr, "determineTag: all of q was epsiloned\n");
+    *tag = 0;
+    return false;
+  }
+
+  const Tag lowestTag = std::abs((*std::min_element(
+      q.begin(), q.end(),
+      [](auto x, auto y) { return std::abs(x->tag()) < std::abs(y->tag()); }))->tag());
+
+  // eliminate lower priorities
+  for (auto i = q.begin(), e = q.end(); i != e; ) {
+    const State* s = *i;
+    if (s->tag() != lowestTag) {
+      i = q.erase(i);
+    } else {
+      i++;
+    }
+  }
+  if (q.empty()) {
+    // fprintf(stderr, "determineTag: lowest tag found: %d, but no states left?\n", priority);
+    *tag = 0;
+    return true;
+  }
+
+  *tag = (*std::min_element(
+        q.begin(),
+        q.end(),
+        [](auto x, auto y) { return x->tag() < y->tag(); }))->tag();
+
+  return true;
 }
 
 } // namespace klex
