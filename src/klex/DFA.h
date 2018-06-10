@@ -8,11 +8,11 @@
 
 #include <klex/Alphabet.h>
 #include <klex/State.h>
-#include <klex/util/UnboxedRange.h>
 
 namespace klex {
 
 class ThompsonConstruct;
+class DotVisitor;
 
 /**
  * Represents a deterministic finite automaton.
@@ -37,31 +37,30 @@ class DFA {
   State* initialState() const { return initialState_; }
 
   //! Retrieves the list of available states.
-  auto states() const { return util::unbox(states_); }
+  const StateVec& states() const { return states_; }
 
   //! Retrieves the list of accepting states.
-  StateSet acceptStates() const;
-
-  const OwnedStateSet& ownedStates() const noexcept { return states_; }
-
-  //! Finds State by its @p id.
-  State* findState(StateId id) const;
+  std::vector<const State*> acceptStates() const;
+  std::vector<State*> acceptStates();
 
   //! Constructs a minimized version of this DFA.
   DFA minimize() const;
 
-  //! Releases ownership of internal data structures to the callers responsibility.
-  std::tuple<OwnedStateSet, State*> release();
-
-  void renumber();
+  /**
+   * Traverses all states and edges in this NFA and calls @p visitor for each state & edge.
+   *
+   * Use this function to e.g. get a GraphViz dot-file drawn.
+   */
+  void visit(DotVisitor& visitor) const;
 
  private:
-  void renumber(State* s, std::set<State*>* registry);
+  State* findState(StateId id) { return states_.find(id); }
   State* createState(StateId expectedId);
   void setInitialState(State* state);
+  void visit(DotVisitor& v, const State* s, int* id) const;
 
  private:
-  OwnedStateSet states_;
+  StateVec states_;
   State* initialState_;
 };
 

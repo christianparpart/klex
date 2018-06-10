@@ -1,5 +1,23 @@
 ### The very incomplete TODO checklist
 
+```
+RegExpr
+RegExprParser
+NFA
+NFABuilder
+DFA
+DFABuilder (from NFA)
+MinDFABuilder
+
+RegExprPass
+NFAPass
+DFAPass
+MinimizerPass
+
+text -> RE AST -> NFA -> DFA -> MinDFA -> Tables
+
+```
+
 - [ ] RE/FA: detect EOL ('$')
 - [ ] FA: how to handle EOF?
 - [ ] RE: be able to parse "(a|)", which is either "a" or ""

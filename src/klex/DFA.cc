@@ -6,6 +6,7 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/DFA.h>
+#include <klex/DotVisitor.h>
 #include <klex/ThompsonConstruct.h>
 #include <iostream>
 #include <deque>
@@ -25,7 +26,7 @@ namespace klex {
 /**
  * Builds a list of states that can be exclusively reached from S via epsilon-transitions.
  */
-static void epsilonClosure(const State* s, StateSet* result) {
+static void epsilonClosure(const State* s, std::vector<const State*>* result) {
   if (std::find(result->begin(), result->end(), s) == result->end())
     result->push_back((State*) s);
 
@@ -36,10 +37,10 @@ static void epsilonClosure(const State* s, StateSet* result) {
   }
 }
 
-static StateSet epsilonClosure(const StateSet& S) {
-  StateSet result;
+static std::vector<const State*> epsilonClosure(const std::vector<const State*>& S) {
+  std::vector<const State*> result;
 
-  for (State* s : S)
+  for (const State* s : S)
     epsilonClosure(s, &result);
 
   return result;
@@ -53,7 +54,7 @@ static StateSet epsilonClosure(const StateSet& S) {
  *
  * @return set of states that the FA can reach from @p c given the input @p c.
  */
-static void delta(const State* s, Symbol c, StateSet* result) {
+static void delta(const State* s, Symbol c, std::vector<const State*>* result) {
   for (const Edge& transition: s->transitions()) {
     if (transition.symbol == EpsilonTransition) {
       delta(transition.state, c, result);
@@ -63,9 +64,9 @@ static void delta(const State* s, Symbol c, StateSet* result) {
   }
 }
 
-static StateSet delta(const StateSet& q, Symbol c) {
-  StateSet result;
-  for (State* s : q) {
+static std::vector<const State*> delta(const std::vector<const State*>& q, Symbol c) {
+  std::vector<const State*> result;
+  for (const State* s : q) {
     delta(s, c, &result);
   }
   return result;
@@ -74,9 +75,9 @@ static StateSet delta(const StateSet& q, Symbol c) {
 /**
  * Finds @p t in @p Q and returns its offset (aka configuration number) or -1 if not found.
  */
-static int configurationNumber(const std::vector<StateSet>& Q, const StateSet& t) {
+static int configurationNumber(const std::vector<std::vector<const State*>>& Q, const std::vector<const State*>& t) {
   int i = 0;
-  for (const StateSet& q_i : Q) {
+  for (const std::vector<const State*>& q_i : Q) {
     if (q_i == t) {
       return i;
     }
@@ -89,14 +90,13 @@ static int configurationNumber(const std::vector<StateSet>& Q, const StateSet& t
 /**
  * Returns whether or not the StateSet @p Q contains at least one State that is also "accepting".
  */
-static bool containsAcceptingState(const StateSet& Q) {
-  for (State* q : Q)
+static bool containsAcceptingState(const std::vector<const State*>& Q) {
+  for (const State* q : Q)
     if (q->isAccepting())
       return true;
 
   return false;
 }
-
 // }}}
 
 Alphabet DFA::alphabet() const {
@@ -111,23 +111,24 @@ Alphabet DFA::alphabet() const {
   return alphabet;
 }
 
-StateSet DFA::acceptStates() const {
-  StateSet result;
+std::vector<const State*> DFA::acceptStates() const {
+  std::vector<const State*> result;
 
-  for (State* s : states())
+  for (const State* s : states_)
     if (s->isAccepting())
       result.push_back(s);
 
   return result;
 }
 
-State* DFA::findState(StateId id) const {
-  auto s = std::find_if(states_.begin(), states_.end(),
-                        [id](const auto& s) { return s->id() == id;});
-  if (s != states_.end())
-    return s->get();
+std::vector<State*> DFA::acceptStates() {
+  std::vector<State*> result;
 
-  return nullptr;
+  for (State* s : states_)
+    if (s->isAccepting())
+      result.push_back(s);
+
+  return result;
 }
 
 /**
@@ -139,10 +140,10 @@ State* DFA::findState(StateId id) const {
  *
  * @returns whether or not the tag could be determined.
  */
-bool determineTag(const ThompsonConstruct& fa, StateSet q, Tag* tag) {
+bool determineTag(const ThompsonConstruct& fa, std::vector<const State*> q, Tag* tag) {
   // eliminate target-states that originate from epsilon transitions or have no tag set at all
   for (auto i = q.begin(), e = q.end(); i != e; ) {
-    State* s = *i;
+    const State* s = *i;
     if (fa.isReceivingEpsilon(s) || !s->tag()) {
       i = q.erase(i);
     } else {
@@ -162,7 +163,7 @@ bool determineTag(const ThompsonConstruct& fa, StateSet q, Tag* tag) {
 
   // eliminate lower priorities
   for (auto i = q.begin(), e = q.end(); i != e; ) {
-    State* s = *i;
+    const State* s = *i;
     if (s->tag() != lowestTag) {
       i = q.erase(i);
     } else {
@@ -186,23 +187,43 @@ bool determineTag(const ThompsonConstruct& fa, StateSet q, Tag* tag) {
 // --------------------------------------------------------------------------
 
 DFA DFA::minimize() const {
-  auto nonAcceptStates = [&]() -> StateSet {
-    StateSet result;
+  std::list<std::vector<const State*>> T;
+  std::list<std::vector<const State*>> P;
 
-    for (State* s : states())
+  auto nonAcceptStates = [&]() -> std::vector<const State*> {
+    std::vector<const State*> result;
+
+    for (const State* s : states())
       if (!s->isAccepting())
         result.push_back(s);
 
     return result;
   };
 
-  std::list<StateSet> T = {acceptStates(), nonAcceptStates()};
-  std::list<StateSet> P = {};
+  auto findGroup = [&](const State* s) -> std::list<std::vector<const State*>>::iterator {
+    for (auto i = T.begin(), e = T.end(); i != e; ++i) {
+      std::vector<const State*>& group = *i;
+      if (group.front()->tag() == s->tag())
+        return i;
+    }
+    return T.end();
+  };
+
+  // group all accept states by their tag
+  for (const State* s : acceptStates()) {
+    if (auto groupIterator = findGroup(s); groupIterator != T.end())
+      groupIterator->push_back(s);
+    else
+      T.push_back({s});
+  }
+
+  // add another group for all non-accept states
+  T.emplace_back(nonAcceptStates());
 
   auto partitionId = [&](State* s) -> int {
     if (s != nullptr) {
       int i = 0;
-      for (const StateSet& p : P) {
+      for (const std::vector<const State*>& p : P) {
         if (std::find(p.begin(), p.end(), s) != p.end())
           return i;
         else
@@ -212,14 +233,14 @@ DFA DFA::minimize() const {
     return -1;
   };
 
-  auto containsInitialState = [this](const StateSet& S) -> bool {
-    for (State* s : S)
+  auto containsInitialState = [this](const std::vector<const State*>& S) -> bool {
+    for (const State* s : S)
       if (s == initialState_)
         return true;
     return false;
   };
 
-  auto split = [&](const StateSet& S) -> std::list<StateSet> {
+  auto split = [&](const std::vector<const State*>& S) -> std::list<std::vector<const State*>> {
     DEBUG("split: {}", to_string(S));
 
     for (Symbol c : alphabet()) {
@@ -227,16 +248,16 @@ DFA DFA::minimize() const {
       //      that is, phi(s_1, c) and phi(s_2, c) reside in two different p_i's (partitions)
       // then return {s_1, s_2}
 
-      std::map<int /*target partition set*/ , StateSet /*source states*/> t_i;
-      for (State* s : S) {
+      std::map<int /*target partition set*/ , std::vector<const State*> /*source states*/> t_i;
+      for (const State* s : S) {
         State* t = s->transition(c);
         int p_i = partitionId(t);
         t_i[p_i].push_back(s);
       }
       if (t_i.size() != 1) {
         DEBUG("  split: on character '{}' into {} sets", (char)c, t_i.size());
-        std::list<StateSet> result;
-        for (const std::pair<int, StateSet>& t : t_i) {
+        std::list<std::vector<const State*>> result;
+        for (const std::pair<int, std::vector<const State*>>& t : t_i) {
           result.emplace_back(std::move(t.second));
         }
         return result;
@@ -249,7 +270,7 @@ DFA DFA::minimize() const {
     P = std::move(T);
     T = {};
 
-    for (StateSet& p : P) {
+    for (std::vector<const State*>& p : P) {
       T.splice(T.end(), split(p));
     }
   }
@@ -260,8 +281,8 @@ DFA DFA::minimize() const {
 
   // instanciate states
   int p_i = 0;
-  for (const StateSet& p : P) {
-    State* s = *p.begin();
+  for (const std::vector<const State*>& p : P) {
+    const State* s = *p.begin();
     State* q = dfamin.createState(p_i);
     q->setAccept(s->isAccepting());
     DEBUG("Creating p{}: {} {}", p_i, s->isAccepting() ? "accepting" : "rejecting",
@@ -274,8 +295,8 @@ DFA DFA::minimize() const {
 
   // setup transitions
   p_i = 0;
-  for (const StateSet& p : P) {
-    State* s = *p.begin();
+  for (const std::vector<const State*>& p : P) {
+    const State* s = *p.begin();
     State* t0 = dfamin.findState(p_i);
     for (const Edge& transition : s->transitions()) {
       if (int t_i = partitionId(transition.state); t_i != -1) {
@@ -293,44 +314,15 @@ DFA DFA::minimize() const {
   return dfamin;
 }
 
-std::tuple<OwnedStateSet, State*> DFA::release() {
-  std::tuple<OwnedStateSet, State*> result { std::move(states_), initialState_ };
-
-  states_.clear();
-  initialState_ = nullptr;
-
-  return result;
-}
-
 State* DFA::createState(StateId id) {
-  for (State* s : states())
-    if (s->id() == id)
-      throw std::invalid_argument{fmt::format("StateId: {}", id)};
+  assert(id == states_.nextId());
 
-  states_.emplace_back(std::make_unique<State>(id));
-  return states_.back().get();
+  return states_.create();
 }
 
 void DFA::setInitialState(State* s) {
   // TODO: assert (s is having no predecessors)
   initialState_ = s;
-}
-
-void DFA::renumber() {
-  std::set<State*> registry;
-  renumber(initialState_, &registry);
-}
-
-void DFA::renumber(State* s, std::set<State*>* registry) {
-  StateId id = registry->size();
-  VERIFY_STATE_AVAILABILITY(id, *registry);
-  s->setId(id);
-  registry->insert(s);
-  for (const Edge& transition : s->transitions()) {
-    if (registry->find(transition.state) == registry->end()) {
-      renumber(transition.state, registry);
-    }
-  }
 }
 
 struct TransitionTable { // {{{
@@ -387,23 +379,23 @@ struct TransitionTable { // {{{
     q3    | d3    | {n3,n4,n6,n7,n8,n9} | -none-              | q2                  | q3
 }}} */
 DFA DFA::construct(ThompsonConstruct nfa) {
-  StateSet q_0 = epsilonClosure({nfa.initialState()});
+  std::vector<const State*> q_0 = epsilonClosure({nfa.initialState()});
   DEBUG("q_0 = epsilonClosure({}) = {}", to_string({nfa.initialState()}), q_0);
-  std::vector<StateSet> Q = {q_0};          // resulting states
-  std::deque<StateSet> workList = {q_0};
+  std::vector<std::vector<const State*>> Q = {q_0};          // resulting states
+  std::deque<std::vector<const State*>> workList = {q_0};
   TransitionTable T;
 
   DEBUG(" {:<8} | {:<14} | {:<24} | {:<}", "set name", "DFA state", "NFA states", "ε-closures(q, *)");
   DEBUG("{}", "------------------------------------------------------------------------");
 
   while (!workList.empty()) {
-    StateSet q = workList.front();    // each set q represents a valid configuration from the NFA
+    std::vector<const State*> q = workList.front();    // each set q represents a valid configuration from the NFA
     workList.pop_front();
     const int q_i = configurationNumber(Q, q);
 
     std::stringstream dbg;
     for (Symbol c : nfa.alphabet()) {
-      StateSet t = epsilonClosure(delta(q, c));
+      std::vector<const State*> t = epsilonClosure(delta(q, c));
 
       int t_i = configurationNumber(Q, t);
 
@@ -428,7 +420,7 @@ DFA DFA::construct(ThompsonConstruct nfa) {
 
   // map q_i to d_i and flag accepting states
   int q_i = 0;
-  for (StateSet& q : Q) {
+  for (std::vector<const State*>& q : Q) {
     // d_i represents the corresponding state in the DFA for all states of q from the NFA
     State* d_i = dfa.createState(q_i);
     // std::cerr << fmt::format("map q{} to d{} for {} states, {}.\n", q_i, d_i->id(), q.size(), to_string(q, "d"));
@@ -466,6 +458,31 @@ DFA DFA::construct(ThompsonConstruct nfa) {
   dfa.setInitialState(dfa.findState(0));
 
   return dfa;
+}
+
+void DFA::visit(DotVisitor& v) const {
+  int id { 0 };
+
+  v.start();
+  visit(v, initialState_, &id);
+  v.end();
+}
+
+void DFA::visit(DotVisitor& v, const State* s, int* id) const {
+  const bool start = s == initialState_;
+  const bool accept = s->isAccepting();
+  const int sourceId = *id;
+
+  v.visitNode(*id, start, accept);
+  *id = *id + 1;
+
+  for (const Edge& edge : s->transitions()) {
+    const int targetId = *id;
+    const std::string edgeText = prettySymbol(edge.symbol);
+
+    visit(v, edge.state, id);
+    v.visitEdge(sourceId, targetId, edgeText);
+  }
 }
 
 } // namespace klex

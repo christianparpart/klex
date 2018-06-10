@@ -5,7 +5,7 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/Builder.h>
+#include <klex/Compiler.h>
 #include <klex/DFA.h>
 #include <klex/Lexer.h>
 #include <klex/LexerDef.h>
@@ -16,35 +16,28 @@
 
 namespace klex {
 
-void Builder::declare(Tag tag, std::string_view pattern) {
+void Compiler::declare(Tag tag, std::string_view pattern) {
   std::unique_ptr<RegExpr> expr = RegExprParser{}.parse(pattern);
   ThompsonConstruct nfa = RegExprExporter{}.construct(expr.get());
-  DFA dfa = DFA::construct(std::move(nfa));
-  DFA dfamin = dfa.minimize();
-
-  // std::cerr << fmt::format("Builder.declare: tag {} RE {}\n", tag, pattern);
-  for (State* s : dfamin.acceptStates()) {
-    s->setTag(tag);
-  }
-
-  ThompsonConstruct tc { std::move(dfamin) };
+  nfa.acceptState()->setTag(tag);
 
   if (fa_.empty()) {
-    fa_ = std::move(tc);
+    fa_ = std::move(nfa);
   } else {
-    fa_.alternate(std::move(tc));
+    fa_.alternate(std::move(nfa));
   }
 }
 
-DFA Builder::compileDFA() {
+DFA Compiler::compileDFA() {
   return DFA::construct(std::move(fa_));
 }
 
-LexerDef Builder::compile() {
+LexerDef Compiler::compile() {
+  // TODO: constructTables(MinDFABuilder::construct(DFA::construct(std::move(fa_))));
   return compile(DFA::construct(std::move(fa_)));
 }
 
-LexerDef Builder::compile(const DFA& dfa) {
+LexerDef Compiler::compile(const DFA& dfa) {
   const Alphabet alphabet = dfa.alphabet();
   TransitionMap transitionMap;
 

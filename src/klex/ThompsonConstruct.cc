@@ -17,39 +17,9 @@ namespace klex {
 #define DEBUG(msg, ...) do { } while (0)
 #endif
 
-// {{{ helper
-static StateId nextId(const OwnedStateSet& states) {
-  StateId id = 0;
-
-  for (const std::unique_ptr<State>& s : states)
-    if (id <= s->id())
-      id = s->id() + 1;
-
-  return id;
-}
-// }}}
-
-ThompsonConstruct::ThompsonConstruct(DFA dfa)
-    : ThompsonConstruct{} {
-  const auto acceptStates = dfa.acceptStates();
-  std::tuple<OwnedStateSet, State*> owned = dfa.release();
-  states_ = std::move(std::get<0>(owned));
-  initialState_ = std::get<1>(owned);
-  nextId_ = nextId(states_);
-
-  if (acceptStates.size() > 1) {
-    State* newEnd = createState();
-    for (State* a : acceptStates) {
-      a->setAccept(false);
-      a->linkTo(newEnd);
-    }
-    newEnd->setAccept(true);
-  }
-}
-
 Alphabet ThompsonConstruct::alphabet() const {
   Alphabet alphabet;
-  for (const State* state : states()) {
+  for (const State* state : states_) {
     for (const Edge& transition : state->transitions()) {
       if (transition.symbol != EpsilonTransition) {
         alphabet.insert(transition.symbol);
@@ -59,26 +29,22 @@ Alphabet ThompsonConstruct::alphabet() const {
   return alphabet;
 }
 
-void ThompsonConstruct::setTag(Tag tag) {
-  for (const std::unique_ptr<State>& s : states_) {
-    assert(s->tag() == 0 && "State.tag() must not be set more than once");
-    s->setTag(tag);
-  }
-}
-
 ThompsonConstruct ThompsonConstruct::clone() const {
   ThompsonConstruct output;
 
   // clone states
-  for (const std::unique_ptr<State>& s : states_) {
-    State* u = output.createState(s->id(), s->isAccepting(), s->tag());
-    if (s.get() == initialState()) {
+  for (const State* s : states_) {
+    State* u = output.createState(s->isAccepting(), s->tag());
+    if (s == initialState_) {
       output.initialState_ = u;
+    }
+    if (s == acceptState_) {
+      output.acceptState_ = u;
     }
   }
 
   // map links
-  for (const std::unique_ptr<State>& s : states_) {
+  for (const State* s : states_) {
     State* u = output.findState(s->id());
     for (const Edge& transition : s->transitions()) {
       State* v = output.findState(transition.state->id());
@@ -87,85 +53,62 @@ ThompsonConstruct ThompsonConstruct::clone() const {
     }
   }
 
-  output.nextId_ = nextId_;
-
   return output;
 }
 
-State* ThompsonConstruct::acceptState() const {
-  for (const std::unique_ptr<State>& s : states_)
-    if (s->isAccepting())
-      return s.get();
-
-  fprintf(stderr, "Internal Bug! Thompson's Consruct without an end state.\n");
-  abort();
-}
-
 // TODO: Remove me?
-// std::tuple<OwnedStateSet, State*> ThompsonConstruct::release() {
-//   auto t = std::make_tuple(std::move(states_), initialState_);
+// std::tuple<OwnedStateSet, State*, State*> ThompsonConstruct::release() {
+//   auto t = std::make_tuple(std::move(states_), initialState_, acceptState_);
 //   initialState_ = nullptr;
+//   acceptState_ = nullptr;
 //   return t;
 // }
 
 State* ThompsonConstruct::createState() {
-  return createState(nextId_++, false, 0);
+  return states_.create();
 }
 
-State* ThompsonConstruct::createState(StateId id, bool accepting, Tag tag) {
-  if (findState(id) != nullptr)
-    throw std::invalid_argument{fmt::format("StateId: {}", id)};
-
-  states_.emplace_back(std::make_unique<State>(id, accepting, tag));
-  return states_.back().get();
+State* ThompsonConstruct::createState(bool accepting, Tag acceptTag) {
+  return states_.create(accepting, acceptTag);
 }
 
-State* ThompsonConstruct::findState(StateId id) const {
-  for (const std::unique_ptr<State>& s : states_)
-    if (s->id() == id)
-      return s.get();
-
-  return nullptr;
+State* ThompsonConstruct::createState(StateId id, bool accepting, Tag acceptTag) {
+  assert(id == states_.nextId());
+  return states_.create(accepting, acceptTag);
 }
 
 ThompsonConstruct& ThompsonConstruct::concatenate(ThompsonConstruct rhs) {
   acceptState()->linkTo(rhs.initialState_);
   acceptState()->setAccept(false);
 
-  // renumber first with given base
-  for (const std::unique_ptr<State>& s : rhs.states_) {
-    VERIFY_STATE_AVAILABILITY(nextId_, states_);
-    s->setId(nextId_++);
-  }
+  states_.append(std::move(rhs.states_));
 
-  for (std::unique_ptr<State>& s : rhs.states_)
-    states_.emplace_back(std::move(s));
+  rhs.initialState_ = nullptr;
+  rhs.acceptState_ = nullptr;
 
   return *this;
 }
 
-ThompsonConstruct& ThompsonConstruct::alternate(ThompsonConstruct other) {
+ThompsonConstruct& ThompsonConstruct::alternate(ThompsonConstruct rhs) {
   State* newStart = createState();
-  newStart->linkTo(initialState_);
-  newStart->linkTo(other.initialState_);
-
+  states_.append(std::move(rhs.states_));
   State* newEnd = createState();
-  acceptState()->linkTo(newEnd);
-  other.acceptState()->linkTo(newEnd);
+
+  newStart->linkTo(initialState_);
+  newStart->linkTo(rhs.initialState_);
+
+  acceptState_->linkTo(newEnd);
+  rhs.acceptState_->linkTo(newEnd);
 
   initialState_ = newStart;
-  acceptState()->setAccept(false);
-  other.acceptState()->setAccept(false);
+  acceptState_ = newEnd;
+
+  acceptState_->setAccept(false);
+  rhs.acceptState_->setAccept(false);
   newEnd->setAccept(true);
 
-  // renumber first with given base
-  for (const std::unique_ptr<State>& s : other.states_) {
-    VERIFY_STATE_AVAILABILITY(nextId_, states_);
-    s->setId(nextId_++);
-  }
-
-  for (std::unique_ptr<State>& s : other.states_)
-    states_.emplace_back(std::move(s));
+  rhs.initialState_ = nullptr;
+  rhs.acceptState_ = nullptr;
 
   return *this;
 }
@@ -231,7 +174,7 @@ ThompsonConstruct& ThompsonConstruct::repeat(unsigned minimum, unsigned maximum)
 }
 
 bool ThompsonConstruct::isReceivingEpsilon(const State* t) const noexcept {
-  for (const std::unique_ptr<State>& s : states_)
+  for (const State* s : states_)
     for (const Edge& edge : s->transitions())
       if (edge.state == t && edge.symbol == EpsilonTransition)
         return true;

@@ -23,6 +23,12 @@ class Alphabet {
 
   void insert(char ch) { alphabet_.insert(ch); }
 
+  void merge(const set_type& syms) {
+    for (Symbol s : syms) {
+      alphabet_.insert(s);
+    }
+  }
+
   std::string to_string() const;
 
   const iterator begin() const { return alphabet_.begin(); }

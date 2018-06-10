@@ -5,8 +5,9 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/Builder.h>
+#include <klex/Compiler.h>
 #include <klex/DFA.h>
+#include <klex/DotVisitor.h>
 #include <klex/Lexer.h>
 #include <klex/Rule.h>
 #include <klex/RuleParser.h>
@@ -93,7 +94,6 @@ int main(int argc, const char* argv[]) {
   flags.defineString("table-name", 'n', "IDENTIFIER", "Symbol name for generated table.", "lexerDef");
   flags.defineString("token-name", 'N', "IDENTIFIER", "Symbol name for generated token enum type.", "Token");
   flags.defineString("fa-dot", 'x', "DOT_FILE", "Writes dot graph of final finite automaton. Use - to represent stdout.", "");
-  flags.defineBool("fa-renumber", 'r', "Renumbers states ordered ascending when generating dot file");
   flags.parse(argc, argv);
 
   if (flags.getBool("help")) {
@@ -109,20 +109,19 @@ int main(int argc, const char* argv[]) {
   klex::RuleParser ruleParser{std::make_unique<std::ifstream>(klexFileName.string())};
   klex::RuleList rules = ruleParser.parseRules();
 
-  klex::Builder builder;
+  klex::Compiler builder;
   for (const klex::Rule& rule : rules)
     builder.declare(rule.tag, rule.pattern);
 
   klex::DFA dfa = builder.compileDFA();
 
   if (std::string dotfile = flags.getString("fa-dot"); !dotfile.empty()) {
-    if (flags.getBool("fa-renumber")) {
-      dfa.renumber();
-    }
     if (dotfile == "-") {
-      std::cout << klex::dot({klex::DotGraph{dfa.initialState(), dfa.ownedStates(), "n", ""}}, "", true);
+      klex::DotfileWriter writer{ std::cout };
+      dfa.visit(writer);
     } else {
-      std::ofstream{dotfile} << klex::dot({klex::DotGraph{dfa.initialState(), dfa.ownedStates(), "n", ""}}, "", true);
+      klex::DotfileWriter writer{ dotfile };
+      dfa.visit(writer);
     }
   }
 
@@ -134,7 +133,7 @@ int main(int argc, const char* argv[]) {
     generateTokenDefCxx(std::cerr, rules, flags.getString("token-name"));
   }
 
-  klex::LexerDef lexerDef = klex::Builder::compile(dfa);
+  klex::LexerDef lexerDef = klex::Compiler::compile(dfa);
   if (std::string tableFile = flags.getString("output-table"); tableFile != "-") {
     fs::create_directories(fs::path{tableFile}.remove_filename());
     std::ofstream ofs {tableFile};

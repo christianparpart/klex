@@ -6,12 +6,16 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
+#include <set>
+#include <utility>
+#include <vector>
 #include <klex/State.h>
 #include <klex/util/UnboxedRange.h>
 
 namespace klex {
 
 class Alphabet;
+class DotVisitor;
 class DFA;
 
 /**
@@ -36,37 +40,43 @@ class ThompsonConstruct {
 
   //! Constructs an empty NFA.
   ThompsonConstruct()
-      : nextId_{0},
-        states_{},
-        initialState_{nullptr} {
+      : states_{},
+        initialState_{nullptr},
+        acceptState_{nullptr},
+        acceptTag_{0} {
   }
 
   //! Constructs an NFA for a single character transition
   explicit ThompsonConstruct(Symbol value)
-      : nextId_{0},
-        states_{},
-        initialState_{createState()} {
-    State* acceptState = createState();
-    acceptState->setAccept(true);
-    initialState_->linkTo(value, acceptState);
+      : ThompsonConstruct{} {
+    initialState_ = createState();
+    acceptState_ = createState();
+    initialState_->linkTo(value, acceptState_);
   }
 
   /**
-   * Constructs this object with the given input automaton, enforcing Thompson's Construction
-   * properties onto it.
+   * Traverses all states and edges in this NFA and calls @p visitor for each state & edge.
+   *
+   * Use this function to e.g. get a GraphViz dot-file drawn.
    */
-  explicit ThompsonConstruct(DFA dfa);
+  void visit(DotVisitor& visitor);
 
+  //! Tests whether or not this is an empty NFA.
   bool empty() const noexcept { return states_.empty(); }
 
-  State* initialState() const { return initialState_; }
-  State* acceptState() const;
+  //! Retrieves the one and only initial state. This value is nullptr iff the NFA is empty.
+  State* initialState() const noexcept { return initialState_; }
+
+  //! Retrieves the one and only accept state. This value is nullptr iff the NFA is empty.
+  State* acceptState() const noexcept { return acceptState_; }
+
+  //! Retrieves the list of states this FA contains.
+  const StateVec& states() const { return states_; }
 
   //! Retrieves the alphabet of this finite automaton.
   Alphabet alphabet() const;
 
-  void setTag(Tag tag);
-
+  //! Clones this NFA.
   ThompsonConstruct clone() const;
 
   //! Concatenates the right FA's initial state with this FA's accepting state.
@@ -90,21 +100,20 @@ class ThompsonConstruct {
   //! Reconstructs this FA to be repeatable between range [minimum, maximum].
   ThompsonConstruct& repeat(unsigned minimum, unsigned maximum);
 
-  //! Retrieves the list of states this FA contains.
-  auto states() const { return util::unbox(states_); }
-
   //! @returns true if @p targetState is only reached via epsilon transition
   bool isReceivingEpsilon(const State* targetState) const noexcept;
 
  private:
   State* createState();
-  State* createState(StateId id, bool accepting, Tag tag);
-  State* findState(StateId id) const;
+  State* createState(bool accepting, Tag acceptTag);
+  State* createState(StateId id, bool accepting, Tag acceptTag);
+  State* findState(StateId id) { return states_.find(id); }
 
  private:
-  StateId nextId_;
-  OwnedStateSet states_;
+  StateVec states_;
   State* initialState_;
+  State* acceptState_;
+  Tag acceptTag_;
 };
 
 } // namespace klex
