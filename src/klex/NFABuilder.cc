@@ -5,41 +5,36 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/RegExprExporter.h>
+#include <klex/NFABuilder.h>
 #include <klex/DFA.h>
 
 namespace klex { 
 
-DFA RegExprExporter::generate(const RegExpr* re) {
-  ThompsonConstruct nfa = construct(re);
-  return DFA::construct(std::move(nfa));
-}
-
-ThompsonConstruct RegExprExporter::construct(const RegExpr* re) {
+NFA NFABuilder::construct(const RegExpr* re) {
   const_cast<RegExpr*>(re)->accept(*this);
 
   return std::move(fa_);
 }
 
-void RegExprExporter::visit(AlternationExpr& alternationExpr) {
-  ThompsonConstruct lhs = construct(alternationExpr.leftExpr());
-  ThompsonConstruct rhs = construct(alternationExpr.rightExpr());
+void NFABuilder::visit(AlternationExpr& alternationExpr) {
+  NFA lhs = construct(alternationExpr.leftExpr());
+  NFA rhs = construct(alternationExpr.rightExpr());
   lhs.alternate(std::move(rhs));
   fa_ = std::move(lhs);
 }
 
-void RegExprExporter::visit(ConcatenationExpr& concatenationExpr) {
-  ThompsonConstruct lhs = construct(concatenationExpr.leftExpr());
-  ThompsonConstruct rhs = construct(concatenationExpr.rightExpr());
+void NFABuilder::visit(ConcatenationExpr& concatenationExpr) {
+  NFA lhs = construct(concatenationExpr.leftExpr());
+  NFA rhs = construct(concatenationExpr.rightExpr());
   lhs.concatenate(std::move(rhs));
   fa_ = std::move(lhs);
 }
 
-void RegExprExporter::visit(CharacterExpr& characterExpr) {
-  fa_ = ThompsonConstruct{characterExpr.value()};
+void NFABuilder::visit(CharacterExpr& characterExpr) {
+  fa_ = NFA{characterExpr.value()};
 }
 
-void RegExprExporter::visit(ClosureExpr& closureExpr) {
+void NFABuilder::visit(ClosureExpr& closureExpr) {
   const unsigned xmin = closureExpr.minimumOccurrences();
   const unsigned xmax = closureExpr.maximumOccurrences();
   constexpr unsigned Infinity = std::numeric_limits<unsigned>::max();

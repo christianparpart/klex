@@ -7,18 +7,21 @@
 
 #include <klex/Compiler.h>
 #include <klex/DFA.h>
+#include <klex/DFABuilder.h>
+#include <klex/DFAMinimizer.h>
 #include <klex/Lexer.h>
 #include <klex/LexerDef.h>
+#include <klex/NFA.h>
+#include <klex/NFABuilder.h>
 #include <klex/RegExpr.h>
-#include <klex/RegExprExporter.h>
-#include <klex/ThompsonConstruct.h>
+
 #include <iostream>
 
 namespace klex {
 
 void Compiler::declare(Tag tag, std::string_view pattern) {
   std::unique_ptr<RegExpr> expr = RegExprParser{}.parse(pattern);
-  ThompsonConstruct nfa = RegExprExporter{}.construct(expr.get());
+  NFA nfa = NFABuilder{}.construct(expr.get());
   nfa.acceptState()->setTag(tag);
 
   if (fa_.empty()) {
@@ -29,12 +32,15 @@ void Compiler::declare(Tag tag, std::string_view pattern) {
 }
 
 DFA Compiler::compileDFA() {
-  return DFA::construct(std::move(fa_));
+  return DFABuilder{}.construct(std::move(fa_));
 }
 
 LexerDef Compiler::compile() {
-  // TODO: constructTables(MinDFABuilder::construct(DFA::construct(std::move(fa_))));
-  return compile(DFA::construct(std::move(fa_)));
+  DFA dfa = DFABuilder{}.construct(std::move(fa_));
+  DFA dfamin = DFAMinimizer{}.construct(dfa);
+  return compile(dfamin);
+  //return compile(MinDFABuilder::construct(DFABuilder{}.construct(std::move(fa_))));
+  //return compile(DFABuilder{}.construct(std::move(fa_)));
 }
 
 LexerDef Compiler::compile(const DFA& dfa) {

@@ -30,16 +30,16 @@ class DFA;
  *   <li> Each state has at most two entering states and at most two leaving states.
  * </ul>
  */
-class ThompsonConstruct {
+class NFA {
  public:
-  ThompsonConstruct(const ThompsonConstruct& other) = delete;
-  ThompsonConstruct& operator=(const ThompsonConstruct& other) = delete;
+  NFA(const NFA& other) = delete;
+  NFA& operator=(const NFA& other) = delete;
 
-  ThompsonConstruct(ThompsonConstruct&&) = default;
-  ThompsonConstruct& operator=(ThompsonConstruct&&) = default;
+  NFA(NFA&&) = default;
+  NFA& operator=(NFA&&) = default;
 
   //! Constructs an empty NFA.
-  ThompsonConstruct()
+  NFA()
       : states_{},
         initialState_{nullptr},
         acceptState_{nullptr},
@@ -47,8 +47,8 @@ class ThompsonConstruct {
   }
 
   //! Constructs an NFA for a single character transition
-  explicit ThompsonConstruct(Symbol value)
-      : ThompsonConstruct{} {
+  explicit NFA(Symbol value)
+      : NFA{} {
     initialState_ = createState();
     acceptState_ = createState();
     initialState_->linkTo(value, acceptState_);
@@ -77,28 +77,28 @@ class ThompsonConstruct {
   Alphabet alphabet() const;
 
   //! Clones this NFA.
-  ThompsonConstruct clone() const;
+  NFA clone() const;
 
   //! Concatenates the right FA's initial state with this FA's accepting state.
-  ThompsonConstruct& concatenate(ThompsonConstruct rhs);
+  NFA& concatenate(NFA rhs);
 
   //! Reconstructs this FA to alternate between this FA and the @p other FA.
-  ThompsonConstruct& alternate(ThompsonConstruct other);
+  NFA& alternate(NFA other);
 
   //! Reconstructs this FA to allow optional input. X -> X?
-  ThompsonConstruct& optional();
+  NFA& optional();
 
   //! Reconstructs this FA with the given @p quantifier factor.
-  ThompsonConstruct& times(unsigned quantifier);
+  NFA& times(unsigned quantifier);
 
   //! Reconstructs this FA to allow recurring input. X -> X*
-  ThompsonConstruct& recurring();
+  NFA& recurring();
 
   //! Reconstructs this FA to be recurring at least once. X+ = XX*
-  ThompsonConstruct& positive();
+  NFA& positive();
 
   //! Reconstructs this FA to be repeatable between range [minimum, maximum].
-  ThompsonConstruct& repeat(unsigned minimum, unsigned maximum);
+  NFA& repeat(unsigned minimum, unsigned maximum);
 
   //! @returns true if @p targetState is only reached via epsilon transition
   bool isReceivingEpsilon(const State* targetState) const noexcept;

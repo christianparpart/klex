@@ -11,8 +11,6 @@
 #include <klex/Lexer.h>
 #include <klex/Rule.h>
 #include <klex/RuleParser.h>
-#include <klex/ThompsonConstruct.h>
-#include <klex/dot.h>
 #include <klex/util/Flags.h>
 
 #include <cstdlib>

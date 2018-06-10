@@ -33,14 +33,15 @@ add_library(klex STATIC
     src/klex/Alphabet.cc
     src/klex/Compiler.cc
     src/klex/DFA.cc
+    src/klex/DFABuilder.cc
+    src/klex/DFAMinimizer.cc
     src/klex/DotVisitor.cc
-    src/klex/dot.cc
     src/klex/Lexer.cc
+    src/klex/NFA.cc
+    src/klex/NFABuilder.cc
     src/klex/RegExpr.cc
-    src/klex/RegExprExporter.cc
     src/klex/RuleParser.cc
     src/klex/State.cc
-    src/klex/ThompsonConstruct.cc
     src/klex/TransitionMap.cc
     src/klex/util/Flags.cc
     )

@@ -11,7 +11,8 @@
 
 namespace klex {
 
-class ThompsonConstruct;
+class NFA;
+class DFABuilder;
 class DotVisitor;
 
 /**
@@ -27,9 +28,6 @@ class DFA {
 
   DFA() : states_{}, initialState_{nullptr} {}
 
-  //! constructs a DFA from a given @p nfa.
-  static DFA construct(ThompsonConstruct nfa);
-
   //! Retrieves the alphabet of this finite automaton.
   Alphabet alphabet() const;
 
@@ -43,9 +41,6 @@ class DFA {
   std::vector<const State*> acceptStates() const;
   std::vector<State*> acceptStates();
 
-  //! Constructs a minimized version of this DFA.
-  DFA minimize() const;
-
   /**
    * Traverses all states and edges in this NFA and calls @p visitor for each state & edge.
    *
@@ -53,10 +48,12 @@ class DFA {
    */
   void visit(DotVisitor& visitor) const;
 
- private:
+  State* createState();
   State* findState(StateId id) { return states_.find(id); }
-  State* createState(StateId expectedId);
   void setInitialState(State* state);
+
+ private:
+  State* createState(StateId expectedId);
   void visit(DotVisitor& v, const State* s, int* id) const;
 
  private:

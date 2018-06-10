@@ -6,29 +6,16 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <klex/State.h>
-#include <klex/LexerDef.h>
-#include <klex/NFA.h>
-
-#include <string_view>
-
 namespace klex {
 
-class Compiler {
+class NFA;
+class DFA;
+
+class DFABuilder {
  public:
-  Compiler() : fa_{} {}
-
-  void ignore(std::string_view pattern); // such as " \t\n" or "#.*$"
-  void declare(Tag tag, std::string_view pattern);
-
-  DFA compileDFA();
-  LexerDef compile();
-
-  static LexerDef compile(const DFA& dfa);
+  DFA construct(NFA nfa);
 
  private:
-  NFA fa_;
 };
 
 } // namespace klex
-

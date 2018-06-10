@@ -5,7 +5,7 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/ThompsonConstruct.h>
+#include <klex/NFA.h>
 #include <klex/DFA.h>
 #include <iostream>
 
@@ -17,7 +17,7 @@ namespace klex {
 #define DEBUG(msg, ...) do { } while (0)
 #endif
 
-Alphabet ThompsonConstruct::alphabet() const {
+Alphabet NFA::alphabet() const {
   Alphabet alphabet;
   for (const State* state : states_) {
     for (const Edge& transition : state->transitions()) {
@@ -29,8 +29,8 @@ Alphabet ThompsonConstruct::alphabet() const {
   return alphabet;
 }
 
-ThompsonConstruct ThompsonConstruct::clone() const {
-  ThompsonConstruct output;
+NFA NFA::clone() const {
+  NFA output;
 
   // clone states
   for (const State* s : states_) {
@@ -57,27 +57,27 @@ ThompsonConstruct ThompsonConstruct::clone() const {
 }
 
 // TODO: Remove me?
-// std::tuple<OwnedStateSet, State*, State*> ThompsonConstruct::release() {
+// std::tuple<OwnedStateSet, State*, State*> NFA::release() {
 //   auto t = std::make_tuple(std::move(states_), initialState_, acceptState_);
 //   initialState_ = nullptr;
 //   acceptState_ = nullptr;
 //   return t;
 // }
 
-State* ThompsonConstruct::createState() {
+State* NFA::createState() {
   return states_.create();
 }
 
-State* ThompsonConstruct::createState(bool accepting, Tag acceptTag) {
+State* NFA::createState(bool accepting, Tag acceptTag) {
   return states_.create(accepting, acceptTag);
 }
 
-State* ThompsonConstruct::createState(StateId id, bool accepting, Tag acceptTag) {
+State* NFA::createState(StateId id, bool accepting, Tag acceptTag) {
   assert(id == states_.nextId());
   return states_.create(accepting, acceptTag);
 }
 
-ThompsonConstruct& ThompsonConstruct::concatenate(ThompsonConstruct rhs) {
+NFA& NFA::concatenate(NFA rhs) {
   acceptState()->linkTo(rhs.initialState_);
   acceptState()->setAccept(false);
 
@@ -89,7 +89,7 @@ ThompsonConstruct& ThompsonConstruct::concatenate(ThompsonConstruct rhs) {
   return *this;
 }
 
-ThompsonConstruct& ThompsonConstruct::alternate(ThompsonConstruct rhs) {
+NFA& NFA::alternate(NFA rhs) {
   State* newStart = createState();
   states_.append(std::move(rhs.states_));
   State* newEnd = createState();
@@ -113,7 +113,7 @@ ThompsonConstruct& ThompsonConstruct::alternate(ThompsonConstruct rhs) {
   return *this;
 }
 
-ThompsonConstruct& ThompsonConstruct::optional() {
+NFA& NFA::optional() {
   State* newStart = createState();
   State* newEnd = createState();
 
@@ -128,7 +128,7 @@ ThompsonConstruct& ThompsonConstruct::optional() {
   return *this;
 }
 
-ThompsonConstruct& ThompsonConstruct::recurring() {
+NFA& NFA::recurring() {
   // {0, inf}
   State* newStart = createState();
   State* newEnd = createState();
@@ -144,27 +144,27 @@ ThompsonConstruct& ThompsonConstruct::recurring() {
   return *this;
 }
 
-ThompsonConstruct& ThompsonConstruct::positive() {
+NFA& NFA::positive() {
   return concatenate(std::move(clone().recurring()));
 }
 
-ThompsonConstruct& ThompsonConstruct::times(unsigned factor) {
+NFA& NFA::times(unsigned factor) {
   assert(factor != 0);
 
   if (factor == 1)
     return *this;
 
-  ThompsonConstruct base = clone();
+  NFA base = clone();
   for (unsigned n = 2; n <= factor; ++n)
     concatenate(base.clone());
 
   return *this;
 }
 
-ThompsonConstruct& ThompsonConstruct::repeat(unsigned minimum, unsigned maximum) {
+NFA& NFA::repeat(unsigned minimum, unsigned maximum) {
   assert(minimum <= maximum);
 
-  ThompsonConstruct factor = clone();
+  NFA factor = clone();
 
   times(minimum);
   for (unsigned n = minimum + 1; n <= maximum; n++)
@@ -173,7 +173,7 @@ ThompsonConstruct& ThompsonConstruct::repeat(unsigned minimum, unsigned maximum)
   return *this;
 }
 
-bool ThompsonConstruct::isReceivingEpsilon(const State* t) const noexcept {
+bool NFA::isReceivingEpsilon(const State* t) const noexcept {
   for (const State* s : states_)
     for (const Edge& edge : s->transitions())
       if (edge.state == t && edge.symbol == EpsilonTransition)

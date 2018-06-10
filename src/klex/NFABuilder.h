@@ -7,9 +7,8 @@
 #pragma once
 
 #include <klex/Alphabet.h>
+#include <klex/NFA.h>
 #include <klex/RegExpr.h>
-#include <klex/ThompsonConstruct.h>
-#include <klex/util/UnboxedRange.h>
 
 #include <fmt/format.h>
 #include <list>
@@ -27,13 +26,12 @@ class DFA;
 /*!
  * Generates a finite automaton from the given input (a regular expression).
  */
-class RegExprExporter : public RegExprVisitor {
+class NFABuilder : public RegExprVisitor {
  public:
-  explicit RegExprExporter()
+  explicit NFABuilder()
       : fa_{} {}
 
-  ThompsonConstruct construct(const RegExpr* re);
-  DFA generate(const RegExpr* re);
+  NFA construct(const RegExpr* re);
 
  private:
   void visit(AlternationExpr& alternationExpr) override;
@@ -42,7 +40,7 @@ class RegExprExporter : public RegExprVisitor {
   void visit(ClosureExpr& closureExpr) override;
 
  private:
-  ThompsonConstruct fa_;
+  NFA fa_;
 };
 
 } // namespace klex
