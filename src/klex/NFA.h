@@ -9,7 +9,7 @@
 #include <klex/State.h>
 #include <klex/util/UnboxedRange.h>
 
-#include <set>
+#include <map>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -34,18 +34,29 @@ class DFA;
  */
 class NFA {
  public:
-  NFA(const NFA& other) = delete;
-  NFA& operator=(const NFA& other) = delete;
+  //! holds a vector of State Ids.
+  using StateIdVec = std::vector<StateId>;
 
+  //! represent a transition table for a specific state
+  using TransitionMap = std::map<Symbol, StateIdVec>;
+
+  //! defines a set of states within one NFA. the index represents the state Id.
+  using StateVec = std::vector<TransitionMap>;
+
+  //! defines a map of accepting states with their associated tag. A tag of 0 means "default".
+  using AcceptMap = std::map<StateId, Tag>;
+
+  NFA(const NFA& other) = default;
   NFA(NFA&&) = default;
+  NFA& operator=(const NFA& other) = default;
   NFA& operator=(NFA&&) = default;
 
   //! Constructs an empty NFA.
   NFA()
       : states_{},
-        initialState_{nullptr},
-        acceptState_{nullptr},
-        acceptTag_{0} {
+        initialState_{0},
+        acceptState_{0},
+        acceptTags_{} {
   }
 
   /**
@@ -57,7 +68,12 @@ class NFA {
       : NFA{} {
     initialState_ = createState();
     acceptState_ = createState();
-    initialState_->linkTo(value, acceptState_);
+    addTransition(initialState_, value, acceptState_);
+    acceptTags_[acceptState_] = 0; // 0 == DefaultAcceptAction
+  }
+
+  void addTransition(StateId from, Symbol s, StateId to) {
+    states_[from][s].push_back(to);
   }
 
   /**
@@ -71,10 +87,10 @@ class NFA {
   bool empty() const noexcept { return states_.empty(); }
 
   //! Retrieves the one and only initial state. This value is nullptr iff the NFA is empty.
-  State* initialState() const noexcept { return initialState_; }
+  StateId initialStateId() const noexcept { return initialState_; }
 
   //! Retrieves the one and only accept state. This value is nullptr iff the NFA is empty.
-  State* acceptState() const noexcept { return acceptState_; }
+  StateId acceptStateId() const noexcept { return acceptState_; }
 
   //! Retrieves the list of states this FA contains.
   const StateVec& states() const { return states_; }
@@ -107,21 +123,26 @@ class NFA {
   //! Reconstructs this FA to be repeatable between range [minimum, maximum].
   NFA& repeat(unsigned minimum, unsigned maximum);
 
-  //! @returns true if @p targetState is only reached via epsilon transition
-  bool isReceivingEpsilon(const State* targetState) const noexcept;
+  //! Retrieves transitions for state with the ID @p id.
+  TransitionMap& stateTransitions(StateId id) {
+    return states_[id];
+  }
+
+  //! Flags given state as accepting-state with given Tag @p acceptTag.
+  void setAccept(StateId id, Tag acceptTag) {
+    acceptTags_[id] = acceptTag;
+  }
 
  private:
-  State* createState();
-  State* createState(bool accepting, Tag acceptTag);
-  State* createState(StateId id, bool accepting, Tag acceptTag);
-  State* findState(StateId id) { return states_.find(id); }
-  void visit(DotVisitor& v, const State* s, std::unordered_map<const State*, size_t>& registry) const;
+  StateId createState();
+  StateId createState(Tag acceptTag);
+  void visit(DotVisitor& v, StateId s, std::unordered_map<StateId, size_t>& registry) const;
 
  private:
   StateVec states_;
-  State* initialState_;
-  State* acceptState_;
-  Tag acceptTag_;
+  StateId initialState_;
+  StateId acceptState_;
+  AcceptMap acceptTags_;
 };
 
 } // namespace klex

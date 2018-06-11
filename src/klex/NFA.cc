@@ -20,57 +20,35 @@ namespace klex {
 
 Alphabet NFA::alphabet() const {
   Alphabet alphabet;
-  for (const State* state : states_) {
-    for (const Edge& transition : state->transitions()) {
-      if (transition.symbol != EpsilonTransition) {
-        alphabet.insert(transition.symbol);
-      }
-    }
-  }
+
+  for (const TransitionMap& transitions : states_)
+    for (const std::pair<Symbol, StateIdVec>& t : transitions)
+      alphabet.insert(t.first);
+
   return alphabet;
 }
 
 NFA NFA::clone() const {
-  NFA output;
-
-  // clone states
-  for (const State* s : states_) {
-    State* u = output.createState(s->isAccepting(), s->tag());
-    if (s == initialState_) {
-      output.initialState_ = u;
-    }
-    if (s == acceptState_) {
-      output.acceptState_ = u;
-    }
-  }
-
-  // map links
-  for (const State* s : states_) {
-    State* u = output.findState(s->id());
-    for (const Edge& transition : s->transitions()) {
-      State* v = output.findState(transition.state->id());
-      u->linkTo(transition.symbol, v);
-      // findState(s->id())->linkTo(t.symbol, findState(t.state->id()));
-    }
-  }
-
-  return output;
+  return *this;
 }
 
-State* NFA::createState() {
-  return states_.create();
+StateId NFA::createState() {
+  states_.emplace_back();
+  return states_.size() - 1;
 }
 
-State* NFA::createState(bool accepting, Tag acceptTag) {
-  return states_.create(accepting, acceptTag);
-}
-
-State* NFA::createState(StateId id, bool accepting, Tag acceptTag) {
-  assert(id == states_.nextId());
-  return states_.create(accepting, acceptTag);
+StateId NFA::createState(Tag acceptTag) {
+  StateId id = createState();
+  acceptTags_[id] = acceptTag;
+  return id;
 }
 
 NFA& NFA::concatenate(NFA rhs) {
+  StateId base = states_.size();
+  for (auto& t : rhs.states_) {
+  }
+
+  // ------------------------------------------------------------------------------
   acceptState_->linkTo(rhs.initialState_);
   acceptState_->setAccept(false);
 
@@ -172,15 +150,6 @@ NFA& NFA::repeat(unsigned minimum, unsigned maximum) {
     alternate(std::move(factor.clone().times(n)));
 
   return *this;
-}
-
-bool NFA::isReceivingEpsilon(const State* t) const noexcept {
-  for (const State* s : states_)
-    for (const Edge& edge : s->transitions())
-      if (edge.state == t && edge.symbol == EpsilonTransition)
-        return true;
-
-  return false;
 }
 
 void NFA::visit(DotVisitor& v) const {

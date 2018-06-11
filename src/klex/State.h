@@ -23,7 +23,7 @@ using Symbol = char;
 
 std::string prettySymbol(Symbol input);
 
-using StateId = unsigned int;
+using StateId = size_t;
 using Tag = int;
 
 class State;
@@ -171,9 +171,9 @@ class StateVec {
  private:
   std::vector<std::unique_ptr<State>> states_;
 
-//   std::vector<StateId> states_;
-//   std::unordered_map<StateId, Tag> accepts_;
-//   std::unordered_map<std::pair<StateId, Symbol>, StateId> transitions_;
+  // std::vector<StateId> states_;
+  // std::unordered_map<StateId, Tag> accepts_;
+  // std::unordered_map<StateId, std::unordered_map<Symbol, StateId>> transitions_;
 };
 
 /**
