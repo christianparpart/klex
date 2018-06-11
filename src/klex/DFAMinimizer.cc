@@ -11,6 +11,8 @@
 
 #include <list>
 #include <map>
+#include <sstream>
+#include <iostream>
 #include <vector>
 
 namespace klex {
@@ -24,22 +26,23 @@ namespace klex {
 DFAMinimizer::DFAMinimizer(const DFA& dfa) : dfa_{dfa} {
 }
 
-std::vector<const State*> DFAMinimizer::nonAcceptStates() const {
-  std::vector<const State*> result;
-
-  for (const State* s : dfa_.states())
-    if (!s->isAccepting())
-      result.push_back(s);
-
-  return result;
-}
-
 bool DFAMinimizer::containsInitialState(const std::vector<const State*>& S) const {
   for (const State* s : S)
     if (s == dfa_.initialState())
       return true;
 
   return false;
+}
+
+std::vector<const State*> DFAMinimizer::nonAcceptStates() const {
+  std::vector<const State*> result;
+
+  for (const State* s : dfa_.states())
+    // if (!s->isAccepting())
+    if (!s->tag())
+      result.push_back(s);
+
+  return result;
 }
 
 std::list<std::vector<const State*>>::iterator DFAMinimizer::findGroup(const State* s) {
@@ -93,11 +96,32 @@ std::list<std::vector<const State*>> DFAMinimizer::split(const std::vector<const
 
 DFA DFAMinimizer::construct() {
   // group all accept states by their tag
-  for (const State* s : dfa_.acceptStates()) {
+  // for (const State* s : dfa_.acceptStates()) {
+  for (const State* s : dfa_.states()) {
+    if (!s->tag()) continue;
+    if (s->isAccepting()) {
+      DEBUG("FIXME?: found accepting state n{} without a tag.", s->id());
+    }
     if (auto group = findGroup(s); group != T.end())
       group->push_back(s);
     else
       T.push_back({s});
+  }
+
+  {
+    DEBUG("dumping groups ({}) {}", T.size(), dfa_.acceptStates().size());
+    int groupNr = 0;
+    for (const auto& t : T) {
+      std::stringstream sstr;
+      sstr << "{";
+      for (size_t i = 0, e = t.size(); i != e; ++i) {
+        if (i) sstr << ", ";
+        sstr << "n" << t[i];
+      }
+      sstr << "}";
+      DEBUG("group {}: {}", groupNr, sstr.str());
+      groupNr++;
+    }
   }
 
   // add another group for all non-accept states
@@ -117,6 +141,7 @@ DFA DFAMinimizer::construct() {
   DFA dfamin;
 
   // instanciate states
+  size_t p_i = 0;
   for (const std::vector<const State*>& p : P) {
     const State* s = *p.begin();
     State* q = dfamin.createState();
@@ -127,10 +152,11 @@ DFA DFAMinimizer::construct() {
     if (containsInitialState(p)) {
       dfamin.setInitialState(q);
     }
+    p_i++;
   }
 
   // setup transitions
-  size_t p_i = 0;
+  p_i = 0;
   for (const std::vector<const State*>& p : P) {
     const State* s = *p.begin();
     State* t0 = dfamin.findState(p_i);

@@ -94,8 +94,10 @@ void DFA::visit(DotVisitor& v) const {
 
   for (const State* s : states_) {
     for (const Edge& edge : s->transitions()) {
-      const std::string edgeText = prettySymbol(edge.symbol);
-      v.visitEdge(s->id(), edge.state->id(), edgeText);
+      v.visitEdge(s->id(), edge.state->id(), edge.symbol);
+    }
+    for (const Edge& edge : s->transitions()) {
+      v.endVisitEdge(s->id(), edge.state->id());
     }
   }
   v.end();

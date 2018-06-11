@@ -206,18 +206,21 @@ void NFA::visit(DotVisitor& v) const {
 
 void NFA::visit(DotVisitor& v, const State* s, std::unordered_map<const State*, size_t>& registry) const {
   const bool start = s == initialState_;
-  const bool accept = s->isAccepting();
+  const bool accept = s->tag() != 0 || s->isAccepting();
   const size_t id = registry.size();
 
   v.visitNode(id, start, accept);
   registry[s] = id;
 
   for (const Edge& edge : s->transitions()) {
-    const std::string edgeText = prettySymbol(edge.symbol);
     if (registry.find(edge.state) == registry.end()) {
       visit(v, edge.state, registry);
     }
-    v.visitEdge(id, registry[edge.state], edgeText);
+    v.visitEdge(id, registry[edge.state], edge.symbol);
+  }
+
+  for (const Edge& edge : s->transitions()) {
+    v.endVisitEdge(id, registry[edge.state]);
   }
 }
 

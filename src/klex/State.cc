@@ -64,27 +64,18 @@ std::string to_string(const std::vector<const State*>& S, std::string_view state
   return sstr.str();
 }
 
-std::string prettySymbol(Symbol input, bool dot) {
+std::string prettySymbol(Symbol input) {
   switch (input) {
     case -1:
       return "<EOF>";
     case EpsilonTransition:
       return "ε";
     case ' ':
-      if (dot)
-        return "\\\\s";
-      else
-        return "\\s";
+      return "\\s";
     case '\t':
-      if (dot)
-        return "\\\\t";
-      else
-        return "\\t";
+      return "\\t";
     case '\n':
-      if (dot)
-        return "\\\\n";
-      else
-        return "\\n";
+      return "\\n";
     default:
       return fmt::format("{}", input);
   }

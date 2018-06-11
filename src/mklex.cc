@@ -8,7 +8,7 @@
 #include <klex/Compiler.h>
 #include <klex/DFA.h>
 #include <klex/DFAMinimizer.h>
-#include <klex/DotVisitor.h>
+#include <klex/DotWriter.h>
 #include <klex/Lexer.h>
 #include <klex/Rule.h>
 #include <klex/RuleParser.h>
@@ -114,20 +114,24 @@ int main(int argc, const char* argv[]) {
     builder.declare(rule.tag, rule.pattern);
 
   if (flags.getBool("debug-nfa")) {
-    klex::DotfileWriter writer{ std::cout };
+    klex::DotWriter writer{ std::cout };
     builder.nfa().visit(writer);
     return EXIT_SUCCESS;
   }
 
   klex::DFA dfa = builder.compileDFA();
+#if 1
   klex::DFA dfamin = klex::DFAMinimizer{dfa}.construct();
+#else
+  klex::DFA& dfamin = dfa;
+#endif
 
   if (std::string dotfile = flags.getString("fa-dot"); !dotfile.empty()) {
     if (dotfile == "-") {
-      klex::DotfileWriter writer{ std::cout };
+      klex::DotWriter writer{ std::cout };
       dfamin.visit(writer);
     } else {
-      klex::DotfileWriter writer{ dotfile };
+      klex::DotWriter writer{ dotfile };
       dfamin.visit(writer);
     }
   }

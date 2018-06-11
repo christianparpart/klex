@@ -78,6 +78,14 @@ struct DFABuilder::TransitionTable { // {{{
 */
 
 DFA DFABuilder::construct(NFA nfa) {
+  // XXX patch-work, d'oh
+  for (State* s : nfa.states()) {
+    if (s->tag() && !s->isAccepting()) {
+      fprintf(stderr, "XXX: fixing accept state\n");
+      s->setAccept(true);
+    }
+  }
+
   std::vector<const State*> q_0 = epsilonClosure({nfa.initialState()});
   DEBUG("q_0 = epsilonClosure({}) = {}", to_string(std::vector<const State*>{nfa.initialState()}), q_0);
   std::vector<std::vector<const State*>> Q = {q_0};          // resulting states
@@ -130,10 +138,10 @@ DFA DFABuilder::construct(NFA nfa) {
       d_i->setAccept(true);
       Tag tag{};
       if (determineTag(nfa, q, &tag)) {
-        // std::cerr << fmt::format("determineTag: q{} tag {} from {}.\n", q_i, tag, q);
+        DEBUG("determineTag: q{} tag {} from {}.", q_i, tag, q);
         d_i->setTag(tag);
       } else {
-        // std::cerr << fmt::format("DFA accepting state {} merged from input states with different tags {}.\n", q_i, to_string(q));
+        DEBUG("FIXME?: DFA accepting state {} merged from input states with different tags {}.", q_i, to_string(q));
       }
     }
 
@@ -223,7 +231,7 @@ bool DFABuilder::determineTag(const NFA& fa, std::vector<const State*> qn, Tag* 
   for (const State* s : qn) {
     DEBUG("determineTag: possible tag from n{} ({}): {}", s->id(), s->isAccepting() ? "accepting" : "na", s->tag());
     if (s->isAccepting()) {// && !fa.isReceivingEpsilon(s)) {
-      if (s->tag() < lowestTag) {
+      if (s->tag() > 0 && s->tag() < lowestTag) {
         lowestTag = s->tag();
       }
     }

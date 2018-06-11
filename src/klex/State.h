@@ -21,8 +21,7 @@ namespace klex {
 //! input symbol as used for transitions
 using Symbol = char;
 
-std::string prettySymbol(Symbol input, bool dot = false);
-std::string groupCharacterClassRanges(std::vector<Symbol> chars, bool dot = false);
+std::string prettySymbol(Symbol input);
 
 using StateId = unsigned int;
 using Tag = int;
@@ -171,6 +170,10 @@ class StateVec {
 
  private:
   std::vector<std::unique_ptr<State>> states_;
+
+//   std::vector<StateId> states_;
+//   std::unordered_map<StateId, Tag> accepts_;
+//   std::unordered_map<std::pair<StateId, Symbol>, StateId> transitions_;
 };
 
 #if 0

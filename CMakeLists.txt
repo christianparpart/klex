@@ -35,7 +35,7 @@ add_library(klex STATIC
     src/klex/DFA.cc
     src/klex/DFABuilder.cc
     src/klex/DFAMinimizer.cc
-    src/klex/DotVisitor.cc
+    src/klex/DotWriter.cc
     src/klex/Lexer.cc
     src/klex/NFA.cc
     src/klex/NFABuilder.cc

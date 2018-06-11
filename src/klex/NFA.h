@@ -78,6 +78,7 @@ class NFA {
 
   //! Retrieves the list of states this FA contains.
   const StateVec& states() const { return states_; }
+  StateVec& states() { return states_; }
 
   //! Retrieves the alphabet of this finite automaton.
   Alphabet alphabet() const;
