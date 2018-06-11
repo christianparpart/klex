@@ -176,16 +176,9 @@ class StateVec {
 //   std::unordered_map<std::pair<StateId, Symbol>, StateId> transitions_;
 };
 
-#if 0
-using StateSet = std::set<State*>;
-#else
-using StateSet = std::list<State*>;
-#endif
-
 /**
- * Returns a human readable string of the StateSet @p S, such as "{n0, n1, n2}".
+ * Returns a human readable string of @p S, such as "{n0, n1, n2}".
  */
-std::string to_string(const StateSet& S, std::string_view stateLabelPrefix = "n");
 std::string to_string(const std::vector<const State*>& S, std::string_view stateLabelPrefix = "n");
 
 #define VERIFY_STATE_AVAILABILITY(freeId, set)                                  \
@@ -209,17 +202,6 @@ namespace fmt {
 
     template <typename FormatContext>
     constexpr auto format(const std::vector<const klex::State*>& v, FormatContext &ctx) {
-      return format_to(ctx.begin(), "{}", klex::to_string(v));
-    }
-  };
-
-  template<>
-  struct formatter<klex::StateSet> {
-    template <typename ParseContext>
-    constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
-
-    template <typename FormatContext>
-    constexpr auto format(const klex::StateSet& v, FormatContext &ctx) {
       return format_to(ctx.begin(), "{}", klex::to_string(v));
     }
   };
