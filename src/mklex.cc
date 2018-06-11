@@ -7,6 +7,7 @@
 
 #include <klex/Compiler.h>
 #include <klex/DFA.h>
+#include <klex/DFAMinimizer.h>
 #include <klex/DotVisitor.h>
 #include <klex/Lexer.h>
 #include <klex/Rule.h>
@@ -119,14 +120,15 @@ int main(int argc, const char* argv[]) {
   }
 
   klex::DFA dfa = builder.compileDFA();
+  klex::DFA dfamin = klex::DFAMinimizer{dfa}.construct();
 
   if (std::string dotfile = flags.getString("fa-dot"); !dotfile.empty()) {
     if (dotfile == "-") {
       klex::DotfileWriter writer{ std::cout };
-      dfa.visit(writer);
+      dfamin.visit(writer);
     } else {
       klex::DotfileWriter writer{ dotfile };
-      dfa.visit(writer);
+      dfamin.visit(writer);
     }
   }
 
@@ -138,7 +140,7 @@ int main(int argc, const char* argv[]) {
     generateTokenDefCxx(std::cerr, rules, flags.getString("token-name"));
   }
 
-  klex::LexerDef lexerDef = klex::Compiler::compile(dfa);
+  klex::LexerDef lexerDef = klex::Compiler::compile(dfamin);
   if (std::string tableFile = flags.getString("output-table"); tableFile != "-") {
     fs::create_directories(fs::path{tableFile}.remove_filename());
     std::ofstream ofs {tableFile};

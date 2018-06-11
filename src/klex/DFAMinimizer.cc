@@ -121,6 +121,7 @@ DFA DFAMinimizer::construct() {
     const State* s = *p.begin();
     State* q = dfamin.createState();
     q->setAccept(s->isAccepting());
+    q->setTag(s->tag());
     DEBUG("Creating p{}: {} {}", p_i, s->isAccepting() ? "accepting" : "rejecting",
                                       containsInitialState(p) ? "initial" : "");
     if (containsInitialState(p)) {
