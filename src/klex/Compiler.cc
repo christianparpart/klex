@@ -23,6 +23,7 @@ void Compiler::declare(Tag tag, std::string_view pattern) {
   std::unique_ptr<RegExpr> expr = RegExprParser{}.parse(pattern);
   NFA nfa = NFABuilder{}.construct(expr.get());
   nfa.acceptState()->setTag(tag);
+  assert(nfa.acceptState()->isAccepting());
 
   if (fa_.empty()) {
     fa_ = std::move(nfa);
@@ -37,6 +38,7 @@ DFA Compiler::compileDFA() {
 
 LexerDef Compiler::compile() {
   DFA dfa = DFABuilder{}.construct(std::move(fa_));
+  // return compile(dfa);
   DFA dfamin = DFAMinimizer{dfa}.construct();
   return compile(dfamin);
   //return compile(MinDFABuilder::construct(DFABuilder{}.construct(std::move(fa_))));

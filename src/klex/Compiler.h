@@ -21,6 +21,8 @@ class Compiler {
   void ignore(std::string_view pattern); // such as " \t\n" or "#.*$"
   void declare(Tag tag, std::string_view pattern);
 
+  const NFA& nfa() const { return fa_; }
+
   DFA compileDFA();
   LexerDef compile();
 

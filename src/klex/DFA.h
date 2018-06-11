@@ -36,6 +36,7 @@ class DFA {
 
   //! Retrieves the list of available states.
   const StateVec& states() const { return states_; }
+  StateVec& states() { return states_; }
 
   //! Retrieves the list of accepting states.
   std::vector<const State*> acceptStates() const;
@@ -48,13 +49,13 @@ class DFA {
    */
   void visit(DotVisitor& visitor) const;
 
+  void createStates(size_t count);
   State* createState();
   State* findState(StateId id) { return states_.find(id); }
   void setInitialState(State* state);
 
  private:
   State* createState(StateId expectedId);
-  void visit(DotVisitor& v, const State* s, int* id) const;
 
  private:
   StateVec states_;

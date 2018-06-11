@@ -56,6 +56,14 @@ std::vector<State*> DFA::acceptStates() {
 
 // --------------------------------------------------------------------------
 
+void DFA::createStates(size_t count) {
+  states_.reserve(states_.size() + count);
+
+  for (size_t i = 0; i < count; ++i) {
+    states_.create();
+  }
+}
+
 State* DFA::createState() {
   return states_.create();
 }
@@ -71,28 +79,40 @@ void DFA::setInitialState(State* s) {
 }
 
 void DFA::visit(DotVisitor& v) const {
-  int id { 0 };
-
+#if 1
   v.start();
-  visit(v, initialState_, &id);
-  v.end();
-}
 
-void DFA::visit(DotVisitor& v, const State* s, int* id) const {
-  const bool start = s == initialState_;
-  const bool accept = s->isAccepting();
-  const int sourceId = *id;
+  v.visitNode(initialState_->id(), true, initialState_->isAccepting());
 
-  v.visitNode(*id, start, accept);
-  *id = *id + 1;
+  for (const State* s : acceptStates())
+    v.visitNode(s->id(), s == initialState_, true);
 
-  for (const Edge& edge : s->transitions()) {
-    const int targetId = *id;
-    const std::string edgeText = prettySymbol(edge.symbol);
+  for (const State* s : states_)
+    if (s != initialState_ && !s->isAccepting())
+      v.visitNode(s->id(), false, false);
 
-    visit(v, edge.state, id);
-    v.visitEdge(sourceId, targetId, edgeText);
+  for (const State* s : states_) {
+    for (const Edge& edge : s->transitions()) {
+      const std::string edgeText = prettySymbol(edge.symbol);
+      v.visitEdge(s->id(), edge.state->id(), edgeText);
+    }
   }
+  v.end();
+#else
+  v.start();
+  for (const State* s : states_) {
+    const bool start = s == initialState_;
+    const bool accept = s->isAccepting();
+
+    v.visitNode(s->id(), start, accept);
+
+    for (const Edge& edge : s->transitions()) {
+      const std::string edgeText = prettySymbol(edge.symbol);
+      v.visitEdge(s->id(), edge.state->id(), edgeText);
+    }
+  }
+  v.end();
+#endif
 }
 
 } // namespace klex

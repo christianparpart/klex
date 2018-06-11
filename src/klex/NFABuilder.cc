@@ -12,6 +12,7 @@ namespace klex {
 
 NFA NFABuilder::construct(const RegExpr* re) {
   const_cast<RegExpr*>(re)->accept(*this);
+  fa_.acceptState()->setAccept(true);
 
   return std::move(fa_);
 }

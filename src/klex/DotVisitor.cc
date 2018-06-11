@@ -28,11 +28,8 @@ static std::string escapeString(const StringType& str) {
         stream_ << ' ';
         break;
       default:
-        if (std::isprint(ch)) {
-          stream_ << ch;
-        } else {
-          stream_ << fmt::format("\\x{:02x}", ch);
-        }
+        stream_ << ch;
+        break;
     }
   }
   return stream_.str();
@@ -41,26 +38,28 @@ static std::string escapeString(const StringType& str) {
 void DotfileWriter::start() {
   stream_ << "digraph {\n";
   stream_ << "  rankdir=LR;\n";
-  stream_ << "  label=\"" << escapeString("FA" /*TODO*/) << "\";\n";
+  //stream_ << "  label=\"" << escapeString("FA" /*TODO*/) << "\";\n";
 }
 
 void DotfileWriter::visitNode(int number, bool start, bool accept) {
   if (start) {
-    stream_ << "    \"\" [shape=plaintext];\n";
-    stream_ << "    node [shape=circle];\n";
-    stream_ << "    \"\" -> " << stateLabelPrefix_ << number << ";\n";
+    stream_ << "  \"\" [shape=plaintext];\n";
+    stream_ << "  node [shape=circle,color=red];\n";
+    stream_ << "  \"\" -> " << stateLabelPrefix_ << number << ";\n";
+    stream_ << "  node [color=black];\n";
   } else if (accept) {
-    stream_ << "    node [shape=doublecircle]; " << stateLabelPrefix_ << number << ";\n";
+    stream_ << "  node [shape=doublecircle]; " << stateLabelPrefix_ << number << ";\n";
+    stream_ << "  node [shape=circle,color=black];\n";
   } else {
-    stream_ << "    " << stateLabelPrefix_ << number << ";\n";
+    // stream_ << stateLabelPrefix_ << number << ";\n";
   }
 }
 
 void DotfileWriter::visitEdge(int from, int to, std::string_view label) {
-  stream_ << "    " << stateLabelPrefix_ << from
-          << " -> " << stateLabelPrefix_ << to;
-  stream_ << "   [label=\"" << escapeString(label) << "\"]";
-  stream_ << ";\n";
+  stream_ << fmt::format("  {}{} -> {}{} [label=\"{}\"];\n",
+                         stateLabelPrefix_, from,
+                         stateLabelPrefix_, to,
+                         escapeString(label));
 }
 
 void DotfileWriter::end() {

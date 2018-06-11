@@ -92,6 +92,7 @@ int main(int argc, const char* argv[]) {
   flags.defineString("table-name", 'n', "IDENTIFIER", "Symbol name for generated table.", "lexerDef");
   flags.defineString("token-name", 'N', "IDENTIFIER", "Symbol name for generated token enum type.", "Token");
   flags.defineString("fa-dot", 'x', "DOT_FILE", "Writes dot graph of final finite automaton. Use - to represent stdout.", "");
+  flags.defineBool("debug-nfa", 'd', "Debug NFA NOW");
   flags.parse(argc, argv);
 
   if (flags.getBool("help")) {
@@ -110,6 +111,12 @@ int main(int argc, const char* argv[]) {
   klex::Compiler builder;
   for (const klex::Rule& rule : rules)
     builder.declare(rule.tag, rule.pattern);
+
+  if (flags.getBool("debug-nfa")) {
+    klex::DotfileWriter writer{ std::cout };
+    builder.nfa().visit(writer);
+    return EXIT_SUCCESS;
+  }
 
   klex::DFA dfa = builder.compileDFA();
 

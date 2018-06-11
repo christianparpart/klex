@@ -6,11 +6,13 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <set>
-#include <utility>
-#include <vector>
 #include <klex/State.h>
 #include <klex/util/UnboxedRange.h>
+
+#include <set>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace klex {
 
@@ -46,7 +48,11 @@ class NFA {
         acceptTag_{0} {
   }
 
-  //! Constructs an NFA for a single character transition
+  /**
+   * Constructs an NFA for a single character transition.
+   *
+   * *No* acceptState flag is set on the accepting node!
+   */
   explicit NFA(Symbol value)
       : NFA{} {
     initialState_ = createState();
@@ -59,7 +65,7 @@ class NFA {
    *
    * Use this function to e.g. get a GraphViz dot-file drawn.
    */
-  void visit(DotVisitor& visitor);
+  void visit(DotVisitor& visitor) const;
 
   //! Tests whether or not this is an empty NFA.
   bool empty() const noexcept { return states_.empty(); }
@@ -108,6 +114,7 @@ class NFA {
   State* createState(bool accepting, Tag acceptTag);
   State* createState(StateId id, bool accepting, Tag acceptTag);
   State* findState(StateId id) { return states_.find(id); }
+  void visit(DotVisitor& v, const State* s, std::unordered_map<const State*, size_t>& registry) const;
 
  private:
   StateVec states_;

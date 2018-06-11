@@ -108,14 +108,26 @@ class StateVec {
   }
 
   void append(StateVec other) {
+    // pre-condition
+    for (size_t i = 0; i < size(); i++) {
+      State* s = states_[i].get();
+      assert(s->id() == i && "Id mismatch");
+    }
+
     states_.reserve(size() + other.size());
     for (size_t i = 0, e = other.size(); i != e; ++i) {
       other.states_[i]->setId(nextId());
       states_.emplace_back(std::move(other.states_[i]));
     }
+
+    // post-condition
+    for (size_t i = 0; i < size(); i++) {
+      State* s = states_[i].get();
+      assert(s->id() == i && "Id mismatch");
+    }
   }
 
-  class const_iterator {
+  class const_iterator { // {{{
    public:
     using WrappedIterator = std::vector<std::unique_ptr<State>>::const_iterator;
 
@@ -130,9 +142,8 @@ class StateVec {
 
    private:
     WrappedIterator it_;
-  };
-
-  class iterator {
+  }; // }}}
+  class iterator { // {{{
    public:
     using WrappedIterator = std::vector<std::unique_ptr<State>>::iterator;
 
@@ -147,7 +158,7 @@ class StateVec {
 
    private:
     WrappedIterator it_;
-  };
+  }; // }}}
 
   iterator begin() { return iterator(states_.begin()); }
   iterator end() { return iterator(states_.end()); }
@@ -155,9 +166,7 @@ class StateVec {
   const_iterator begin() const { return const_iterator(states_.begin()); }
   const_iterator end() const { return const_iterator(states_.end()); }
 
-  // using const_iterator = std::vector<std::unique_ptr<State>>::const_iterator;
-  // const_iterator begin() const { return states_.begin(); }
-  // const_iterator end() const { return states_.end(); }
+  void reserve(size_t n) { states_.reserve(n); }
 
  private:
   std::vector<std::unique_ptr<State>> states_;
@@ -192,6 +201,17 @@ std::string to_string(const std::vector<const State*>& S, std::string_view state
 } // namespace klex
 
 namespace fmt {
+  template<>
+  struct formatter<std::vector<const klex::State*>> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    constexpr auto format(const std::vector<const klex::State*>& v, FormatContext &ctx) {
+      return format_to(ctx.begin(), "{}", klex::to_string(v));
+    }
+  };
+
   template<>
   struct formatter<klex::StateSet> {
     template <typename ParseContext>

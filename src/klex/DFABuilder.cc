@@ -8,14 +8,16 @@
 #include <klex/DFA.h>
 #include <klex/DFABuilder.h>
 #include <klex/NFA.h>
+#include <klex/State.h>
 
 #include <deque>
+#include <iostream>
 #include <sstream>
 #include <vector>
 
 namespace klex {
 
-#if 0
+#if 0 
 #define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
 #else
 #define DEBUG(msg, ...) do { } while (0)
@@ -77,7 +79,7 @@ struct DFABuilder::TransitionTable { // {{{
 
 DFA DFABuilder::construct(NFA nfa) {
   std::vector<const State*> q_0 = epsilonClosure({nfa.initialState()});
-  DEBUG("q_0 = epsilonClosure({}) = {}", to_string({nfa.initialState()}), q_0);
+  DEBUG("q_0 = epsilonClosure({}) = {}", to_string(std::vector<const State*>{nfa.initialState()}), q_0);
   std::vector<std::vector<const State*>> Q = {q_0};          // resulting states
   std::deque<std::vector<const State*>> workList = {q_0};
   TransitionTable T;
@@ -114,12 +116,13 @@ DFA DFABuilder::construct(NFA nfa) {
   // Q now contains all the valid configurations and T all transitions between them
 
   DFA dfa;
+  dfa.createStates(Q.size());
 
   // map q_i to d_i and flag accepting states
   int q_i = 0;
   for (std::vector<const State*>& q : Q) {
     // d_i represents the corresponding state in the DFA for all states of q from the NFA
-    State* d_i = dfa.createState();
+    State* d_i = dfa.states()[q_i];
     // std::cerr << fmt::format("map q{} to d{} for {} states, {}.\n", q_i, d_i->id(), q.size(), to_string(q, "d"));
 
     // if q contains an accepting state, then d is an accepting state in the DFA
@@ -215,19 +218,15 @@ bool DFABuilder::containsAcceptingState(const std::vector<const State*>& Q) {
   return false;
 }
 
-bool DFABuilder::determineTag(const NFA& fa, std::vector<const State*> q, Tag* tag) {
+bool DFABuilder::determineTag(const NFA& fa, std::vector<const State*> qn, Tag* tag) {
   // eliminate target-states that originate from epsilon transitions or have no tag set at all
-  for (auto i = q.begin(), e = q.end(); i != e; ) {
-    const State* s = *i;
-    if (fa.isReceivingEpsilon(s) || !s->tag()) {
-      i = q.erase(i);
-    } else {
-      i++;
-    }
-  }
+  std::vector<const State*> q;
+  for (const State* s : qn)
+    if (s->tag() && !fa.isReceivingEpsilon(s))
+      q.push_back(s);
 
   if (q.empty()) {
-    // fprintf(stderr, "determineTag: all of q was epsiloned\n");
+    fprintf(stderr, "determineTag: all of q was epsiloned\n");
     *tag = 0;
     return false;
   }
@@ -246,7 +245,7 @@ bool DFABuilder::determineTag(const NFA& fa, std::vector<const State*> q, Tag* t
     }
   }
   if (q.empty()) {
-    // fprintf(stderr, "determineTag: lowest tag found: %d, but no states left?\n", priority);
+    fprintf(stderr, "determineTag: lowest tag found: %d, but no states left?\n", lowestTag);
     *tag = 0;
     return true;
   }

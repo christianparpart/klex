@@ -7,6 +7,7 @@
 
 #include <klex/NFA.h>
 #include <klex/DFA.h>
+#include <klex/DotVisitor.h>
 #include <iostream>
 
 namespace klex {
@@ -78,8 +79,10 @@ State* NFA::createState(StateId id, bool accepting, Tag acceptTag) {
 }
 
 NFA& NFA::concatenate(NFA rhs) {
-  acceptState()->linkTo(rhs.initialState_);
-  acceptState()->setAccept(false);
+  acceptState_->linkTo(rhs.initialState_);
+  acceptState_->setAccept(false);
+
+  acceptState_ = rhs.acceptState_;
 
   states_.append(std::move(rhs.states_));
 
@@ -100,12 +103,12 @@ NFA& NFA::alternate(NFA rhs) {
   acceptState_->linkTo(newEnd);
   rhs.acceptState_->linkTo(newEnd);
 
-  initialState_ = newStart;
-  acceptState_ = newEnd;
-
   acceptState_->setAccept(false);
   rhs.acceptState_->setAccept(false);
   newEnd->setAccept(true);
+
+  initialState_ = newStart;
+  acceptState_ = newEnd;
 
   rhs.initialState_ = nullptr;
   rhs.acceptState_ = nullptr;
@@ -119,11 +122,13 @@ NFA& NFA::optional() {
 
   newStart->linkTo(initialState_);
   newStart->linkTo(newEnd);
-  acceptState()->linkTo(newEnd);
+  acceptState_->linkTo(newEnd);
+
+  acceptState_->setAccept(false);
+  newEnd->setAccept(true);
 
   initialState_ = newStart;
-  acceptState()->setAccept(false);
-  newEnd->setAccept(true);
+  acceptState_ = newEnd;
 
   return *this;
 }
@@ -132,14 +137,18 @@ NFA& NFA::recurring() {
   // {0, inf}
   State* newStart = createState();
   State* newEnd = createState();
+
   newStart->linkTo(initialState_);
   newStart->linkTo(newEnd);
-  acceptState()->linkTo(initialState_);
-  acceptState()->linkTo(newEnd);
+
+  acceptState_->linkTo(initialState_);
+  acceptState_->linkTo(newEnd);
+
+  acceptState_->setAccept(false);
+  newEnd->setAccept(true);
 
   initialState_ = newStart;
-  acceptState()->setAccept(false);
-  newEnd->setAccept(true);
+  acceptState_ = newEnd;
 
   return *this;
 }
@@ -180,6 +189,44 @@ bool NFA::isReceivingEpsilon(const State* t) const noexcept {
         return true;
 
   return false;
+}
+
+void NFA::visit(DotVisitor& v) const {
+  v.start();
+#if 0
+  for (const State* s : states_) {
+    const bool start = s == initialState_;
+    const bool accept = s->isAccepting();
+
+    v.visitNode(s->id(), start, accept);
+
+    for (const Edge& edge : s->transitions()) {
+      const std::string edgeText = prettySymbol(edge.symbol);
+      v.visitEdge(s->id(), edge.state->id(), edgeText);
+    }
+  }
+#else
+  std::unordered_map<const State*, size_t> registry;
+  visit(v, initialState_, registry);
+#endif
+  v.end();
+}
+
+void NFA::visit(DotVisitor& v, const State* s, std::unordered_map<const State*, size_t>& registry) const {
+  const bool start = s == initialState_;
+  const bool accept = s->isAccepting();
+  const size_t id = registry.size();
+
+  v.visitNode(id, start, accept);
+  registry[s] = id;
+
+  for (const Edge& edge : s->transitions()) {
+    const std::string edgeText = prettySymbol(edge.symbol);
+    if (registry.find(edge.state) == registry.end()) {
+      visit(v, edge.state, registry);
+    }
+    v.visitEdge(id, registry[edge.state], edgeText);
+  }
 }
 
 } // namespace klex
