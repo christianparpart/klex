@@ -57,14 +57,6 @@ NFA NFA::clone() const {
   return output;
 }
 
-// TODO: Remove me?
-// std::tuple<OwnedStateSet, State*, State*> NFA::release() {
-//   auto t = std::make_tuple(std::move(states_), initialState_, acceptState_);
-//   initialState_ = nullptr;
-//   acceptState_ = nullptr;
-//   return t;
-// }
-
 State* NFA::createState() {
   return states_.create();
 }

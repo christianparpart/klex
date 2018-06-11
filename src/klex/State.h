@@ -13,6 +13,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 namespace klex {
@@ -173,17 +174,14 @@ class StateVec {
 };
 
 #if 0
-using OwnedStateSet = std::set<std::unique_ptr<State>>;
 using StateSet = std::set<State*>;
 #else
-using OwnedStateSet = std::list<std::unique_ptr<State>>;
 using StateSet = std::list<State*>;
 #endif
 
 /**
  * Returns a human readable string of the StateSet @p S, such as "{n0, n1, n2}".
  */
-std::string to_string(const OwnedStateSet& S, std::string_view stateLabelPrefix = "n");
 std::string to_string(const StateSet& S, std::string_view stateLabelPrefix = "n");
 std::string to_string(const std::vector<const State*>& S, std::string_view stateLabelPrefix = "n");
 
@@ -219,17 +217,6 @@ namespace fmt {
 
     template <typename FormatContext>
     constexpr auto format(const klex::StateSet& v, FormatContext &ctx) {
-      return format_to(ctx.begin(), "{}", klex::to_string(v));
-    }
-  };
-
-  template<>
-  struct formatter<klex::OwnedStateSet> {
-    template <typename ParseContext>
-    constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
-
-    template <typename FormatContext>
-    constexpr auto format(const klex::OwnedStateSet& v, FormatContext &ctx) {
       return format_to(ctx.begin(), "{}", klex::to_string(v));
     }
   };

@@ -219,43 +219,21 @@ bool DFABuilder::containsAcceptingState(const std::vector<const State*>& Q) {
 }
 
 bool DFABuilder::determineTag(const NFA& fa, std::vector<const State*> qn, Tag* tag) {
-  // eliminate target-states that originate from epsilon transitions or have no tag set at all
-  std::vector<const State*> q;
-  for (const State* s : qn)
-    if (s->tag() && !fa.isReceivingEpsilon(s))
-      q.push_back(s);
-
-  if (q.empty()) {
-    fprintf(stderr, "determineTag: all of q was epsiloned\n");
-    *tag = 0;
-    return false;
-  }
-
-  const Tag lowestTag = std::abs((*std::min_element(
-      q.begin(), q.end(),
-      [](auto x, auto y) { return std::abs(x->tag()) < std::abs(y->tag()); }))->tag());
-
-  // eliminate lower priorities
-  for (auto i = q.begin(), e = q.end(); i != e; ) {
-    const State* s = *i;
-    if (s->tag() != lowestTag) {
-      i = q.erase(i);
-    } else {
-      i++;
+  Tag lowestTag = std::numeric_limits<Tag>::max();
+  for (const State* s : qn) {
+    DEBUG("determineTag: possible tag from n{} ({}): {}", s->id(), s->isAccepting() ? "accepting" : "na", s->tag());
+    if (s->isAccepting()) {// && !fa.isReceivingEpsilon(s)) {
+      if (s->tag() < lowestTag) {
+        lowestTag = s->tag();
+      }
     }
   }
-  if (q.empty()) {
-    fprintf(stderr, "determineTag: lowest tag found: %d, but no states left?\n", lowestTag);
-    *tag = 0;
+  if (lowestTag != std::numeric_limits<Tag>::max()) {
+    *tag = lowestTag;
     return true;
   }
 
-  *tag = (*std::min_element(
-        q.begin(),
-        q.end(),
-        [](auto x, auto y) { return x->tag() < y->tag(); }))->tag();
-
-  return true;
+  return false;
 }
 
 } // namespace klex
