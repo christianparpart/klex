@@ -85,7 +85,8 @@ void DFA::visit(DotVisitor& v) const {
   v.visitNode(initialState_->id(), true, initialState_->isAccepting());
 
   for (const State* s : acceptStates())
-    v.visitNode(s->id(), s == initialState_, true);
+    if (s != initialState_)
+      v.visitNode(s->id(), s == initialState_, true);
 
   for (const State* s : states_)
     if (s != initialState_ && !s->isAccepting())
