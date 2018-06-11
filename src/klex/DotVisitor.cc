@@ -43,8 +43,9 @@ void DotfileWriter::start() {
 
 void DotfileWriter::visitNode(int number, bool start, bool accept) {
   if (start) {
+    const std::string_view shape = accept ? "doublecircle" : "circle";
     stream_ << "  \"\" [shape=plaintext];\n";
-    stream_ << "  node [shape=circle,color=red];\n";
+    stream_ << "  node [shape=" << shape << ",color=red];\n";
     stream_ << "  \"\" -> " << stateLabelPrefix_ << number << ";\n";
     stream_ << "  node [color=black];\n";
   } else if (accept) {
