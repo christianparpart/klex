@@ -43,59 +43,75 @@ StateId NFA::createState(Tag acceptTag) {
   return id;
 }
 
-NFA& NFA::concatenate(NFA rhs) {
-  StateId base = states_.size();
-  for (auto& t : rhs.states_) {
+void NFA::prepareStateIds(StateId baseId) {
+  // adjust transition state IDs
+  // traverse through each state's transition set
+  //    traverse through each transition in the transition set
+  //        traverse through each element and add BASE_ID
+
+  // for each state's transitions
+  for (StateId i = 0, e = size(); i != e; ++i) {
+    TransitionMap& transitions = states_[i];
+
+    // for each vector of target-state-id per transition-symbol
+    for (auto t = transitions.begin(), tE = transitions.end(); t != tE; ++t) {
+      StateIdVec& transition = t->second;
+
+      // for each target state ID
+      for (StateId k = 0, kE = transition.size(); k != kE; ++k) {
+        transition[k] += baseId;
+      }
+    }
   }
 
-  // ------------------------------------------------------------------------------
-  acceptState_->linkTo(rhs.initialState_);
-  acceptState_->setAccept(false);
+  for (auto& a : acceptTags_) {
+    acceptTags_[baseId + a.first] = a.second;
+  }
 
+  initialState_ += baseId;
+  acceptState_ += baseId;
+}
+
+NFA& NFA::concatenate(NFA rhs) {
+  rhs.prepareStateIds(states_.size());
+  states_.reserve(size() + rhs.size());
+  states_.insert(states_.end(), rhs.states_.begin(), rhs.states_.end());
+  acceptTags_.insert(rhs.acceptTags_.begin(), rhs.acceptTags_.end());
+
+  addTransition(acceptState_, EpsilonTransition, rhs.initialState_);
   acceptState_ = rhs.acceptState_;
-
-  states_.append(std::move(rhs.states_));
-
-  rhs.initialState_ = nullptr;
-  rhs.acceptState_ = nullptr;
 
   return *this;
 }
 
+
 NFA& NFA::alternate(NFA rhs) {
-  State* newStart = createState();
-  states_.append(std::move(rhs.states_));
-  State* newEnd = createState();
+  StateId newStart = createState();
+  StateId newEnd = createState();
 
-  newStart->linkTo(initialState_);
-  newStart->linkTo(rhs.initialState_);
+  rhs.prepareStateIds(states_.size());
+  states_.insert(states_.end(), rhs.states_.begin(), rhs.states_.end());
+  acceptTags_.insert(rhs.acceptTags_.begin(), rhs.acceptTags_.end());
 
-  acceptState_->linkTo(newEnd);
-  rhs.acceptState_->linkTo(newEnd);
+  addTransition(newStart, EpsilonTransition, initialState_);
+  addTransition(newStart, EpsilonTransition, rhs.initialState_);
 
-  acceptState_->setAccept(false);
-  rhs.acceptState_->setAccept(false);
-  newEnd->setAccept(true);
+  addTransition(acceptState_, EpsilonTransition, newEnd);
+  addTransition(rhs.acceptState_, EpsilonTransition, newEnd);
 
   initialState_ = newStart;
   acceptState_ = newEnd;
-
-  rhs.initialState_ = nullptr;
-  rhs.acceptState_ = nullptr;
 
   return *this;
 }
 
 NFA& NFA::optional() {
-  State* newStart = createState();
-  State* newEnd = createState();
+  StateId newStart = createState();
+  StateId newEnd = createState();
 
-  newStart->linkTo(initialState_);
-  newStart->linkTo(newEnd);
-  acceptState_->linkTo(newEnd);
-
-  acceptState_->setAccept(false);
-  newEnd->setAccept(true);
+  addTransition(newStart, EpsilonTransition, initialState_);
+  addTransition(newStart, EpsilonTransition, newEnd);
+  addTransition(acceptState_, EpsilonTransition, newEnd);
 
   initialState_ = newStart;
   acceptState_ = newEnd;
@@ -105,17 +121,14 @@ NFA& NFA::optional() {
 
 NFA& NFA::recurring() {
   // {0, inf}
-  State* newStart = createState();
-  State* newEnd = createState();
+  StateId newStart = createState();
+  StateId newEnd = createState();
 
-  newStart->linkTo(initialState_);
-  newStart->linkTo(newEnd);
+  addTransition(newStart, EpsilonTransition, initialState_);
+  addTransition(newStart, EpsilonTransition, newEnd);
 
-  acceptState_->linkTo(initialState_);
-  acceptState_->linkTo(newEnd);
-
-  acceptState_->setAccept(false);
-  newEnd->setAccept(true);
+  addTransition(acceptState_, EpsilonTransition, initialState_);
+  addTransition(acceptState_, EpsilonTransition, newEnd);
 
   initialState_ = newStart;
   acceptState_ = newEnd;
@@ -154,43 +167,34 @@ NFA& NFA::repeat(unsigned minimum, unsigned maximum) {
 
 void NFA::visit(DotVisitor& v) const {
   v.start();
-#if 0
-  for (const State* s : states_) {
-    const bool start = s == initialState_;
-    const bool accept = s->isAccepting();
 
-    v.visitNode(s->id(), start, accept);
+  for (StateId i = 0, e = size(); i != e; ++i) {
+    const TransitionMap& transitions = states_[i];
+    const bool isInitialState = i == initialState_;
+    const bool isAcceptState = acceptTags_.find(i) != acceptTags_.end();
 
-    for (const Edge& edge : s->transitions()) {
-      const std::string edgeText = prettySymbol(edge.symbol);
-      v.visitEdge(s->id(), edge.state->id(), edgeText);
+    v.visitNode(i, isInitialState, isAcceptState);
+
+    // for each vector of target-state-id per transition-symbol
+    for (auto t = transitions.cbegin(), tE = transitions.cend(); t != tE; ++t) {
+      const Symbol symbol = t->first;
+      const StateIdVec& transition = t->second;
+
+      // for each target state ID
+      for (StateId k = 0, kE = transition.size(); k != kE; ++k) {
+        const StateId targetState = transition[k];
+
+        v.visitEdge(i, targetState, symbol);
+      }
+
+      for (StateId k = 0, kE = transition.size(); k != kE; ++k) {
+        const StateId targetState = transition[k];
+        v.endVisitEdge(i, targetState);
+      }
     }
   }
-#else
-  std::unordered_map<const State*, size_t> registry;
-  visit(v, initialState_, registry);
-#endif
+
   v.end();
-}
-
-void NFA::visit(DotVisitor& v, const State* s, std::unordered_map<const State*, size_t>& registry) const {
-  const bool start = s == initialState_;
-  const bool accept = s->tag() != 0 || s->isAccepting();
-  const size_t id = registry.size();
-
-  v.visitNode(id, start, accept);
-  registry[s] = id;
-
-  for (const Edge& edge : s->transitions()) {
-    if (registry.find(edge.state) == registry.end()) {
-      visit(v, edge.state, registry);
-    }
-    v.visitEdge(id, registry[edge.state], edge.symbol);
-  }
-
-  for (const Edge& edge : s->transitions()) {
-    v.endVisitEdge(id, registry[edge.state]);
-  }
 }
 
 } // namespace klex

@@ -22,8 +22,7 @@ namespace klex {
 void Compiler::declare(Tag tag, std::string_view pattern) {
   std::unique_ptr<RegExpr> expr = RegExprParser{}.parse(pattern);
   NFA nfa = NFABuilder{}.construct(expr.get());
-  nfa.acceptState()->setTag(tag);
-  assert(nfa.acceptState()->isAccepting());
+  nfa.setAccept(tag);
 
   if (fa_.empty()) {
     fa_ = std::move(nfa);
@@ -33,11 +32,11 @@ void Compiler::declare(Tag tag, std::string_view pattern) {
 }
 
 DFA Compiler::compileDFA() {
-  return DFABuilder{}.construct(std::move(fa_));
+  return DFABuilder{std::move(fa_)}.construct();
 }
 
 LexerDef Compiler::compile() {
-  DFA dfa = DFABuilder{}.construct(std::move(fa_));
+  DFA dfa = DFABuilder{std::move(fa_)}.construct();
   // return compile(dfa);
   DFA dfamin = DFAMinimizer{dfa}.construct();
   return compile(dfamin);

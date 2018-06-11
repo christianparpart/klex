@@ -6,24 +6,26 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
+#include <klex/NFA.h>
 #include <vector>
 
 namespace klex {
 
-class NFA;
 class DFA;
 class State;
 
 class DFABuilder {
  public:
-  DFA construct(NFA nfa);
+  DFABuilder(NFA nfa) : nfa_{nfa} {}
+  DFA construct();
 
  private:
   /**
    * Builds a list of states that can be exclusively reached from S via epsilon-transitions.
    */
-  static void epsilonClosure(const State* s, std::vector<const State*>* result);
-  static std::vector<const State*> epsilonClosure(const std::vector<const State*>& S);
+  void epsilonClosure(StateId s, std::vector<StateId>* result) const;
+  std::vector<StateId> epsilonClosure(const std::vector<StateId>& S) const;
+  std::vector<StateId> epsilonClosure(StateId S) const;
 
   /**
    * Computes a valid configuration the FA can reach with the given input @p q and @p c.
@@ -33,18 +35,18 @@ class DFABuilder {
    *
    * @return set of states that the FA can reach from @p c given the input @p c.
    */
-  static void delta(const State* s, Symbol c, std::vector<const State*>* result);
-  static std::vector<const State*> delta(const std::vector<const State*>& q, Symbol c);
+  void delta(StateId s, Symbol c, std::vector<StateId>* result) const;
+  std::vector<StateId> delta(const std::vector<StateId>& q, Symbol c) const;
 
   /**
    * Finds @p t in @p Q and returns its offset (aka configuration number) or -1 if not found.
    */
-  static int configurationNumber(const std::vector<std::vector<const State*>>& Q, const std::vector<const State*>& t);
+  static int configurationNumber(const std::vector<std::vector<StateId>>& Q, const std::vector<StateId>& t);
 
   /**
    * Returns whether or not the StateSet @p Q contains at least one State that is also "accepting".
    */
-  static bool containsAcceptingState(const std::vector<const State*>& Q);
+  bool containsAcceptingState(const std::vector<StateId>& Q);
 
   /**
    * Determines the tag to use for the deterministic state representing @p q from non-deterministic FA @p fa.
@@ -55,9 +57,12 @@ class DFABuilder {
    *
    * @returns whether or not the tag could be determined.
    */
-  bool determineTag(const NFA& fa, std::vector<const State*> q, Tag* tag);
+  bool determineTag(std::vector<StateId> q, Tag* tag) const;
 
   struct TransitionTable;
+
+ private:
+  NFA nfa_;
 };
 
 } // namespace klex

@@ -23,8 +23,9 @@ using Symbol = char;
 
 std::string prettySymbol(Symbol input);
 
-using StateId = size_t;
 using Tag = int;
+using StateId = size_t;
+using StateIdVec = std::vector<StateId>;
 
 class State;
 
@@ -180,6 +181,7 @@ class StateVec {
  * Returns a human readable string of @p S, such as "{n0, n1, n2}".
  */
 std::string to_string(const std::vector<const State*>& S, std::string_view stateLabelPrefix = "n");
+std::string to_string(const std::vector<StateId>& S, std::string_view stateLabelPrefix = "n");
 
 #define VERIFY_STATE_AVAILABILITY(freeId, set)                                  \
   do {                                                                          \
@@ -195,6 +197,17 @@ std::string to_string(const std::vector<const State*>& S, std::string_view state
 } // namespace klex
 
 namespace fmt {
+  template<>
+  struct formatter<std::vector<klex::StateId>> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    constexpr auto format(const std::vector<klex::StateId>& v, FormatContext &ctx) {
+      return format_to(ctx.begin(), "{}", klex::to_string(v));
+    }
+  };
+
   template<>
   struct formatter<std::vector<const klex::State*>> {
     template <typename ParseContext>

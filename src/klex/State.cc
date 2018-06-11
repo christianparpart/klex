@@ -22,6 +22,27 @@ void State::linkTo(Symbol input, State* state) {
   transitions_.emplace_back(input, state);
 }
 
+std::string to_string(const std::vector<StateId>& S, std::string_view stateLabelPrefix) {
+  std::vector<StateId> names = S;
+  for (StateId s : S)
+    names.push_back(s);
+
+  std::sort(names.begin(), names.end());
+
+  std::stringstream sstr;
+  sstr << "{";
+  int i = 0;
+  for (StateId name : names) {
+    if (i)
+      sstr << ", ";
+    sstr << stateLabelPrefix << name;
+    i++;
+  }
+  sstr << "}";
+
+  return sstr.str();
+}
+
 std::string to_string(const std::vector<const State*>& S, std::string_view stateLabelPrefix) {
   std::vector<StateId> names;
   for (const State* s : S)

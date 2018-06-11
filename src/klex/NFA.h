@@ -86,6 +86,9 @@ class NFA {
   //! Tests whether or not this is an empty NFA.
   bool empty() const noexcept { return states_.empty(); }
 
+  //! Retrieves the number of states of this NFA.
+  size_t size() const noexcept { return states_.size(); }
+
   //! Retrieves the one and only initial state. This value is nullptr iff the NFA is empty.
   StateId initialStateId() const noexcept { return initialState_; }
 
@@ -124,19 +127,35 @@ class NFA {
   NFA& repeat(unsigned minimum, unsigned maximum);
 
   //! Retrieves transitions for state with the ID @p id.
+  const TransitionMap& stateTransitions(StateId id) const {
+    return states_[id];
+  }
+
   TransitionMap& stateTransitions(StateId id) {
     return states_[id];
   }
 
   //! Flags given state as accepting-state with given Tag @p acceptTag.
-  void setAccept(StateId id, Tag acceptTag) {
-    acceptTags_[id] = acceptTag;
+  void setAccept(Tag acceptTag) {
+    acceptTags_[acceptState_] = acceptTag;
+  }
+
+  Tag acceptTag(StateId s) const {
+    if (auto i = acceptTags_.find(s); i != acceptTags_.end())
+      return i->second;
+
+    return 0;
+  }
+
+  bool isAccepting(StateId s) const {
+    return acceptTags_.find(s) != acceptTags_.end();
   }
 
  private:
   StateId createState();
   StateId createState(Tag acceptTag);
   void visit(DotVisitor& v, StateId s, std::unordered_map<StateId, size_t>& registry) const;
+  void prepareStateIds(StateId baseId);
 
  private:
   StateVec states_;
