@@ -18,7 +18,7 @@
 
 namespace klex {
 
-#if 1
+#if 0
 #define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
 #else
 #define DEBUG(msg, ...) do { } while (0)
@@ -82,7 +82,7 @@ inline void DFABuilder::TransitionTable::insert(int q, Symbol c, int t) {
 */
 
 DFA DFABuilder::construct() {
-  std::vector<StateId> q_0 = epsilonClosure({nfa_.initialStateId()});
+  std::vector<StateId> q_0 = nfa_.epsilonClosure({nfa_.initialStateId()});
   DEBUG("q_0 = epsilonClosure({}) = {}", to_string(std::vector<StateId>{nfa_.initialStateId()}), q_0);
   std::vector<std::vector<StateId>> Q = {q_0};          // resulting states
   std::deque<std::vector<StateId>> workList = {q_0};
@@ -99,7 +99,7 @@ DFA DFABuilder::construct() {
 
     std::stringstream dbg;
     for (Symbol c : nfa_.alphabet()) {
-      std::vector<StateId> t = epsilonClosure(delta(q, c));
+      std::vector<StateId> t = nfa_.epsilonClosure(nfa_.delta(q, c));
 
       int t_i = configurationNumber(Q, t);
 
@@ -163,75 +163,6 @@ DFA DFABuilder::construct() {
   dfa.setInitialState(dfa.findState(0));
 
   return dfa;
-}
-
-void DFABuilder::epsilonClosure(StateId s, std::vector<StateId>* result) const {
-  if (std::find(result->begin(), result->end(), s) == result->end())
-    result->push_back(s);
-
-  for (StateId t : nfa_.epsilonTransitions(s))
-    epsilonClosure(t, result);
-}
-
-std::vector<StateId> DFABuilder::epsilonClosure(const std::vector<StateId>& S) const {
-#if 0
-  std::vector<StateId> result;
-
-  for (StateId s : S)
-    epsilonClosure(s, &result);
-
-  return result;
-#else
-  std::vector<StateId> eclosure = S;
-  std::stack<StateId> workList;
-  for (StateId s : S)
-    workList.push(s);
-
-  while (!workList.empty()) {
-    const StateId s = workList.top();
-    workList.pop();
-
-    for (StateId t : nfa_.epsilonTransitions(s)) {
-      if (std::find(eclosure.begin(), eclosure.end(), t) == eclosure.end()) {
-        eclosure.push_back(t);
-        workList.push(t);
-      }
-    }
-  }
-  std::sort(eclosure.begin(), eclosure.end());
-  return eclosure;
-#endif
-}
-
-// std::vector<StateId> DFABuilder::epsilonClosure(StateId s) const {
-//   std::vector<StateId> result;
-//   epsilonClosure(s, &result);
-//   return result;
-// }
-
-void DFABuilder::delta(StateId s, Symbol c, std::vector<StateId>* result) const {
-  const NFA::TransitionMap& transitions = nfa_.stateTransitions(s);
-  for (const std::pair<Symbol, StateIdVec>& transition : transitions) {
-    if (transition.first == EpsilonTransition) {
-      for (StateId targetState : transition.second) {
-        delta(targetState, c, result);
-      }
-    } else if (transition.first == c) {
-      for (StateId targetState : transition.second) {
-        result->push_back(targetState);
-      }
-    }
-  }
-}
-
-std::vector<StateId> DFABuilder::delta(const std::vector<StateId>& q, Symbol c) const {
-  std::vector<StateId> result;
-
-  for (StateId s : q) {
-    delta(s, c, &result);
-  }
-
-  return result;
 }
 
 int DFABuilder::configurationNumber(const std::vector<std::vector<StateId>>& Q, const std::vector<StateId>& t) {

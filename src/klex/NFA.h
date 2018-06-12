@@ -130,19 +130,11 @@ class NFA {
     return states_[id];
   }
 
-  //! Retrieves all epsilon-transitions directly connected to State @p s.
-  StateIdVec epsilonTransitions(StateId s) const {
-    StateIdVec t;
-    for (const std::pair<Symbol, StateIdVec>& p : stateTransitions(s))
-      if (p.first == EpsilonTransition)
-        t.insert(t.end(), p.second.begin(), p.second.end());
-    return std::move(t);
-  }
+  //! Retrieves all states that can be reached from @p S with one single input Symbol @p c.
+  std::vector<StateId> delta(const std::vector<StateId>& S, Symbol c) const;
 
   //! Retrieves all states that can be directly or indirectly accessed via epsilon-transitions exclusively.
-  StateIdVec epsilonClosure(StateIdVec S) const {
-    return StateIdVec{}; // TODO
-  }
+  StateIdVec epsilonClosure(const StateIdVec& S) const;
 
   TransitionMap& stateTransitions(StateId s) {
     return states_[s];
@@ -169,6 +161,9 @@ class NFA {
   StateId createState(Tag acceptTag);
   void visit(DotVisitor& v, StateId s, std::unordered_map<StateId, size_t>& registry) const;
   void prepareStateIds(StateId baseId);
+
+  //! Retrieves all epsilon-transitions directly connected to State @p s.
+  StateIdVec epsilonTransitions(StateId s) const;
 
  private:
   StateVec states_;

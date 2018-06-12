@@ -8,7 +8,11 @@
 #include <klex/NFA.h>
 #include <klex/Alphabet.h>
 #include <klex/DotVisitor.h>
+
+#include <algorithm>
 #include <iostream>
+#include <stack>
+#include <vector>
 
 namespace klex {
 
@@ -42,6 +46,54 @@ StateId NFA::createState(Tag acceptTag) {
   StateId id = createState();
   acceptTags_[id] = acceptTag;
   return id;
+}
+
+std::vector<StateId> NFA::delta(const std::vector<StateId>& S, Symbol c) const {
+  std::vector<StateId> result;
+
+  for (StateId s : S) {
+    for (const std::pair<Symbol, StateIdVec>& transition : stateTransitions(s)) {
+      if (transition.first == c) {
+        for (StateId targetState : transition.second) {
+          result.push_back(targetState);
+        }
+      }
+    }
+  }
+
+  return std::move(result);
+}
+
+StateIdVec NFA::epsilonTransitions(StateId s) const {
+  StateIdVec t;
+
+  for (const std::pair<Symbol, StateIdVec>& p : stateTransitions(s))
+    if (p.first == EpsilonTransition)
+      t.insert(t.end(), p.second.begin(), p.second.end());
+
+  return std::move(t);
+}
+
+std::vector<StateId> NFA::epsilonClosure(const std::vector<StateId>& S) const {
+  std::vector<StateId> eclosure = S;
+  std::stack<StateId> workList;
+  for (StateId s : S)
+    workList.push(s);
+
+  while (!workList.empty()) {
+    const StateId s = workList.top();
+    workList.pop();
+
+    for (StateId t : epsilonTransitions(s)) {
+      if (std::find(eclosure.begin(), eclosure.end(), t) == eclosure.end()) {
+        eclosure.push_back(t);
+        workList.push(t);
+      }
+    }
+  }
+
+  std::sort(eclosure.begin(), eclosure.end());
+  return std::move(eclosure);
 }
 
 void NFA::prepareStateIds(StateId baseId) {
