@@ -15,6 +15,7 @@
 #include <klex/util/Flags.h>
 
 #include <chrono>
+#include <optional>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -108,8 +109,7 @@ void generateTokenDefCxx(std::ostream& os, const klex::RuleList& rules, const st
   os << "};\n";
 }
 
-int main(int argc, const char* argv[]) {
-  klex::util::Flags flags;
+std::optional<int> prepareAndParseCLI(klex::util::Flags& flags, int argc, const char* argv[]) {
   flags.defineBool("verbose", 'v', "Prints some more verbose output");
   flags.defineBool("help", 'h', "Prints this help and exits");
   flags.defineString("file", 'f', "PATTERN_FILE", "Input file with lexer rules");
@@ -126,9 +126,18 @@ int main(int argc, const char* argv[]) {
     std::cout << "mklex - klex lexer generator\n"
               << "(c) 2018 Christian Parpart <christian@parpart.family>\n"
               << "\n"
-              << flags.helpText();
+              << flags.helpText()
+              << "\n";
     return EXIT_SUCCESS;
   }
+
+  return std::nullopt;
+}
+
+int main(int argc, const char* argv[]) {
+  klex::util::Flags flags;
+  if (std::optional<int> rc = prepareAndParseCLI(flags, argc, argv); rc)
+    return rc.value();
 
   fs::path klexFileName = flags.getString("file");
 
