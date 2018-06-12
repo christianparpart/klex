@@ -68,11 +68,6 @@ State* DFA::createState() {
   return states_.create();
 }
 
-State* DFA::createState(StateId id) {
-  assert(id == states_.nextId());
-  return states_.create();
-}
-
 void DFA::setInitialState(State* s) {
   // TODO: assert (s is having no predecessors)
   initialState_ = s;
