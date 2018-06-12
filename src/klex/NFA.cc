@@ -23,7 +23,8 @@ Alphabet NFA::alphabet() const {
 
   for (const TransitionMap& transitions : states_)
     for (const std::pair<Symbol, StateIdVec>& t : transitions)
-      alphabet.insert(t.first);
+      if (t.first != EpsilonTransition)
+        alphabet.insert(t.first);
 
   return alphabet;
 }
