@@ -165,7 +165,8 @@ int main(int argc, const char* argv[]) {
   }
 
   if (std::string tokenFile = flags.getString("output-token"); tokenFile != "-") {
-    fs::create_directories(fs::path{tokenFile}.remove_filename());
+    if (auto p = fs::path{tokenFile}.remove_filename(); p != "")
+      fs::create_directories(p);
     std::ofstream ofs {tokenFile};
     generateTokenDefCxx(ofs, rules, flags.getString("token-name"));
   } else {
@@ -174,7 +175,8 @@ int main(int argc, const char* argv[]) {
 
   klex::LexerDef lexerDef = klex::Compiler::compile(dfamin);
   if (std::string tableFile = flags.getString("output-table"); tableFile != "-") {
-    fs::create_directories(fs::path{tableFile}.remove_filename());
+    if (auto p = fs::path{tableFile}.remove_filename(); p != "")
+      fs::create_directories(p);
     std::ofstream ofs {tableFile};
     generateTableDefCxx(ofs, lexerDef, rules, flags.getString("table-name"));
   } else {
