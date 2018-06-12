@@ -14,9 +14,10 @@
 #include <klex/RuleParser.h>
 #include <klex/util/Flags.h>
 
+#include <chrono>
 #include <cstdlib>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <string>
 
 #include <experimental/filesystem>
@@ -73,6 +74,30 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
   os << "};\n";
 }
 
+struct PerfTimer {
+  using Duration = std::chrono::duration<double>;
+  using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
+
+  explicit PerfTimer(bool _enabled) : enabled{_enabled} {
+    if (_enabled)
+      start = std::chrono::high_resolution_clock::now();
+  }
+
+  bool enabled;
+  TimePoint start;
+  TimePoint end;
+
+  void lap(std::string_view message) {
+    if (enabled) {
+      end = std::chrono::high_resolution_clock::now();
+      const Duration duration = end - start;
+      std::swap(end, start);
+
+      std::cerr << message << ": " << duration.count() << " seconds\n";
+    }
+  }
+};
+
 void generateTokenDefCxx(std::ostream& os, const klex::RuleList& rules, const std::string& symbol) {
   // TODO: is symbol contains ::, everything before the last :: is considered a (nested) namespace
   os << "#pragma once\n";
@@ -92,8 +117,9 @@ int main(int argc, const char* argv[]) {
   flags.defineString("output-token", 'T', "FILE", "Output file that will contain the compiled tables");
   flags.defineString("table-name", 'n', "IDENTIFIER", "Symbol name for generated table.", "lexerDef");
   flags.defineString("token-name", 'N', "IDENTIFIER", "Symbol name for generated token enum type.", "Token");
-  flags.defineString("fa-dot", 'x', "DOT_FILE", "Writes dot graph of final finite automaton. Use - to represent stdout.", "");
-  flags.defineBool("debug-nfa", 'd', "Debug NFA NOW");
+  flags.defineString("debug-dfa", 'x', "DOT_FILE", "Writes dot graph of final finite automaton. Use - to represent stdout.", "");
+  flags.defineBool("perf", 'p', "Print performance counters to stderr.");
+  flags.defineBool("debug-nfa", 'd', "Print NFA and exit.");
   flags.parse(argc, argv);
 
   if (flags.getBool("help")) {
@@ -107,11 +133,14 @@ int main(int argc, const char* argv[]) {
   fs::path klexFileName = flags.getString("file");
 
   klex::RuleParser ruleParser{std::make_unique<std::ifstream>(klexFileName.string())};
+  PerfTimer perfTimer { flags.getBool("perf") };
   klex::RuleList rules = ruleParser.parseRules();
+  perfTimer.lap("Rule parsing");
 
   klex::Compiler builder;
   for (const klex::Rule& rule : rules)
     builder.declare(rule.tag, rule.pattern);
+  perfTimer.lap("NFA construction");
 
   if (flags.getBool("debug-nfa")) {
     klex::DotWriter writer{ std::cout };
@@ -120,13 +149,12 @@ int main(int argc, const char* argv[]) {
   }
 
   klex::DFA dfa = builder.compileDFA();
-#if 1
-  klex::DFA dfamin = klex::DFAMinimizer{dfa}.construct();
-#else
-  klex::DFA& dfamin = dfa;
-#endif
+  perfTimer.lap("DFA construction");
 
-  if (std::string dotfile = flags.getString("fa-dot"); !dotfile.empty()) {
+  klex::DFA dfamin = klex::DFAMinimizer{dfa}.construct();
+  perfTimer.lap("DFA minimization");
+
+  if (std::string dotfile = flags.getString("debug-dfa"); !dotfile.empty()) {
     if (dotfile == "-") {
       klex::DotWriter writer{ std::cout };
       dfamin.visit(writer);
