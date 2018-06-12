@@ -8,6 +8,7 @@
 
 #include <klex/Alphabet.h>
 #include <klex/State.h>
+#include <map>
 
 namespace klex {
 
@@ -20,6 +21,12 @@ class DotVisitor;
  */
 class DFA {
  public:
+  struct State {
+    std::vector<StateId> states;
+    std::map<Symbol, StateId> moves;
+  };
+  using StateVec = std::vector<State>;
+
   DFA(const DFA& other) : DFA{} { *this = other; }
   DFA& operator=(const DFA& other);
   DFA(DFA&&) = default;
@@ -32,15 +39,14 @@ class DFA {
   Alphabet alphabet() const;
 
   //! Retrieves the initial state.
-  State* initialState() const { return initialState_; }
+  StateId initialStateId() const { return initialState_; }
 
   //! Retrieves the list of available states.
   const StateVec& states() const { return states_; }
   StateVec& states() { return states_; }
 
   //! Retrieves the list of accepting states.
-  std::vector<const State*> acceptStates() const;
-  std::vector<State*> acceptStates();
+  std::vector<StateId> acceptStates() const;
 
   /**
    * Traverses all states and edges in this NFA and calls @p visitor for each state & edge.
@@ -50,16 +56,13 @@ class DFA {
   void visit(DotVisitor& visitor) const;
 
   void createStates(size_t count);
-  State* createState();
-  State* findState(StateId id) { return states_.find(id); }
-  void setInitialState(State* state);
-
- private:
-  State* createState(StateId expectedId);
+  StateId createState();
+  void setInitialState(StateId state);
 
  private:
   StateVec states_;
-  State* initialState_;
+  StateId initialState_;
+  AcceptMap acceptTags_;
 };
 
-} // namespace klex {
+} // namespace klex

@@ -30,20 +30,22 @@ struct DFABuilder::TransitionTable { // {{{
     int targetNumber;
   };
 
-  void insert(int q, Symbol c, int t) {
-    auto i = std::find_if(transitions.begin(), transitions.end(),
-                          [=](const auto& input) {
-        return input.first.configurationNumber == q && input.first.symbol == c;
-    });
-    if (i == transitions.end()) {
-      transitions.emplace_back(Input{q, c}, t);
-    } else {
-      DEBUG("TransitionTable[q{}][{}] = q{}; already present", q, prettySymbol(c), t);
-    }
-  }
+  void insert(int q, Symbol c, int t);
 
   std::list<std::pair<Input, int>> transitions;
-}; // }}}
+};
+void TransitionTable::insert(int q, Symbol c, int t) {
+  auto i = std::find_if(transitions.begin(), transitions.end(),
+                        [=](const auto& input) {
+      return input.first.configurationNumber == q && input.first.symbol == c;
+  });
+  if (i == transitions.end()) {
+    transitions.emplace_back(Input{q, c}, t);
+  } else {
+    DEBUG("TransitionTable[q{}][{}] = q{}; already present", q, prettySymbol(c), t);
+  }
+}
+// }}}
 
 /* DFA construction visualization
   REGEX:      a(b|c)*
