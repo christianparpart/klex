@@ -13,11 +13,12 @@
 #include <deque>
 #include <iostream>
 #include <sstream>
+#include <stack>
 #include <vector>
 
 namespace klex {
 
-#if 0 
+#if 1
 #define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
 #else
 #define DEBUG(msg, ...) do { } while (0)
@@ -34,7 +35,8 @@ struct DFABuilder::TransitionTable { // {{{
 
   std::list<std::pair<Input, int>> transitions;
 };
-void TransitionTable::insert(int q, Symbol c, int t) {
+
+inline void DFABuilder::TransitionTable::insert(int q, Symbol c, int t) {
   auto i = std::find_if(transitions.begin(), transitions.end(),
                         [=](const auto& input) {
       return input.first.configurationNumber == q && input.first.symbol == c;
@@ -80,12 +82,13 @@ void TransitionTable::insert(int q, Symbol c, int t) {
 */
 
 DFA DFABuilder::construct() {
-  std::vector<StateId> q_0 = epsilonClosure(nfa_.initialStateId());
+  std::vector<StateId> q_0 = epsilonClosure({nfa_.initialStateId()});
   DEBUG("q_0 = epsilonClosure({}) = {}", to_string(std::vector<StateId>{nfa_.initialStateId()}), q_0);
   std::vector<std::vector<StateId>> Q = {q_0};          // resulting states
   std::deque<std::vector<StateId>> workList = {q_0};
   TransitionTable T;
 
+  DEBUG("alphabet = {}", nfa_.alphabet());
   DEBUG(" {:<8} | {:<14} | {:<24} | {:<}", "set name", "DFA state", "NFA states", "ε-closures(q, *)");
   DEBUG("{}", "------------------------------------------------------------------------");
 
@@ -166,33 +169,45 @@ void DFABuilder::epsilonClosure(StateId s, std::vector<StateId>* result) const {
   if (std::find(result->begin(), result->end(), s) == result->end())
     result->push_back(s);
 
-  const NFA::TransitionMap& transitions = nfa_.stateTransitions(s);
-
-  for (const std::pair<Symbol, StateIdVec>& transition : transitions) {
-    if (transition.first == EpsilonTransition) {
-      for (StateId targetState : transition.second) {
-        epsilonClosure(targetState, result);
-      }
-    }
-  }
+  for (StateId t : nfa_.epsilonTransitions(s))
+    epsilonClosure(t, result);
 }
 
 std::vector<StateId> DFABuilder::epsilonClosure(const std::vector<StateId>& S) const {
+#if 0
   std::vector<StateId> result;
 
   for (StateId s : S)
     epsilonClosure(s, &result);
 
   return result;
+#else
+  std::vector<StateId> eclosure = S;
+  std::stack<StateId> workList;
+  for (StateId s : S)
+    workList.push(s);
+
+  while (!workList.empty()) {
+    const StateId s = workList.top();
+    workList.pop();
+
+    for (StateId t : nfa_.epsilonTransitions(s)) {
+      if (std::find(eclosure.begin(), eclosure.end(), t) == eclosure.end()) {
+        eclosure.push_back(t);
+        workList.push(t);
+      }
+    }
+  }
+  std::sort(eclosure.begin(), eclosure.end());
+  return eclosure;
+#endif
 }
 
-std::vector<StateId> DFABuilder::epsilonClosure(StateId s) const {
-  std::vector<StateId> result;
-
-  epsilonClosure(s, &result);
-
-  return result;
-}
+// std::vector<StateId> DFABuilder::epsilonClosure(StateId s) const {
+//   std::vector<StateId> result;
+//   epsilonClosure(s, &result);
+//   return result;
+// }
 
 void DFABuilder::delta(StateId s, Symbol c, std::vector<StateId>* result) const {
   const NFA::TransitionMap& transitions = nfa_.stateTransitions(s);
@@ -242,7 +257,8 @@ bool DFABuilder::containsAcceptingState(const std::vector<StateId>& Q) {
 bool DFABuilder::determineTag(std::vector<StateId> qn, Tag* tag) const {
   Tag lowestTag = std::numeric_limits<Tag>::max();
   for (StateId s : qn) {
-    DEBUG("determineTag: possible tag from n{} ({}): {}", s->id(), s->isAccepting() ? "accepting" : "na", s->tag());
+    DEBUG("determineTag: possible tag from n{} ({}): {}", s, nfa_.isAccepting(s) ? "accepting" : "na",
+        nfa_.acceptTag(s));
     if (Tag t = nfa_.acceptTag(s); t > 0) {
       if (t < lowestTag) {
         lowestTag = t;

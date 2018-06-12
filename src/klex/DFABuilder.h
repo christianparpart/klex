@@ -25,7 +25,7 @@ class DFABuilder {
    */
   void epsilonClosure(StateId s, std::vector<StateId>* result) const;
   std::vector<StateId> epsilonClosure(const std::vector<StateId>& S) const;
-  std::vector<StateId> epsilonClosure(StateId S) const;
+  // [[deprecated]] std::vector<StateId> epsilonClosure(StateId S) const;
 
   /**
    * Computes a valid configuration the FA can reach with the given input @p q and @p c.
