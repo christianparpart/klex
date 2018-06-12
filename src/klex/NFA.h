@@ -69,7 +69,6 @@ class NFA {
     initialState_ = createState();
     acceptState_ = createState();
     addTransition(initialState_, value, acceptState_);
-    acceptTags_[acceptState_] = 0; // 0 == DefaultAcceptAction
   }
 
   void addTransition(StateId from, Symbol s, StateId to) {

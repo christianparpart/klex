@@ -64,9 +64,11 @@ void NFA::prepareStateIds(StateId baseId) {
     }
   }
 
-  for (auto& a : acceptTags_) {
-    acceptTags_[baseId + a.first] = a.second;
-  }
+  AcceptMap remapped;
+  for (auto& a : acceptTags_)
+    remapped[baseId + a.first] = a.second;
+
+  acceptTags_ = std::move(remapped);
 
   initialState_ += baseId;
   acceptState_ += baseId;
@@ -169,11 +171,13 @@ void NFA::visit(DotVisitor& v) const {
   v.start();
 
   for (StateId i = 0, e = size(); i != e; ++i) {
-    const TransitionMap& transitions = states_[i];
     const bool isInitialState = i == initialState_;
     const bool isAcceptState = acceptTags_.find(i) != acceptTags_.end();
-
     v.visitNode(i, isInitialState, isAcceptState);
+  }
+
+  for (StateId i = 0, e = size(); i != e; ++i) {
+    const TransitionMap& transitions = states_[i];
 
     // for each vector of target-state-id per transition-symbol
     for (auto t = transitions.cbegin(), tE = transitions.cend(); t != tE; ++t) {
