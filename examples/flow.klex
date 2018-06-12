@@ -6,7 +6,7 @@
 
 # NUMBER            ::= 0|[1-9][0-9]*
 # IDENT             ::= [a-zA-Z_][a-zA-Z_0-9]*
-# IP4               ::= {IP4Oct}(.{IP4Oct}){3}
+# IP4               ::= {IP4Oct}(\.{IP4Oct}){3}
 # IP4Cidr           ::= {IP4}/{CidrMask}
 # 
 # %%
@@ -81,9 +81,9 @@ StringType        ::= string
 # misc
 Ident             ::= [a-zA-Z_][a-zA-Z_0-9]*
 RegExpGroup       ::= \$[0-9]+
-Period            ::= .
-DblPeriod         ::= ..
-Ellipsis          ::= ...
+Period            ::= \.
+DblPeriod         ::= \.\.
+Ellipsis          ::= \.\.\.
 Comment(ignore)   ::= "#[^$]*"
 Spacing(ignore)   ::= "[ \t\n]+"
 # Eof               ::= <<EOF>>
