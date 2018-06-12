@@ -6,7 +6,7 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/NFA.h>
-#include <klex/DFA.h>
+#include <klex/Alphabet.h>
 #include <klex/DotVisitor.h>
 #include <iostream>
 
