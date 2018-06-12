@@ -24,8 +24,6 @@ void State::linkTo(Symbol input, State* state) {
 
 std::string to_string(const std::vector<StateId>& S, std::string_view stateLabelPrefix) {
   std::vector<StateId> names = S;
-  for (StateId s : S)
-    names.push_back(s);
 
   std::sort(names.begin(), names.end());
 
