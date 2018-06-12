@@ -130,8 +130,22 @@ class NFA {
     return states_[id];
   }
 
-  TransitionMap& stateTransitions(StateId id) {
-    return states_[id];
+  //! Retrieves all epsilon-transitions directly connected to State @p s.
+  StateIdVec epsilonTransitions(StateId s) const {
+    StateIdVec t;
+    for (const std::pair<Symbol, StateIdVec>& p : stateTransitions(s))
+      if (p.first == EpsilonTransition)
+        t.insert(t.end(), p.second.begin(), p.second.end());
+    return std::move(t);
+  }
+
+  //! Retrieves all states that can be directly or indirectly accessed via epsilon-transitions exclusively.
+  StateIdVec epsilonClosure(StateIdVec S) const {
+    return StateIdVec{}; // TODO
+  }
+
+  TransitionMap& stateTransitions(StateId s) {
+    return states_[s];
   }
 
   //! Flags given state as accepting-state with given Tag @p acceptTag.
