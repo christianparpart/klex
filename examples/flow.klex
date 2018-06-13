@@ -85,8 +85,8 @@ Period            ::= \.
 DblPeriod         ::= \.\.
 Ellipsis          ::= \.\.\.
 Comment(ignore)   ::= "#[^$]*"
-Spacing(ignore)   ::= "[ \t\n]+"
-# Eof               ::= <<EOF>>
+Spacing(ignore)   ::= [\s\t\n]+
+Eof               ::= <<EOF>>
 
 # literals
 TrueLiteral       ::= true

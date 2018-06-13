@@ -4,8 +4,8 @@
 #include <iostream>
 #include <fmt/format.h>
 
-enum class Token { INVALID, RndOpen, RndClose, Plus, Minus, Mul, Div, Number };
-constexpr std::string_view patterns[] { "\\(", "\\)", "\\+", "-", "\\*", "/", "[0-9]+" };
+enum class Token { INVALID, Eof, RndOpen, RndClose, Plus, Minus, Mul, Div, Number };
+constexpr std::string_view patterns[] { "<<EOF>>", "\\(", "\\)", "\\+", "-", "\\*", "/", "[0-9]+" };
 
 int main(int argc, const char* argv[]) {
   klex::Compiler cc;
@@ -14,15 +14,19 @@ int main(int argc, const char* argv[]) {
     cc.declare(i++, p);
 
   cc.declare(klex::IgnoreTag, "[ ]+");
+  cc.declare(klex::EofTag, "<<EOF>>");
 
   klex::Lexer lexer { cc.compile(), std::cin };
 
-  for (int t = lexer.recognizeOne(); t > -1; t = lexer.recognize()) {
+  // for (int t = lexer.recognizeOne(); t > Token::Eof; t = lexer.recognize()) {
+  int t;
+  do {
+    t = lexer.recognizeOne();
     std::cerr << fmt::format("[{}-{}]: token {} (\"{}\")\n",
                              lexer.offset().first,
                              lexer.offset().second,
-                             t, lexer.word());
-  }
+                             klex::Tag{t}, lexer.word());
+  } while (Token{t} != Token::Eof && t != -1);
 
   return 0;
 }
