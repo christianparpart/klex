@@ -23,11 +23,17 @@ class Lexer {
  public:
   /**
    * Constructs the Lexer with the given information table.
-   *
-   * @see Builder
    */
   explicit Lexer(LexerDef info);
 
+  /**
+   * Constructs the Lexer with the given information table and input stream.
+   */
+  Lexer(LexerDef info, std::unique_ptr<std::istream> input);
+
+  /**
+   * Open given input stream.
+   */
   void open(std::unique_ptr<std::istream> input);
 
   /**

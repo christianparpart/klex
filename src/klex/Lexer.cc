@@ -20,11 +20,15 @@ namespace klex {
 #endif
 
 Lexer::Lexer(LexerDef info)
+    : Lexer{std::move(info), nullptr} {
+}
+
+Lexer::Lexer(LexerDef info, std::unique_ptr<std::istream> stream)
     : transitions_{std::move(info.transitions)},
       initialStateId_{info.initialStateId},
       acceptStates_{std::move(info.acceptStates)},
       word_{},
-      stream_{},
+      stream_{std::move(stream)},
       oldOffset_{},
       offset_{},
       line_{},
