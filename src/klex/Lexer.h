@@ -31,6 +31,8 @@ class Lexer {
    */
   Lexer(LexerDef info, std::unique_ptr<std::istream> input);
 
+  Lexer(LexerDef info, std::istream& input);
+
   /**
    * Open given input stream.
    */
@@ -73,7 +75,8 @@ class Lexer {
   StateId initialStateId_;
   std::map<StateId, Tag> acceptStates_;
   std::string word_;
-  std::unique_ptr<std::istream> stream_;
+  std::unique_ptr<std::istream> ownedStream_;
+  std::istream* stream_;
   std::vector<int> buffered_;
   unsigned oldOffset_;
   unsigned offset_;

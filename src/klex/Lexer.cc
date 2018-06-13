@@ -28,22 +28,29 @@ Lexer::Lexer(LexerDef info, std::unique_ptr<std::istream> stream)
       initialStateId_{info.initialStateId},
       acceptStates_{std::move(info.acceptStates)},
       word_{},
-      stream_{std::move(stream)},
+      ownedStream_{std::move(stream)},
+      stream_{ownedStream_.get()},
       oldOffset_{},
       offset_{},
       line_{},
       column_{} {
-  // for (StateId s : transitions_.states()) {
-  //   std::cerr << fmt::format("n{}: (", s);
-  //   for (std::pair<Symbol, StateId> p : transitions_.map(s)) {
-  //     std::cerr << fmt::format(" '{}': n{};", prettySymbol(p.first), p.second);
-  //   }
-  //   std::cerr << fmt::format(")\n");
-  // }
+}
+
+Lexer::Lexer(LexerDef info, std::istream& stream)
+    : transitions_{std::move(info.transitions)},
+      initialStateId_{info.initialStateId},
+      acceptStates_{std::move(info.acceptStates)},
+      word_{},
+      ownedStream_{},
+      stream_{&stream},
+      oldOffset_{},
+      offset_{},
+      line_{},
+      column_{} {
 }
 
 void Lexer::open(std::unique_ptr<std::istream> stream) {
-  stream_ = std::move(stream);
+  ownedStream_ = std::move(stream);
   oldOffset_ = 0;
   offset_ = 0;
   line_ = 1;
