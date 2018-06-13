@@ -30,9 +30,10 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/klex/sysconfig.h.cmake
 
 # ----------------------------------------------------------------------------
 add_executable(klex_test
+    src/klex/NFA_test.cc
+    src/klex/klex_test.cc
     src/klex/util/AnsiColor.cc
     src/klex/util/testing.cc
-    src/klex/klex_test.cc
     )
 
 target_link_libraries(klex_test PUBLIC klex)
