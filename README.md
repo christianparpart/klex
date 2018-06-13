@@ -24,14 +24,23 @@ mklex - klex lexer generator
 ### Example klex Grammar
 
 ```
-If            ::= if
-Then          ::= then
-Else          ::= else
-NumberLiteral ::= 0|[1-9][0-9]*
-Identifier    ::= [a-zA-Z_][a-zA-Z0-9_]*
-Plus          ::= \+
-RndOpen       ::= \(
-RndOpen       ::= \)
+# specials
+Spacing(ignore) ::= "[ \t\s]+"
+Eof             ::= <<EOF>>
+
+# symbols
+Plus            ::= \+
+RndOpen         ::= \(
+RndOpen         ::= \)
+
+# keywords
+If              ::= if
+Then            ::= then
+Else            ::= else
+
+# literals & identifiers
+NumberLiteral   ::= 0|[1-9][0-9]*
+Identifier      ::= [a-zA-Z_][a-zA-Z0-9_]*
 ```
 
 ### libklex API
