@@ -5,29 +5,33 @@
 
 ### mklex CLI
 ```
-Usage:
-  mklex [-v] -f RULES_FILE -o OUTPUT_FILE
+mklex - klex lexer generator
+(c) 2018 Christian Parpart <christian@parpart.family>
 
-    -f, --file=PATH           source file containing the lexer rules
-    -o, --output=PATH         generated header file containing tables and token definitions
-        --token-output=PATH   split out token definitions into seperate generated header file.
-    -t, --dot=PATH            writes dot graph of final finite automaton. Use - to represent stdout.
-    -O, --optimization=NUM    level of optimization for the finite automaton.
-                                0 - raw NFA, no tables can be generated.
-                                1 - DFA, input rules will be transformed to DFA but not minimized.
-                                2 - DFA-minimized, like DFA but also compressed.
+ -v, --verbose                Prints some more verbose output
+ -h, --help                   Prints this help and exits
+ -f, --file=PATTERN_FILE      Input file with lexer rules
+ -t, --output-table=FILE      Output file that will contain the compiled tables
+ -T, --output-token=FILE      Output file that will contain the compiled tables
+ -n, --table-name=IDENTIFIER  Symbol name for generated table. [lexerDef]
+ -N, --token-name=IDENTIFIER  Symbol name for generated token enum type. [Token]
+ -x, --debug-dfa=DOT_FILE     Writes dot graph of final finite automaton. Use - to
+                              represent stdout. []
+ -p, --perf                   Print performance counters to stderr.
+ -d, --debug-nfa              Print NFA and exit.
 ```
 
-### klex grammar
+### Example klex Grammar
 
 ```
-RuleFile    ::= (SymbolDef* '%%')? RuleDef*
-SymbolDef   ::= IDENT SP+ Expression LF
-RuleDef     ::= Expression
-Expression  ::= <regular expression> LF
-SP          ::= (\s\t)+
-LF          ::= '\n'
-IDENT       ::= [a-zA-Z_][a-zA-Z0-9_]*
+If            ::= if
+Then          ::= then
+Else          ::= else
+NumberLiteral ::= 0|[1-9][0-9]*
+Identifier    ::= [a-zA-Z_][a-zA-Z0-9_]*
+Plus          ::= \+
+RndOpen       ::= \(
+RndOpen       ::= \)
 ```
 
 ### libklex API
@@ -35,10 +39,11 @@ IDENT       ::= [a-zA-Z_][a-zA-Z0-9_]*
 #include <lexer/lexer.h>
 #include <fstream>
 #include "myrules.h"
+#include "mytokens.h"
 
 int main(int argc, const char* argv[]) {
   lexer::Lexer lex{myrules, std::ifstream(argv[1])};
-  while (lex.recognize() != -1) {
+  while (lex.recognize() != Token::Eof) {
     lex.dump();
   }
 }
