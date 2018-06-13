@@ -84,6 +84,14 @@ std::string CharacterExpr::to_string() const {
   return std::string(1, value_);
 }
 
+void EndOfFileExpr::accept(RegExprVisitor& visitor) {
+  return visitor.visit(*this);
+}
+
+std::string EndOfFileExpr::to_string() const {
+  return "<<EOF>>";
+}
+
 void EndOfLineExpr::accept(RegExprVisitor& visitor) {
   return visitor.visit(*this);
 }

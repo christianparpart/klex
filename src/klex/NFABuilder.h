@@ -38,6 +38,7 @@ class NFABuilder : public RegExprVisitor {
   void visit(AlternationExpr& alternationExpr) override;
   void visit(CharacterExpr& characterExpr) override;
   void visit(ClosureExpr& closureExpr) override;
+  void visit(EndOfFileExpr& eofExpr) override;
   void visit(EndOfLineExpr& eolExpr) override;
   void visit(DotExpr& dotExpr) override;
 

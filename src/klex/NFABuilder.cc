@@ -53,6 +53,10 @@ void NFABuilder::visit(ClosureExpr& closureExpr) {
     throw std::invalid_argument{"closureExpr"};
 }
 
+void NFABuilder::visit(EndOfFileExpr& eofExpr) {
+  fa_ = NFA{EndOfFileTransition};
+}
+
 void NFABuilder::visit(EndOfLineExpr& dotExpr) {
   fa_ = NFA{'\n'};
 }

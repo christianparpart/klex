@@ -41,6 +41,7 @@ using EdgeList = std::vector<Edge>;
 
 // represents an epsilon-transition
 constexpr Symbol EpsilonTransition = '\0';
+constexpr Symbol EndOfFileTransition = '\xff';
 
 class State {
  public:
