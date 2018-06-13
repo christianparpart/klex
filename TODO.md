@@ -1,3 +1,9 @@
+### Current Work
+
+- EOL (`$`)
+- dot (`.`) character class
+- `<<EOF>>`
+
 ### The very incomplete TODO checklist
 
 ```

@@ -86,7 +86,7 @@ static std::string stateName(StateId s) {
 
 Tag Lexer::recognize() {
   for (;;) {
-    if (Tag tag = recognizeOne(); tag >= -1) {
+    if (Tag tag = recognizeOne(); tag != IgnoreTag) {
       return tag;
     }
   }

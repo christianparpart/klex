@@ -25,6 +25,27 @@ TEST(NFA, characterCtor) {
   ASSERT_EQ(StateIdVec{1}, nfa.delta(StateIdVec{0}, 'a'));
 }
 
+TEST(NFA, concatenate) {
+  const NFA ab = NFA{ 'a' }.concatenate(NFA{'b'});
+  ASSERT_EQ(4, ab.size());
+  ASSERT_EQ(0, ab.initialStateId());
+  ASSERT_EQ(3, ab.acceptStateId());
+
+  // TODO: check ab.initial == A.initial
+  // TODO: check A.accept == B.initial
+  // TODO: check ab.accept == B.accept
+}
+
+TEST(NFA, alternate) {
+  const NFA ab = NFA{ 'a' }.alternate(NFA{'b'});
+  ASSERT_EQ(6, ab.size());
+  ASSERT_EQ(2, ab.initialStateId());
+  ASSERT_EQ(3, ab.acceptStateId());
+
+  // TODO: check acceptState transitions to A and B
+  // TODO: check A and B's outgoing edges to final acceptState
+}
+
 TEST(NFA, epsilonClosure) {
   const NFA nfa{'a'};
   ASSERT_EQ(0, nfa.initialStateId());

@@ -12,6 +12,10 @@
 
 namespace klex {
 
+constexpr Tag EofTag = static_cast<Tag>(-1);
+constexpr Tag ErrorTag = static_cast<Tag>(-2);
+constexpr Tag IgnoreTag = static_cast<Tag>(-3);
+
 using AcceptStateMap = std::map<StateId, Tag>;
 
 struct LexerDef {

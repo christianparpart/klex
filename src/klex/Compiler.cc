@@ -14,6 +14,7 @@
 #include <klex/NFA.h>
 #include <klex/NFABuilder.h>
 #include <klex/RegExpr.h>
+#include <klex/RegExprParser.h>
 
 #include <iostream>
 

@@ -114,76 +114,34 @@ class CharacterExpr : public RegExpr {
   char value_;
 };
 
-class RegExprParser {
+class DotExpr : public RegExpr {
  public:
-  RegExprParser();
+  explicit DotExpr()
+      : RegExpr{4} {}
 
-  std::unique_ptr<RegExpr> parse(std::string_view expr);
+  std::string to_string() const override;
+  void accept(RegExprVisitor& visitor) override;
+};
 
-  class UnexpectedToken : public std::runtime_error {
-   public:
-    UnexpectedToken(int actual, int expected)
-        : std::runtime_error{fmt::format("Unexpected token {}. Expected {} instead.",
-                                         actual == -1 ? "EOF"
-                                                      : fmt::format("{}", static_cast<char>(actual)),
-                                         static_cast<char>(expected))}
-    {}
-  };
+class EndOfLineExpr : public RegExpr {
+ public:
+  explicit EndOfLineExpr()
+      : RegExpr{4} {}
 
- private:
-  int currentChar() const;
-  bool eof() const noexcept { return currentChar() == -1; }
-  void consume(int ch);
-  int consume();
-  unsigned parseInt();
-
-  std::unique_ptr<RegExpr> parseExpr();                   // alternation
-  std::unique_ptr<RegExpr> parseAlternation();            // concatenation ('|' concatenation)*
-  std::unique_ptr<RegExpr> parseConcatenation();          // closure (closure)*
-  std::unique_ptr<RegExpr> parseClosure();                // atom ['*' | '?' | '{' NUM [',' NUM] '}']
-  std::unique_ptr<RegExpr> parseAtom();                   // character | characterClass | '(' expr ')'
-  std::unique_ptr<RegExpr> parseCharacterClass();         // '[' characterClassFragment+ ']'
-  std::unique_ptr<RegExpr> parseCharacterClassFragment(); // character | character '-' character
-
- private:
-  std::string_view input_;
-  std::string_view::iterator currentChar_;
+  std::string to_string() const override;
+  void accept(RegExprVisitor& visitor) override;
 };
 
 class RegExprVisitor {
  public:
   virtual ~RegExprVisitor() {}
 
-  virtual void visit(AlternationExpr& alternationExpr) = 0;
   virtual void visit(ConcatenationExpr& concatenationExpr) = 0;
+  virtual void visit(AlternationExpr& alternationExpr) = 0;
   virtual void visit(CharacterExpr& characterExpr) = 0;
   virtual void visit(ClosureExpr& closureExpr) = 0;
-};
-
-class RegExprEvaluator : protected RegExprVisitor {
- public:
-  RegExprEvaluator();
-
-  bool match(std::string_view pattern, RegExpr* expr);
-
-  bool result() const noexcept { return result_; }
-  size_t offset() const noexcept { return offset_; }
-
- private:
-  bool evaluate(RegExpr* expr);
-  void visit(AlternationExpr& alternationExpr) override;
-  void visit(ConcatenationExpr& concatenationExpr) override;
-  void visit(CharacterExpr& characterExpr) override;
-  void visit(ClosureExpr& closureExpr) override;
-
-  bool eof() const { return offset_ == pattern_.size(); }
-  int currentChar() const { return !eof() ? pattern_[offset_] : -1; }
-  int consume();
-
- private:
-  std::string_view pattern_;
-  size_t offset_;
-  bool result_;
+  virtual void visit(EndOfLineExpr& eolExpr) = 0;
+  virtual void visit(DotExpr& dotExpr) = 0;
 };
 
 } // namespace klex

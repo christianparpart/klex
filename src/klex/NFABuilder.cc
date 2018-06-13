@@ -53,4 +53,16 @@ void NFABuilder::visit(ClosureExpr& closureExpr) {
     throw std::invalid_argument{"closureExpr"};
 }
 
+void NFABuilder::visit(EndOfLineExpr& dotExpr) {
+  fa_ = NFA{'\n'};
+}
+
+void NFABuilder::visit(DotExpr& dotExpr) {
+  // any character except LF
+  fa_ = NFA{'\t'};
+  for (int ch = 32; ch < 127; ++ch) {
+    fa_.addTransition(fa_.initialStateId(), ch, fa_.acceptStateId());
+  }
+}
+
 } // namespace klex
