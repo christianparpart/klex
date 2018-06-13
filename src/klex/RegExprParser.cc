@@ -152,6 +152,15 @@ unsigned RegExprParser::parseInt() {
 
 std::unique_ptr<RegExpr> RegExprParser::parseAtom() {
   switch (currentChar()) {
+    case '<':
+      consume();
+      consume('<');
+      consume('E');
+      consume('O');
+      consume('F');
+      consume('>');
+      consume('>');
+      return std::make_unique<EndOfFileExpr>();
     case '(': {
       consume();
       std::unique_ptr<RegExpr> subExpr = parseExpr();

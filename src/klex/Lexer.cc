@@ -157,7 +157,7 @@ int Lexer::nextChar() {
 
   if (!stream_->good()) { // EOF or I/O error
     //std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, "EOF");
-    return -1;
+    return EndOfFileTransition;
   }
 
   int ch = stream_->get();
