@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.6)
 project(klex VERSION "0.0.0" LANGUAGES CXX)
 
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+include(mklex)
+
 set(MASTER_PROJECT OFF)
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   set(MASTER_PROJECT ON)
@@ -8,6 +11,7 @@ endif ()
 
 option(KLEX_EMBEDDED_FMTLIB "Build against embedded fmtlib [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
 option(KLEX_EXAMPLES "Build examples [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
+option(KLEX_TESTS "Build test suite [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
 
 # fmtlib
 if(KLEX_EMBEDDED_FMTLIB)
@@ -27,21 +31,6 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/src
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/klex/sysconfig.h.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/src/klex/sysconfig.h)
-
-# ----------------------------------------------------------------------------
-add_executable(klex_test
-    src/klex/NFA_test.cc
-    src/klex/klex_test.cc
-    src/klex/util/AnsiColor.cc
-    src/klex/util/testing.cc
-    )
-
-target_link_libraries(klex_test PUBLIC klex)
-target_link_libraries(klex_test PUBLIC fmt::fmt-header-only stdc++fs)
-set_target_properties(klex_test PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
-if(CLANG_TIDY_EXE)
-  set_target_properties(klex_test PROPERTIES CXX_CLANG_TIDY "${DO_CLANG_TIDY}")
-endif()
 
 # ----------------------------------------------------------------------------
 add_library(klex STATIC
@@ -84,26 +73,21 @@ set_target_properties(mklex PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 target_link_libraries(mklex klex)
 
 # ----------------------------------------------------------------------------
-function(klex_generate_cpp KLEX_FILE TOKEN_FILE TABLE_FILE)
-  set(${TABLE_FILE} "${CMAKE_CURRENT_BINARY_DIR}/${KLEX_FILE}.table.cc")
-  set(${TABLE_FILE} "${CMAKE_CURRENT_BINARY_DIR}/${KLEX_FILE}.table.cc" PARENT_SCOPE)
+if(KLEX_TESTS)
+  add_executable(klex_test
+      src/klex/NFA_test.cc
+      src/klex/klex_test.cc
+      src/klex/util/AnsiColor.cc
+      src/klex/util/testing.cc
+      )
 
-  set(klex_file "${CMAKE_CURRENT_SOURCE_DIR}/${KLEX_FILE}")
-
-  message(STATUS "klex_generate_cpp: klex file: ${klex_file}")
-  message(STATUS "klex_generate_cpp: token out: ${TOKEN_FILE}")
-  message(STATUS "klex_generate_cpp: table out: ${TABLE_FILE} ${${TABLE_FILE}}")
-
-  add_custom_command(
-      OUTPUT "${TOKEN_FILE}" "${${TABLE_FILE}}"
-      COMMAND ${CMAKE_CURRENT_BINARY_DIR}/mklex
-      ARGS -f "${klex_file}" -t "${${TABLE_FILE}}" -T "${TOKEN_FILE}" -p
-      DEPENDS mklex ${klex_file}
-      COMMENT "Generating lexer table and tokens for ${KLEX_FILE}"
-      VERBATIM)
-  set_source_files_properties(${TOKEN_FILE} PROPERTIES GENERATED TRUE)
-  set_source_files_properties(${${TABLE_FILE}} PROPERTIES GENERATED TRUE)
-endfunction()
+  target_link_libraries(klex_test PUBLIC klex)
+  target_link_libraries(klex_test PUBLIC fmt::fmt-header-only stdc++fs)
+  set_target_properties(klex_test PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+  if(CLANG_TIDY_EXE)
+    set_target_properties(klex_test PROPERTIES CXX_CLANG_TIDY "${DO_CLANG_TIDY}")
+  endif()
+endif(KLEX_TESTS)
 
 # ----------------------------------------------------------------------------
 if(KLEX_EXAMPLES)
