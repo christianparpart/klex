@@ -102,7 +102,7 @@ if(KLEX_EXAMPLES)
   target_include_directories(example_flowlexer PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/examples)
   # add_dependencies(example_flowlexer mklex)
 
-  add_executable(example_mathexpr examples/mathexpr.cc ${FLOW_TABLE_SRC})
+  add_executable(example_mathexpr examples/mathexpr.cc)
   set_target_properties(example_mathexpr PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
   target_link_libraries(example_mathexpr klex)
   target_include_directories(example_mathexpr PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/examples)
