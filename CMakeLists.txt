@@ -29,6 +29,20 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/klex/sysconfig.h.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/src/klex/sysconfig.h)
 
 # ----------------------------------------------------------------------------
+add_executable(klex_test
+    src/klex/util/AnsiColor.cc
+    src/klex/util/testing.cc
+    src/klex/klex_test.cc
+    )
+
+target_link_libraries(klex_test PUBLIC klex)
+target_link_libraries(klex_test PUBLIC fmt::fmt-header-only stdc++fs)
+set_target_properties(klex_test PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+if(CLANG_TIDY_EXE)
+  set_target_properties(klex_test PROPERTIES CXX_CLANG_TIDY "${DO_CLANG_TIDY}")
+endif()
+
+# ----------------------------------------------------------------------------
 add_library(klex STATIC
     src/klex/Alphabet.cc
     src/klex/Compiler.cc

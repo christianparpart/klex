@@ -4,6 +4,7 @@
 text -> RE AST -> NFA -> DFA -> MinDFA -> Tables
 ```
 
+- [ ] <<more unit tests>>
 - [ ] RE/FA: detect EOL ('$')
 - [ ] FA: how to handle EOF?
 - [ ] RE: be able to parse "(a|)", which is either "a" or ""

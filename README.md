@@ -45,13 +45,14 @@ Identifier      ::= [a-zA-Z_][a-zA-Z0-9_]*
 
 ### libklex API
 ```!cpp
-#include <lexer/lexer.h>
+#include <klex/Lexer.h>
 #include <fstream>
+#include <memory>
 #include "myrules.h"
 #include "mytokens.h"
 
 int main(int argc, const char* argv[]) {
-  lexer::Lexer lex{myrules, std::ifstream(argv[1])};
+  lexer::Lexer lex{myrules, std::make_unique<std::ifstream>(argv[1])};
   while (lex.recognize() != Token::Eof) {
     lex.dump();
   }
