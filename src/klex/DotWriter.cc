@@ -15,18 +15,18 @@ namespace klex {
 
 static std::string symbolText(Symbol input) {
   switch (input) {
-    case -1:
+    case Symbols::EndOfFile:
       return "<EOF>";
-    case EpsilonTransition:
+    case Symbols::Epsilon:
       return "ε";
     case ' ':
-      return "\\\\s";
+      return "\\s";
     case '\t':
-      return "\\\\t";
+      return "\\t";
     case '\n':
-      return "\\\\n";
+      return "\\n";
     default:
-      return fmt::format("{}", input);
+      return fmt::format("{}", (char) input);
   }
 }
 

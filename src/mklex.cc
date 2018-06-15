@@ -10,6 +10,8 @@
 #include <klex/DFAMinimizer.h>
 #include <klex/DotWriter.h>
 #include <klex/Lexer.h>
+#include <klex/RegExpr.h>
+#include <klex/RegExprParser.h>
 #include <klex/Rule.h>
 #include <klex/RuleParser.h>
 #include <klex/util/Flags.h>
@@ -88,13 +90,13 @@ struct PerfTimer {
   TimePoint start;
   TimePoint end;
 
-  void lap(std::string_view message) {
+  void lap(std::string_view message, size_t count, std::string_view item) {
     if (enabled) {
       end = std::chrono::high_resolution_clock::now();
       const Duration duration = end - start;
       std::swap(end, start);
 
-      std::cerr << message << ": " << duration.count() << " seconds\n";
+      std::cerr << fmt::format("{}: {} seconds ({} {})\n", message, duration.count(), count, item);
     }
   }
 };
@@ -144,12 +146,14 @@ int main(int argc, const char* argv[]) {
   klex::RuleParser ruleParser{std::make_unique<std::ifstream>(klexFileName.string())};
   PerfTimer perfTimer { flags.getBool("perf") };
   klex::RuleList rules = ruleParser.parseRules();
-  perfTimer.lap("Rule parsing");
+  perfTimer.lap("Rule parsing", rules.size(), "rules");
 
   klex::Compiler builder;
-  for (const klex::Rule& rule : rules)
-    builder.declare(rule.tag, rule.pattern);
-  perfTimer.lap("NFA construction");
+  for (const klex::Rule& rule : rules) {
+    // std::cerr << fmt::format("Rule at {}:{}: {}\n", rule.line, rule.column, rule.pattern);
+    builder.declare(rule.tag, *klex::RegExprParser{}.parse(rule.pattern, rule.line, rule.column));
+  }
+  perfTimer.lap("NFA construction", builder.nfa().size(), "states");
 
   if (flags.getBool("debug-nfa")) {
     klex::DotWriter writer{ std::cout };
@@ -158,10 +162,10 @@ int main(int argc, const char* argv[]) {
   }
 
   klex::DFA dfa = builder.compileDFA();
-  perfTimer.lap("DFA construction");
+  perfTimer.lap("DFA construction", dfa.size(), "states");
 
   klex::DFA dfamin = klex::DFAMinimizer{dfa}.construct();
-  perfTimer.lap("DFA minimization");
+  perfTimer.lap("DFA minimization", dfamin.size(), "states");
 
   if (std::string dotfile = flags.getString("debug-dfa"); !dotfile.empty()) {
     if (dotfile == "-") {
@@ -182,7 +186,7 @@ int main(int argc, const char* argv[]) {
     generateTokenDefCxx(std::cerr, rules, flags.getString("token-name"));
   }
 
-  klex::LexerDef lexerDef = klex::Compiler::compile(dfamin);
+  klex::LexerDef lexerDef = klex::Compiler::generateTables(dfamin);
   if (std::string tableFile = flags.getString("output-table"); tableFile != "-") {
     if (auto p = fs::path{tableFile}.remove_filename(); p != "")
       fs::create_directories(p);

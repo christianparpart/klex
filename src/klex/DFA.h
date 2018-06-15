@@ -35,6 +35,8 @@ class DFA {
 
   DFA() : states_{}, initialState_{nullptr} {}
 
+  size_t size() const noexcept { return states_.size(); }
+
   //! Retrieves the alphabet of this finite automaton.
   Alphabet alphabet() const;
 

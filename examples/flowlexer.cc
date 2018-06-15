@@ -17,11 +17,15 @@ int main(int argc, const char* argv[]) {
   klex::Lexer lexer {lexerDef};
   lexer.open(std::make_unique<std::ifstream>(argv[1]));
 
+  int i = 0;
   for (int t = lexer.recognize(); t > 0; t = lexer.recognize()) {
     std::cerr << fmt::format("[{}-{}]: token {} (\"{}\")\n",
                              lexer.offset().first,
                              lexer.offset().second,
                              t, lexer.word());
+    i++;
+    if (i == 10)
+      break;
   }
 
   return EXIT_SUCCESS;

@@ -6,6 +6,8 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
+#include <klex/Symbols.h>
+
 #include <fmt/format.h>
 
 #include <list>
@@ -17,11 +19,6 @@
 #include <vector>
 
 namespace klex {
-
-//! input symbol as used for transitions
-using Symbol = char;
-
-std::string prettySymbol(Symbol input);
 
 using Tag = int;
 using StateId = size_t;
@@ -38,10 +35,6 @@ struct Edge {
 };
 
 using EdgeList = std::vector<Edge>;
-
-// represents an epsilon-transition
-constexpr Symbol EpsilonTransition = '\0';
-constexpr Symbol EndOfFileTransition = '\xff';
 
 class State {
  public:

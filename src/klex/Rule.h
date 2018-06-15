@@ -8,17 +8,19 @@
 
 #include <klex/State.h> // fa::Tag
 #include <string>
-#include <list>
+#include <vector>
 
 namespace klex {
 
 struct Rule {
+  unsigned int line;
+  unsigned int column;
   Tag tag;
   std::string name;
   std::string pattern;
 };
 
-using RuleList = std::list<Rule>;
+using RuleList = std::vector<Rule>;
 
 } // namespace klex
 

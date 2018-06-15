@@ -20,37 +20,31 @@ namespace klex {
 #endif
 
 Lexer::Lexer(LexerDef info)
-    : Lexer{std::move(info), nullptr} {
-}
-
-Lexer::Lexer(LexerDef info, std::unique_ptr<std::istream> stream)
-    : transitions_{std::move(info.transitions)},
-      initialStateId_{info.initialStateId},
-      acceptStates_{std::move(info.acceptStates)},
-      word_{},
-      ownedStream_{std::move(stream)},
-      stream_{ownedStream_.get()},
-      oldOffset_{},
-      offset_{},
-      line_{},
-      column_{} {
-}
-
-Lexer::Lexer(LexerDef info, std::istream& stream)
     : transitions_{std::move(info.transitions)},
       initialStateId_{info.initialStateId},
       acceptStates_{std::move(info.acceptStates)},
       word_{},
       ownedStream_{},
-      stream_{&stream},
+      stream_{nullptr},
       oldOffset_{},
       offset_{},
-      line_{},
-      column_{} {
+      line_{1},
+      column_{0},
+      token_{ErrorTag} {
+}
+
+Lexer::Lexer(LexerDef info, std::unique_ptr<std::istream> stream)
+    : Lexer{std::move(info)} {
+  open(std::move(stream));
+}
+
+Lexer::Lexer(LexerDef info, std::istream& stream)
+    : Lexer{std::move(info)} {
 }
 
 void Lexer::open(std::unique_ptr<std::istream> stream) {
   ownedStream_ = std::move(stream);
+  stream_ = ownedStream_.get();
   oldOffset_ = 0;
   offset_ = 0;
   line_ = 1;
@@ -101,19 +95,27 @@ Tag Lexer::recognizeOne() {
   stack.push_back(BadState);
 
   // advance
+  unsigned int savedLine = line_;
+  unsigned int savedCol = column_;
   while (state != ErrorState) {
-    Symbol ch = nextChar();
+    Symbol ch = nextChar(); // one of: input character, ERROR or EOF
     word_.push_back(ch);
 
     if (isAcceptState(state))
       stack.clear();
 
     stack.push_back(state);
+    savedLine = line_;
+    savedCol = column_;
     DEBUG("recognize: state {} char '{}' {}", stateName(state), prettySymbol(ch), isAcceptState(state) ? "accepting" : "");
     state = transitions_.apply(state, ch);
   }
 
   // trackback
+  if (state == BadState) {
+    line_ = savedLine;
+    column_ = savedCol;
+  }
   while (state != BadState && !isAcceptState(state)) {
     DEBUG("recognize: trackback: current state {} {}; stack: {}",
           stateName(state),
@@ -130,46 +132,47 @@ Tag Lexer::recognizeOne() {
   DEBUG("recognize: final state {} {}", stateName(state), isAcceptState(state) ? "accepting" : "non-accepting");
 
   if (isAcceptState(state))
-    return type(state);
+    return token_ = type(state);
 
-  return -1;
+  return token_ = ErrorTag;
 }
 
 int Lexer::type(StateId acceptState) const {
   if (auto i = acceptStates_.find(acceptState); i != acceptStates_.end())
     return i->second;
 
-  return -1;
+  return ErrorTag;
 }
 
 bool Lexer::isAcceptState(StateId id) const {
   return acceptStates_.find(id) != acceptStates_.end();
 }
 
-int Lexer::nextChar() {
+Symbol Lexer::nextChar() {
   if (!buffered_.empty()) {
     offset_++;
     int ch = buffered_.back();
     buffered_.resize(buffered_.size() - 1);
-    //std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, prettySymbol(ch));
+    DEBUG("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
     return ch;
   }
 
   if (!stream_->good()) { // EOF or I/O error
-    //std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, "EOF");
+    DEBUG("Lexer:{}: advance '{}'", offset_, "EOF");
     return EndOfFileTransition;
   }
 
   int ch = stream_->get();
   if (ch >= 0)
     offset_++;
-  //std::cerr << fmt::format("Lexer:{}: advance '{}'\n", offset_, prettySymbol(ch));
+  DEBUG("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
   return ch;
 }
 
 void Lexer::rollback() {
   if (word_.back() != -1) {
     offset_--;
+    // TODO: rollback (line, column)
     buffered_.push_back(word_.back());
   }
 }

@@ -42,7 +42,9 @@ class RuleParser {
  private:
   std::unique_ptr<std::istream> stream_;
   char currentChar_;
-  unsigned offset_;
+  unsigned int line_;
+  unsigned int column_;
+  unsigned int offset_;
   int nextTag_;
 };
 
@@ -61,25 +63,30 @@ class RuleParser::UnexpectedToken : public std::runtime_error {
 
  private:
   unsigned offset_;
+  unsigned line_;
+  unsigned column_;
   char actual_;
   std::string expected_;
 };
 
 class RuleParser::UnexpectedChar : public std::runtime_error {
  public:
-  UnexpectedChar(unsigned offset, char actual, char expected)
-      : std::runtime_error{fmt::format("{}: Unexpected char {}, expected {} instead.",
-          offset, actual, expected)},
-        offset_{offset},
+  UnexpectedChar(unsigned int line, unsigned int column, char actual, char expected)
+      : std::runtime_error{fmt::format("[{}:{}] Unexpected char {}, expected {} instead.",
+          line, column, actual, expected)},
+        line_{line},
+        column_{column},
         actual_{actual},
         expected_{expected} {}
 
-  unsigned offset() const noexcept { return offset_; }
+  unsigned int line() const noexcept { return line_; }
+  unsigned int column() const noexcept { return column_; }
   char actual() const noexcept { return actual_; }
   char expected() const noexcept { return expected_; }
 
  private:
-  unsigned offset_;
+  unsigned int line_;
+  unsigned int column_;
   char actual_;
   char expected_;
 };

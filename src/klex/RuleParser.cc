@@ -6,6 +6,7 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/RuleParser.h>
+#include <klex/LexerDef.h> // special tags
 #include <sstream>
 #include <iostream>
 #include <cstring>
@@ -15,20 +16,24 @@ namespace klex {
 RuleParser::RuleParser(std::unique_ptr<std::istream> input)
     : stream_{std::move(input)},
       currentChar_{0},
+      line_{1},
+      column_{0},
       offset_{0},
-      nextTag_{1} {
+      nextTag_{FirstUserTag} {
   consumeChar();
 }
 
 RuleList RuleParser::parseRules() {
   RuleList rules;
 
-  while (!eof()) {
+  for (;;) {
     consumeSpace();
-    if (currentChar() != '\n') {
-      rules.emplace_back(parseRule());
+    if (eof()) {
+      break;
+    } else if (currentChar() == '\n') {
+      consumeChar();
     } else {
-      consumeChar('\n');
+      rules.emplace_back(parseRule());
     }
   }
 
@@ -56,16 +61,21 @@ Rule RuleParser::parseRule() {
   consumeSP();
   consumeAssoc();
   consumeSP();
+  unsigned int line = line_;
+  unsigned int column = column_;
   std::string pattern = parseExpression();
   consumeSpace();
   consumeChar('\n');
 
-  Tag tag = nextTag_++;
-
+  Tag tag{};
   if (ignore)
-    tag = -tag;
+    tag = IgnoreTag;
+  else if (pattern == "<<EOF>>")
+    tag = EofTag;
+  else
+    tag = nextTag_++;
 
-  return Rule{tag, token, pattern};
+  return Rule{line, column, tag, token, pattern};
 }
 
 std::string RuleParser::parseExpression() {
@@ -75,11 +85,12 @@ std::string RuleParser::parseExpression() {
   std::stringstream sstr;
 
   if (currentChar_ == '"') {
-    consumeChar();
+    sstr << consumeChar();
+    // TODO: count "'s and avoid breaking on escaped "
     while (!eof() && !strchr("\t\n\r\"", currentChar_)) {
       sstr << consumeChar();
     }
-    consumeChar('"');
+    sstr << consumeChar('"');
   } else {
     while (!eof() && !strchr("\t\n\r# ", currentChar_)) {
       sstr << consumeChar();
@@ -115,7 +126,7 @@ char RuleParser::currentChar() const noexcept {
 
 char RuleParser::consumeChar(char ch) {
   if (currentChar_ != ch)
-    throw UnexpectedChar{offset_, currentChar_, ch};
+    throw UnexpectedChar{line_, column_, currentChar_, ch};
 
   return consumeChar();
 }
@@ -124,8 +135,15 @@ char RuleParser::consumeChar() {
   char t = currentChar_;
 
   currentChar_ = stream_->get();
-  if (!stream_->eof())
+  if (!stream_->eof()) {
     offset_++;
+    if (t == '\n') {
+      line_++;
+      column_ = 1;
+    } else {
+      column_++;
+    }
+  }
 
   return t;
 }
@@ -149,7 +167,7 @@ std::string RuleParser::consumeToken() {
 void RuleParser::consumeSP() {
   // require at least one SP character (0x20 or 0x09)
   if (currentChar_ != ' ' && currentChar_ != '\t')
-    throw UnexpectedChar{offset_, currentChar_, ' '};
+    throw UnexpectedChar{line_, column_, currentChar_, ' '};
 
   do consumeChar();
   while (currentChar_ == ' ' || currentChar_ == '\t');

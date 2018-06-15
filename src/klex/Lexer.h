@@ -64,8 +64,11 @@ class Lexer {
   //! @returns the current column of the current line the lexer is reading from.
   unsigned column() const noexcept { return column_; }
 
+  //! @returns the last recognized token (which includes ErrorTag and EofTag).
+  Tag token() const noexcept { return token_; }
+
  private:
-  int nextChar();
+  Symbol nextChar();
   void rollback();
   bool isAcceptState(StateId state) const;
   int type(StateId acceptState) const;
@@ -82,6 +85,7 @@ class Lexer {
   unsigned offset_;
   unsigned line_;
   unsigned column_;
+  Tag token_;
 };
 
 } // namespace klex

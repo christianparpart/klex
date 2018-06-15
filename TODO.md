@@ -3,6 +3,7 @@
 - EOL (`$`)
 - dot (`.`) character class
 - `<<EOF>>`
+- (uninterpreted) string pattern handling
 
 ### The very incomplete TODO checklist
 

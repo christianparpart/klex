@@ -37,6 +37,8 @@ namespace klex {
 
 RegExprParser::RegExprParser()
     : input_{},
+      line_{1},
+      column_{0},
       currentChar_{input_.end()} {
 }
 
@@ -60,6 +62,12 @@ int RegExprParser::consume() {
     return -1;
 
   int ch = *currentChar_;
+  if (ch == '\n') {
+    line_++;
+    column_ = 1;
+  } else {
+    column_++;
+  }
   ++currentChar_;
   //DEBUG("consume: '{}'", (char)ch);
   return ch;
@@ -69,13 +77,15 @@ void RegExprParser::consume(int expected) {
   int actual = currentChar();
   consume();
   if (actual != expected) {
-    throw UnexpectedToken{actual, expected};
+    throw UnexpectedToken{line_, column_, actual, expected};
   }
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parse(std::string_view expr) {
+std::unique_ptr<RegExpr> RegExprParser::parse(std::string_view expr, int line, int column) {
   input_ = std::move(expr);
   currentChar_ = input_.begin();
+  line_ = line;
+  column_ = column;
 
   return parseExpr();
 }
@@ -167,6 +177,16 @@ std::unique_ptr<RegExpr> RegExprParser::parseAtom() {
       consume(')');
       return subExpr;
     }
+    case '"': {
+      consume();
+      std::unique_ptr<RegExpr> lhs = std::make_unique<CharacterExpr>(consume());
+      while (!eof() && currentChar() != '"') {
+        std::unique_ptr<RegExpr> rhs = std::make_unique<CharacterExpr>(consume());
+        lhs = std::make_unique<ConcatenationExpr>(std::move(lhs), std::move(rhs));
+      }
+      consume('"');
+      return lhs;
+    }
     case '[':
       return parseCharacterClass();
     case '.':
@@ -212,6 +232,9 @@ std::unique_ptr<RegExpr> RegExprParser::parseCharacterClassFragment() {
   if (currentChar() == '\\') {
     consume();
     switch (currentChar()) {
+      case 's':
+        consume();
+        return std::make_unique<CharacterExpr>(' ');
       case 't':
         consume();
         return std::make_unique<CharacterExpr>('\t');

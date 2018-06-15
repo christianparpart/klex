@@ -47,6 +47,7 @@ add_library(klex STATIC
     src/klex/RegExprParser.cc
     src/klex/RuleParser.cc
     src/klex/State.cc
+    src/klex/Symbols.cc
     src/klex/TransitionMap.cc
     src/klex/util/Flags.cc
     )
@@ -77,6 +78,7 @@ target_link_libraries(mklex klex)
 if(KLEX_TESTS)
   add_executable(klex_test
       src/klex/NFA_test.cc
+      src/klex/RuleParser_test.cc
       src/klex/klex_test.cc
       src/klex/util/AnsiColor.cc
       src/klex/util/testing.cc
