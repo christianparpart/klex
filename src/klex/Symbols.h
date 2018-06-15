@@ -31,11 +31,6 @@ struct Symbols {
   constexpr static Symbol Character(char ch) { return Symbol(ch); }
 };
 
-// represents an epsilon-transition
-constexpr Symbol EpsilonTransition = Symbols::Epsilon;
-constexpr Symbol EndOfFileTransition = Symbols::EndOfFile;
-constexpr Symbol ErrorTransition = Symbols::Error;
-
 /**
  * Represents a set of symbols.
  */

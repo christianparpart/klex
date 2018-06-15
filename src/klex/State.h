@@ -54,7 +54,7 @@ class State {
 
   State* transition(Symbol input) const;
 
-  void linkTo(State* state) { linkTo(EpsilonTransition, state); }
+  void linkTo(State* state) { linkTo(Symbols::Epsilon, state); }
   void linkTo(Symbol condition, State* state);
 
   void setAccept(bool accepting) { accepting_ = accepting; }

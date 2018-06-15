@@ -27,7 +27,7 @@ Alphabet NFA::alphabet() const {
 
   for (const TransitionMap& transitions : states_)
     for (const std::pair<Symbol, StateIdVec>& t : transitions)
-      if (t.first != EpsilonTransition)
+      if (t.first != Symbols::Epsilon)
         alphabet.insert(t.first);
 
   return alphabet;
@@ -68,7 +68,7 @@ StateIdVec NFA::epsilonTransitions(StateId s) const {
   StateIdVec t;
 
   for (const std::pair<Symbol, StateIdVec>& p : stateTransitions(s))
-    if (p.first == EpsilonTransition)
+    if (p.first == Symbols::Epsilon)
       t.insert(t.end(), p.second.begin(), p.second.end());
 
   return std::move(t);
@@ -133,7 +133,7 @@ NFA& NFA::concatenate(NFA rhs) {
   states_.insert(states_.end(), rhs.states_.begin(), rhs.states_.end());
   acceptTags_.insert(rhs.acceptTags_.begin(), rhs.acceptTags_.end());
 
-  addTransition(acceptState_, EpsilonTransition, rhs.initialState_);
+  addTransition(acceptState_, Symbols::Epsilon, rhs.initialState_);
   acceptState_ = rhs.acceptState_;
 
   return *this;
@@ -148,11 +148,11 @@ NFA& NFA::alternate(NFA rhs) {
   states_.insert(states_.end(), rhs.states_.begin(), rhs.states_.end());
   acceptTags_.insert(rhs.acceptTags_.begin(), rhs.acceptTags_.end());
 
-  addTransition(newStart, EpsilonTransition, initialState_);
-  addTransition(newStart, EpsilonTransition, rhs.initialState_);
+  addTransition(newStart, Symbols::Epsilon, initialState_);
+  addTransition(newStart, Symbols::Epsilon, rhs.initialState_);
 
-  addTransition(acceptState_, EpsilonTransition, newEnd);
-  addTransition(rhs.acceptState_, EpsilonTransition, newEnd);
+  addTransition(acceptState_, Symbols::Epsilon, newEnd);
+  addTransition(rhs.acceptState_, Symbols::Epsilon, newEnd);
 
   initialState_ = newStart;
   acceptState_ = newEnd;
@@ -164,9 +164,9 @@ NFA& NFA::optional() {
   StateId newStart = createState();
   StateId newEnd = createState();
 
-  addTransition(newStart, EpsilonTransition, initialState_);
-  addTransition(newStart, EpsilonTransition, newEnd);
-  addTransition(acceptState_, EpsilonTransition, newEnd);
+  addTransition(newStart, Symbols::Epsilon, initialState_);
+  addTransition(newStart, Symbols::Epsilon, newEnd);
+  addTransition(acceptState_, Symbols::Epsilon, newEnd);
 
   initialState_ = newStart;
   acceptState_ = newEnd;
@@ -179,11 +179,11 @@ NFA& NFA::recurring() {
   StateId newStart = createState();
   StateId newEnd = createState();
 
-  addTransition(newStart, EpsilonTransition, initialState_);
-  addTransition(newStart, EpsilonTransition, newEnd);
+  addTransition(newStart, Symbols::Epsilon, initialState_);
+  addTransition(newStart, Symbols::Epsilon, newEnd);
 
-  addTransition(acceptState_, EpsilonTransition, initialState_);
-  addTransition(acceptState_, EpsilonTransition, newEnd);
+  addTransition(acceptState_, Symbols::Epsilon, initialState_);
+  addTransition(acceptState_, Symbols::Epsilon, newEnd);
 
   initialState_ = newStart;
   acceptState_ = newEnd;

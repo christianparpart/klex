@@ -159,7 +159,7 @@ Symbol Lexer::nextChar() {
 
   if (!stream_->good()) { // EOF or I/O error
     DEBUG("Lexer:{}: advance '{}'", offset_, "EOF");
-    return EndOfFileTransition;
+    return Symbols::EndOfFile;
   }
 
   int ch = stream_->get();

@@ -26,7 +26,7 @@ Alphabet DFA::alphabet() const {
   Alphabet alphabet;
   for (const State* state : states()) {
     for (const Edge& transition : state->transitions()) {
-      if (transition.symbol != EpsilonTransition) {
+      if (transition.symbol != Symbols::Epsilon) {
         alphabet.insert(transition.symbol);
       }
     }

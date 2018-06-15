@@ -54,7 +54,7 @@ void NFABuilder::visit(ClosureExpr& closureExpr) {
 }
 
 void NFABuilder::visit(EndOfFileExpr& eofExpr) {
-  fa_ = NFA{EndOfFileTransition};
+  fa_ = NFA{Symbols::EndOfFile};
 }
 
 void NFABuilder::visit(EndOfLineExpr& dotExpr) {
