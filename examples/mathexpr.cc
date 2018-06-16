@@ -20,6 +20,77 @@
 enum class Token { INVALID, Eof, RndOpen, RndClose, Plus, Minus, Mul, Div, Number };
 constexpr std::string_view patterns[] { "<<EOF>>", "\\(", "\\)", "\\+", "-", "\\*", "/", "[0-9]+" };
 
+LexerDef createLexerDef() {
+  // TODO: ensure rule position equals token ID
+  klex::RuleParser rp{std::make_Unique<std::stringstream>(R"x
+    Space(ignore) ::= [\s\t]+
+    Eof           ::= <<EOF>>
+    Plus          ::= "+"
+    Minus         ::= "-"
+    Mul           ::= "*"
+    Div           ::= "/"
+    RndOpen       ::= "("
+    RndClose      ::= ")"
+    Number        ::= [0-9]+
+  x");
+  Tag i = 10;
+  for (const Rule& rule : rp.parseRules())
+    cc.declare(i++, rule.pattern);
+
+  return cc.compile();
+}
+
+using Number = int;
+Number expr(Lexer&);
+
+Number primaryExpr(Lexer& lexer) {
+  switch (lexer.recognize()) {
+    case Token::Number:
+      return std::stoi(lexer.word());
+    case Token::RndOpen: {
+      Number y = expr(lexer);
+      consume(lexer, Token::RndClose);
+      return y;
+    } 
+  }
+}
+
+Number mulExpr(Lexer& lexer) {
+  Number lhs = primaryExpr(lexer);
+  for (;;) {
+    switch (lexer.recognize()) {
+      case Token::Mul:
+        lhs = lhs + primaryExpr(lexer);
+        break;
+      case Token::Div:
+        lhs = lhs - primaryExpr(lexer);
+        break;
+      default:
+        return lhs;
+    }
+  }
+}
+
+Number addExpr(Lexer& lexer) {
+  Number lhs = mulExpr(lexer);
+  for (;;) {
+    switch (lexer.recognize()) {
+      case Token::Plus:
+        lhs = lhs + mulExpr(lexer);
+        break;
+      case Token::Minus:
+        lhs = lhs - mulExpr(lexer);
+        break;
+      default:
+        return lhs;
+    }
+  }
+}
+
+Number expr(Lexer& lexer) {
+  return addExpr(lexer);
+}
+
 int main(int argc, const char* argv[]) {
   klex::util::Flags flags;
   flags.defineBool("dfa", 'x', "Dumps DFA dotfile and exits.");
