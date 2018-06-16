@@ -75,25 +75,33 @@ StateIdVec NFA::epsilonTransitions(StateId s) const {
 }
 
 std::vector<StateId> NFA::epsilonClosure(const std::vector<StateId>& S) const {
-  std::vector<StateId> eclosure = S;
+  std::vector<StateId> eclosure;
+  epsilonClosure(S, &eclosure);
+  return std::move(eclosure);
+}
+
+void NFA::epsilonClosure(const StateIdVec& S, StateIdVec* eclosure) const {
+  *eclosure = S;
+  std::vector<bool> availabilityCheck(1 + size(), false);
   std::stack<StateId> workList;
-  for (StateId s : S)
+  for (StateId s : S) {
     workList.push(s);
+    availabilityCheck[s] = true;
+  }
 
   while (!workList.empty()) {
     const StateId s = workList.top();
     workList.pop();
 
     for (StateId t : epsilonTransitions(s)) {
-      if (std::find(eclosure.begin(), eclosure.end(), t) == eclosure.end()) {
-        eclosure.push_back(t);
+      if (!availabilityCheck[t]) {
+        eclosure->push_back(t);
         workList.push(t);
       }
     }
   }
 
-  std::sort(eclosure.begin(), eclosure.end());
-  return std::move(eclosure);
+  std::sort(eclosure->begin(), eclosure->end());
 }
 
 void NFA::prepareStateIds(StateId baseId) {

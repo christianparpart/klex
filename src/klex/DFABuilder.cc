@@ -81,6 +81,7 @@ DFA DFABuilder::construct() {
   DEBUG(" {:<8} | {:<14} | {:<24} | {:<}", "set name", "DFA state", "NFA states", "ε-closures(q, *)");
   DEBUG("{}", "------------------------------------------------------------------------");
 
+  StateIdVec t;
   while (!workList.empty()) {
     StateIdVec q = workList.front();    // each set q represents a valid configuration from the NFA
     workList.pop_front();
@@ -88,7 +89,7 @@ DFA DFABuilder::construct() {
 
     std::stringstream dbg;
     for (Symbol c : nfa_.alphabet()) {
-      StateIdVec t = nfa_.epsilonClosure(nfa_.delta(q, c));
+      nfa_.epsilonClosure(nfa_.delta(q, c), &t);
 
       int t_i = configurationNumber(Q, t);
 

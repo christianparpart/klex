@@ -132,6 +132,7 @@ class NFA {
 
   //! Retrieves all states that can be directly or indirectly accessed via epsilon-transitions exclusively.
   StateIdVec epsilonClosure(const StateIdVec& S) const;
+  void epsilonClosure(const StateIdVec& S, StateIdVec* result) const;
 
   TransitionMap& stateTransitions(StateId s) {
     return states_[s];

@@ -38,7 +38,13 @@ class DFA {
 
   DFA() : states_{}, initialState_{0}, acceptTags_{} {}
 
+  bool empty() const noexcept { return states_.empty(); }
   size_t size() const noexcept { return states_.size(); }
+
+  StateId lastState() const noexcept {
+    assert(!empty());
+    return states_.size() - 1;
+  }
 
   //! Retrieves the alphabet of this finite automaton.
   Alphabet alphabet() const;
