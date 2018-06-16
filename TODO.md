@@ -1,6 +1,7 @@
 ### Current Work
 
-- dot (`.`) character class
+- 1.) DFA: convert to vector<int>-states, too
+- 2.) dot (`.`) character class
 
 ### The very incomplete TODO checklist
 

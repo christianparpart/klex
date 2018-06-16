@@ -11,6 +11,7 @@
 #include <fmt/format.h>
 
 #include <list>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -35,6 +36,8 @@ struct Edge {
 };
 
 using EdgeList = std::vector<Edge>;
+
+using AcceptMap = std::map<StateId, Tag>;
 
 class State {
  public:

@@ -24,93 +24,60 @@ namespace klex {
 
 Alphabet DFA::alphabet() const {
   Alphabet alphabet;
-  for (const State* state : states()) {
-    for (const Edge& transition : state->transitions()) {
-      if (transition.symbol != Symbols::Epsilon) {
-        alphabet.insert(transition.symbol);
-      }
-    }
-  }
-  return alphabet;
+  for (const State& state : states_)
+    for (const std::pair<Symbol, StateId>& t : state.transitions)
+      alphabet.insert(t.first);
+
+  return std::move(alphabet);
 }
 
-std::vector<const State*> DFA::acceptStates() const {
-  std::vector<const State*> result;
+std::vector<StateId> DFA::acceptStates() const {
+  std::vector<StateId> states;
+  states.reserve(acceptTags_.size());
+  std::for_each(acceptTags_.begin(), acceptTags_.end(), [&](const auto& s) { states.push_back(s.first); });
 
-  for (const State* s : states_)
-    if (s->isAccepting())
-      result.push_back(s);
-
-  return result;
-}
-
-std::vector<State*> DFA::acceptStates() {
-  std::vector<State*> result;
-
-  for (State* s : states_)
-    if (s->isAccepting())
-      result.push_back(s);
-
-  return result;
+  return std::move(states);
 }
 
 // --------------------------------------------------------------------------
 
 void DFA::createStates(size_t count) {
-  states_.reserve(states_.size() + count);
-
-  for (size_t i = 0; i < count; ++i) {
-    states_.create();
-  }
+  states_.resize(states_.size() + count);
 }
 
-State* DFA::createState() {
-  return states_.create();
+StateId DFA::createState() {
+  states_.emplace_back();
+  return states_.size() - 1;
 }
 
-void DFA::setInitialState(State* s) {
+void DFA::setInitialState(StateId s) {
   // TODO: assert (s is having no predecessors)
   initialState_ = s;
 }
 
 void DFA::visit(DotVisitor& v) const {
-#if 1
   v.start();
 
-  v.visitNode(initialState_->id(), true, initialState_->isAccepting());
+  // STATE: initial
+  v.visitNode(initialState_, true, isAccepting(initialState_));
 
-  for (const State* s : acceptStates())
+  // STATE: accepting
+  for (StateId s : acceptStates())
     if (s != initialState_)
-      v.visitNode(s->id(), s == initialState_, true);
+      v.visitNode(s, s == initialState_, true);
 
-  for (const State* s : states_)
-    if (s != initialState_ && !s->isAccepting())
-      v.visitNode(s->id(), false, false);
+  // STATE: any other
+  for (StateId s : stateIds())
+    if (s != initialState_ && !isAccepting(s))
+      v.visitNode(s, false, false);
 
-  for (const State* s : states_) {
-    for (const Edge& edge : s->transitions()) {
-      v.visitEdge(s->id(), edge.state->id(), edge.symbol);
-    }
-    for (const Edge& edge : s->transitions()) {
-      v.endVisitEdge(s->id(), edge.state->id());
-    }
+  // TRANSITIONS
+  for (StateId s = 0, sE = size(); s != sE; ++s) {
+    const TransitionMap& T = states_[s].transitions;
+    std::for_each(T.begin(), T.end(), [&](const auto& t) { v.visitEdge(s, t.second, t.first); });
+    std::for_each(T.begin(), T.end(), [&](const auto& t) { v.endVisitEdge(s, t.second); });
   }
   v.end();
-#else
-  v.start();
-  for (const State* s : states_) {
-    const bool start = s == initialState_;
-    const bool accept = s->isAccepting();
-
-    v.visitNode(s->id(), start, accept);
-
-    for (const Edge& edge : s->transitions()) {
-      const std::string edgeText = prettySymbol(edge.symbol);
-      v.visitEdge(s->id(), edge.state->id(), edgeText);
-    }
-  }
-  v.end();
-#endif
 }
 
 } // namespace klex

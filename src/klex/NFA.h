@@ -43,9 +43,6 @@ class NFA {
   //! defines a set of states within one NFA. the index represents the state Id.
   using StateVec = std::vector<TransitionMap>;
 
-  //! defines a map of accepting states with their associated tag. A tag of 0 means "default".
-  using AcceptMap = std::map<StateId, Tag>;
-
   NFA(const NFA& other) = default;
   NFA(NFA&&) = default;
   NFA& operator=(const NFA& other) = default;

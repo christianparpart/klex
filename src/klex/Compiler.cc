@@ -52,22 +52,19 @@ LexerDef Compiler::generateTables(const DFA& dfa) {
   const Alphabet alphabet = dfa.alphabet();
   TransitionMap transitionMap;
 
-  //std::cout << dot({klex::DotGraph{dfa, "n", ""}}, "", true);
-
-  for (const State* state : dfa.states()) {
-    //std::cerr << fmt::format("Walking through state {} (with {} links)\n", state->id(), state->transitions().size());
+  for (StateId state : dfa.stateIds()) {
     for (Symbol c : alphabet) {
-      if (const State* nextState = state->transition(c); nextState != nullptr) {
-        transitionMap.define(state->id(), c, nextState->id());
+      if (std::optional<StateId> nextState = dfa.delta(state, c); nextState.has_value()) {
+        transitionMap.define(state, c, nextState.value());
       }
     }
   }
 
   std::map<StateId, Tag> acceptStates;
-  for (const State* s : dfa.acceptStates())
-    acceptStates.emplace(s->id(), s->tag());
+  for (StateId s : dfa.acceptStates())
+    acceptStates.emplace(s, dfa.acceptTag(s));
 
-  return LexerDef{dfa.initialState()->id(), std::move(transitionMap), std::move(acceptStates)};
+  return LexerDef{dfa.initialState(), std::move(transitionMap), std::move(acceptStates)};
 }
 
 } // namespace klex
