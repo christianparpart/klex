@@ -1,6 +1,6 @@
 ### Current Work
 
-- 1.) DFA: convert to vector<int>-states, too
+- 1.) fix TransitionTable performance
 - 2.) dot (`.`) character class
 
 ### The very incomplete TODO checklist

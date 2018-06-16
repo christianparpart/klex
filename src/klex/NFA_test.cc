@@ -7,6 +7,7 @@
 
 #include <klex/util/testing.h>
 #include <klex/NFA.h>
+#include <klex/State.h>
 #include <klex/Alphabet.h>
 
 using namespace klex;

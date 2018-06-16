@@ -10,18 +10,6 @@
 
 namespace klex {
 
-State* State::transition(Symbol input) const {
-  for (const Edge& transition : transitions_)
-    if (input == transition.symbol)
-      return transition.state;
-
-  return nullptr;
-}
-
-void State::linkTo(Symbol input, State* state) {
-  transitions_.emplace_back(input, state);
-}
-
 std::string to_string(const std::vector<StateId>& S, std::string_view stateLabelPrefix) {
   std::vector<StateId> names = S;
 
@@ -39,46 +27,6 @@ std::string to_string(const std::vector<StateId>& S, std::string_view stateLabel
   sstr << "}";
 
   return sstr.str();
-}
-
-std::string to_string(const std::vector<const State*>& S, std::string_view stateLabelPrefix) {
-  std::vector<StateId> names;
-  for (const State* s : S)
-    names.push_back(s->id());
-
-  std::sort(names.begin(), names.end());
-
-  std::stringstream sstr;
-  sstr << "{";
-  int i = 0;
-  for (StateId name : names) {
-    if (i)
-      sstr << ", ";
-    sstr << stateLabelPrefix << name;
-    i++;
-  }
-  sstr << "}";
-
-  return sstr.str();
-}
-
-std::string prettySymbol(Symbol input) {
-  switch (input) {
-    case Symbols::Error:
-      return "<<ERROR>>";
-    case Symbols::EndOfFile:
-      return "<<EOF>>";
-    case Symbols::Epsilon:
-      return "ε";
-    case ' ':
-      return "\\s";
-    case '\t':
-      return "\\t";
-    case '\n':
-      return "\\n";
-    default:
-      return fmt::format("{}", (char) input);
-  }
 }
 
 } // namespace klex

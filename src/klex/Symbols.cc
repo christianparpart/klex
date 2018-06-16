@@ -10,14 +10,14 @@
 
 namespace klex {
 
-static std::string _symbolText(Symbol input) {
+std::string prettySymbol(Symbol input) {
   switch (input) {
-    case Symbols::Epsilon:
-      return "ε";
+    case Symbols::Error:
+      return "<<ERROR>>";
     case Symbols::EndOfFile:
       return "<<EOF>>";
-    case Symbols::Error:
-      return "\\E"; // XXX ?like this?
+    case Symbols::Epsilon:
+      return "ε";
     case ' ':
       return "\\s";
     case '\t':
@@ -36,19 +36,19 @@ static std::string _prettyCharRange(Symbol ymin, Symbol ymax) {
   std::stringstream sstr;
   switch (std::abs(ymax - ymin)) {
     case 0:
-      sstr << _symbolText(ymin);
+      sstr << prettySymbol(ymin);
       break;
     case 1:
-      sstr << _symbolText(ymin)
-           << _symbolText(ymin + 1);
+      sstr << prettySymbol(ymin)
+           << prettySymbol(ymin + 1);
       break;
     case 2:
-      sstr << _symbolText(ymin)
-           << _symbolText(ymin + 1)
-           << _symbolText(ymax);
+      sstr << prettySymbol(ymin)
+           << prettySymbol(ymin + 1)
+           << prettySymbol(ymax);
       break;
     default:
-      sstr << _symbolText(ymin) << '-' << _symbolText(ymax);
+      sstr << prettySymbol(ymin) << '-' << prettySymbol(ymax);
       break;
   }
   return sstr.str();

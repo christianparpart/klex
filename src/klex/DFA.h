@@ -25,7 +25,7 @@ class DFA {
  public:
   using TransitionMap = std::map<Symbol, StateId>;
   struct State {
-    std::vector<StateId> states;
+    //std::vector<StateId> states;
     TransitionMap transitions;
   };
   using StateVec = std::vector<State>;

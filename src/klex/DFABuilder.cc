@@ -28,11 +28,9 @@ struct DFABuilder::TransitionTable { // {{{
   struct Input {
     int configurationNumber;
     Symbol symbol;
-    int targetNumber;
   };
 
   void insert(int q, Symbol c, int t);
-
   std::list<std::pair<Input, int>> transitions;
 };
 
