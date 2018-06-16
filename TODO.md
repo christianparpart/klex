@@ -1,9 +1,6 @@
 ### Current Work
 
-- EOL (`$`)
 - dot (`.`) character class
-- `<<EOF>>`
-- (uninterpreted) string pattern handling
 
 ### The very incomplete TODO checklist
 
@@ -12,12 +9,13 @@ text -> RE AST -> NFA -> DFA -> MinDFA -> Tables
 ```
 
 - [ ] <<more unit tests>>
-- [ ] RE/FA: detect EOL ('$')
-- [ ] FA: how to handle EOF?
 - [ ] RE: be able to parse "(a|)", which is either "a" or ""
 - [ ] RE: invertible character classes ([^abc])
 - [ ] RE: support named character classes (see https://en.wikipedia.org/wiki/Regular_expression#Character_classes)
 - [ ] FA: create RE pattern out of FA
+- [x] RE: double-quoted raw string patterns (just like in flex)
+- [x] RE/FA: detect EOL ('$')
+- [x] FA: how to handle EOF?
 - [x] FA: DFA minimization
 - [x] RE: be able to parse character classes, such as: [a-zA-Z]
 - [x] RE: support range syntax, such as: a{0,1} as well as a{2}
