@@ -19,12 +19,13 @@
 #include <stdexcept>
 #include <fmt/format.h>
 
-enum class Token { INVALID, Eof, RndOpen, RndClose, Plus, Minus, Mul, Div, Number };
+enum class Token { Space = 1, Eof, Plus, Minus, Mul, Div, RndOpen, RndClose, Number, INVALID };
 using Lexer = klex::Lexer<Token>;
 using Number = int;
 
 std::string to_string(Token t) {
   switch (t) {
+    case Token::INVALID: return "<<INVALID>>";
     case Token::Eof: return "<<EOF>>";
     case Token::RndOpen: return "'('";
     case Token::RndClose: return "')'";
@@ -33,7 +34,6 @@ std::string to_string(Token t) {
     case Token::Mul: return "'*'";
     case Token::Div: return "'/'";
     case Token::Number: return "<<NUMBER>>";
-    case Token::INVALID: return "<<INVALID>>";
     default: abort();
   }
 }

@@ -30,7 +30,7 @@ LexerBase::LexerBase(LexerDef info)
       offset_{},
       line_{1},
       column_{0},
-      token_{ErrorTag} {
+      token_{0} {
 }
 
 LexerBase::LexerBase(LexerDef info, std::unique_ptr<std::istream> stream)
@@ -116,6 +116,7 @@ Tag LexerBase::recognizeOne() {
     line_ = savedLine;
     column_ = savedCol;
   }
+
   while (state != BadState && !isAcceptState(state)) {
     DEBUG("recognize: trackback: current state {} {}; stack: {}",
           stateName(state),
@@ -131,17 +132,15 @@ Tag LexerBase::recognizeOne() {
   }
   DEBUG("recognize: final state {} {}", stateName(state), isAcceptState(state) ? "accepting" : "non-accepting");
 
-  if (isAcceptState(state))
-    return token_ = type(state);
+  if (!isAcceptState(state))
+    throw LexerError{offset_, line_, column_};
 
-  return token_ = ErrorTag;
-}
+  if (auto i = acceptStates_.find(state); i != acceptStates_.end())
+    return token_ = i->second;
 
-int LexerBase::type(StateId acceptState) const {
-  if (auto i = acceptStates_.find(acceptState); i != acceptStates_.end())
-    return i->second;
-
-  return ErrorTag;
+  // should never happen
+  fprintf(stderr, "Internal bug. Accept state hit, but no tag assigned.\n");
+  abort();
 }
 
 bool LexerBase::isAcceptState(StateId id) const {

@@ -70,8 +70,6 @@ Rule RuleParser::parseRule() {
   Tag tag{};
   if (ignore)
     tag = IgnoreTag;
-  else if (pattern == "<<EOF>>")
-    tag = EofTag;
   else
     tag = nextTag_++;
 

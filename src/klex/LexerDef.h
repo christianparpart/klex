@@ -13,10 +13,8 @@
 namespace klex {
 
 // special tags
-constexpr Tag EofTag = static_cast<Tag>(1);
-constexpr Tag ErrorTag = static_cast<Tag>(2);
-constexpr Tag IgnoreTag = static_cast<Tag>(3);
-constexpr Tag FirstUserTag = 4;
+constexpr Tag IgnoreTag = static_cast<Tag>(-1);
+constexpr Tag FirstUserTag = 1;
 
 using AcceptStateMap = std::map<StateId, Tag>;
 

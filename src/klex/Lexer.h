@@ -43,8 +43,6 @@ class LexerBase {
 
   /**
    * Recognizes one token (ignored patterns are skipped).
-   *
-   * @return -1 on parse error, or Rule tag for recognized pattern.
    */
   Tag recognize();
 
@@ -67,14 +65,28 @@ class LexerBase {
   //! @returns the current column of the current line the lexer is reading from.
   unsigned column() const noexcept { return column_; }
 
-  //! @returns the last recognized token (which includes ErrorTag and EofTag).
+  //! @returns the last recognized token.
   Tag token() const noexcept { return token_; }
+
+  /**
+   * Runtime exception that is getting thrown when a word could not be recognized.
+   */
+  class LexerError : public std::runtime_error {
+   public:
+    LexerError(unsigned int offset, unsigned int line, unsigned int column)
+        : std::runtime_error{fmt::format("[{}:{}] Failed to lexically recognize a word.")},
+          offset_{offset}, line_{line}, column_{column} {}
+
+   private:
+    unsigned int offset_;
+    unsigned int line_;
+    unsigned int column_;
+  };
 
  private:
   Symbol nextChar();
   void rollback();
   bool isAcceptState(StateId state) const;
-  int type(StateId acceptState) const;
 
  private:
   TransitionMap transitions_;
@@ -91,19 +103,36 @@ class LexerBase {
   Tag token_;
 };
 
+/**
+ * Specialization of LexerBase that strongly types your costom Token type.
+ */
 template<typename Token = Tag>
 class Lexer : public LexerBase {
  public:
+  /**
+   * Constructs the Lexer with the given information table.
+   */
   explicit Lexer(LexerDef info)
       : LexerBase{std::move(info)} {}
 
+  /**
+   * Constructs the Lexer with the given information table and input stream.
+   */
   Lexer(LexerDef info, std::unique_ptr<std::istream> input)
       : LexerBase{std::move(info), std::move(input)} {}
 
+  /**
+   * Constructs the Lexer with the given information table and input stream.
+   */
   Lexer(LexerDef info, std::istream& input)
       : LexerBase{std::move(info), input} {}
 
+  /**
+   * Recognizes one token (ignored patterns are skipped).
+   */
   Token recognize() { return static_cast<Token>(LexerBase::recognize()); }
+
+  //! @returns the last recognized token.
   Token token() const noexcept { return static_cast<Token>(LexerBase::token()); }
 };
 
