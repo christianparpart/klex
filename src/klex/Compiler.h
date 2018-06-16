@@ -20,7 +20,6 @@ class Compiler {
  public:
   Compiler() : fa_{} {}
 
-  void ignore(std::string_view pattern); // such as " \t\n" or "#.*$"
   void declare(Tag tag, std::string_view pattern);
   void declare(Tag tag, const RegExpr& pattern);
 
