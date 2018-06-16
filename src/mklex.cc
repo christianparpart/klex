@@ -163,13 +163,8 @@ int main(int argc, const char* argv[]) {
   klex::DFA dfa = builder.compileDFA();
   perfTimer.lap("DFA construction", dfa.size(), "states");
 
-  // FIXME
-#if 1
   klex::DFA dfamin = klex::DFAMinimizer{dfa}.construct();
   perfTimer.lap("DFA minimization", dfamin.size(), "states");
-#else
-  klex::DFA& dfamin = dfa;
-#endif
 
   if (std::string dotfile = flags.getString("debug-dfa"); !dotfile.empty()) {
     if (dotfile == "-") {

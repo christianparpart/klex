@@ -17,7 +17,7 @@
 
 namespace klex {
 
-#if 1
+#if 0
 #define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
 #else
 #define DEBUG(msg, ...) do { } while (0)
@@ -32,16 +32,6 @@ bool DFAMinimizer::containsInitialState(const StateIdVec& S) const {
       return true;
 
   return false;
-}
-
-StateIdVec DFAMinimizer::nonAcceptStates() const {
-  StateIdVec result;
-
-  for (StateId s : dfa_.stateIds())
-    if (!dfa_.isAccepting(s))
-      result.push_back(s);
-
-  return result;
 }
 
 std::list<StateIdVec>::iterator DFAMinimizer::findGroup(StateId s) {
@@ -76,6 +66,8 @@ std::list<StateIdVec> DFAMinimizer::split(const StateIdVec& S) const {
       if (const std::optional<StateId> t = dfa_.delta(s, c); t.has_value()) {
         const int p_i = partitionId(*t);
         t_i[p_i].push_back(s);
+      } else {
+        t_i[-1].push_back(s);
       }
     }
     if (t_i.size() > 1) {
@@ -83,6 +75,7 @@ std::list<StateIdVec> DFAMinimizer::split(const StateIdVec& S) const {
       std::list<StateIdVec> result;
       for (const std::pair<int, StateIdVec>& t : t_i) {
         result.emplace_back(std::move(t.second));
+        DEBUG(" partition {}: {}", t.first, t.second);
       }
       return result;
     }
@@ -117,7 +110,7 @@ DFA DFAMinimizer::construct() {
   }
 
   // add another group for all non-accept states
-  T.emplace_front(nonAcceptStates());
+  T.emplace_front(dfa_.nonAcceptStates());
 
   dumpGroups(T);
 

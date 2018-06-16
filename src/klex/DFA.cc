@@ -55,6 +55,17 @@ void DFA::setInitialState(StateId s) {
   initialState_ = s;
 }
 
+void DFA::setTransition(StateId from, Symbol symbol, StateId to) {
+  const State& s = states_[from];
+  if (auto i = s.transitions.find(symbol); i != s.transitions.end()) {
+    std::cerr << fmt::format("n{} --({})--> n{} attempted to overwrite with (n{})\n",
+        from, symbol, i->second, to);
+    abort();
+  }
+
+  states_[from].transitions[symbol] = to;
+}
+
 void DFA::visit(DotVisitor& v) const {
   v.start();
 

@@ -9,6 +9,7 @@
 #include <klex/Alphabet.h>
 #include <klex/State.h>
 #include <map>
+#include <cmath>
 #include <algorithm>
 
 namespace klex {
@@ -100,9 +101,17 @@ class DFA {
     return std::nullopt;
   }
 
-  void setTransition(StateId from, Symbol symbol, StateId to) {
-    // TODO: raise if this transition already exists. (hence, only allow new)
-    states_[from].transitions[symbol] = to;
+  void setTransition(StateId from, Symbol symbol, StateId to);
+
+  StateIdVec nonAcceptStates() const {
+    StateIdVec result;
+    result.reserve(abs(states_.size() - acceptTags_.size()));
+
+    for (StateId s = 0, sE = size(); s != sE; ++s)
+      if (!isAccepting(s))
+        result.push_back(s);
+
+    return std::move(result);
   }
 
  private:

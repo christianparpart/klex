@@ -79,7 +79,7 @@ NumberType        ::= int
 StringType        ::= string
 
 # misc
-#Ident             ::= [a-zA-Z_][a-zA-Z_0-9]*
+Ident             ::= [a-zA-Z_][a-zA-Z_0-9]*
 #RegExpGroup       ::= \$[0-9]+
 
 # literals
@@ -92,6 +92,6 @@ NumberLiteral     ::= 0|[1-9][0-9]*
 # IP4Cidr         ::= TODO
 
 # specials
-#Comment(ignore)   ::= "#[^$]*"
+Comment(ignore)   ::= "#[^$]*"
 Spacing(ignore)   ::= [\s\t\n]+
 Eof               ::= <<EOF>>
