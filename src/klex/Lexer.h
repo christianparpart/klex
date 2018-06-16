@@ -19,19 +19,22 @@ namespace klex {
 /**
  * Lexer API for recognizing words.
  */
-class Lexer {
+class LexerBase {
  public:
   /**
    * Constructs the Lexer with the given information table.
    */
-  explicit Lexer(LexerDef info);
+  explicit LexerBase(LexerDef info);
 
   /**
    * Constructs the Lexer with the given information table and input stream.
    */
-  Lexer(LexerDef info, std::unique_ptr<std::istream> input);
+  LexerBase(LexerDef info, std::unique_ptr<std::istream> input);
 
-  Lexer(LexerDef info, std::istream& input);
+  /**
+   * Constructs the Lexer with the given information table and input stream.
+   */
+  LexerBase(LexerDef info, std::istream& input);
 
   /**
    * Open given input stream.
@@ -86,6 +89,22 @@ class Lexer {
   unsigned line_;
   unsigned column_;
   Tag token_;
+};
+
+template<typename Token = Tag>
+class Lexer : public LexerBase {
+ public:
+  explicit Lexer(LexerDef info)
+      : LexerBase{std::move(info)} {}
+
+  Lexer(LexerDef info, std::unique_ptr<std::istream> input)
+      : LexerBase{std::move(info), std::move(input)} {}
+
+  Lexer(LexerDef info, std::istream& input)
+      : LexerBase{std::move(info), input} {}
+
+  Token recognize() { return static_cast<Token>(LexerBase::recognize()); }
+  Token token() const noexcept { return static_cast<Token>(LexerBase::token()); }
 };
 
 } // namespace klex

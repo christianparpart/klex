@@ -70,8 +70,8 @@ class RegExprParser {
  private:
   std::string_view input_;
   std::string_view::iterator currentChar_;
-  int line_;
-  int column_;
+  unsigned int line_;
+  unsigned int column_;
 };
 
 } // namespace klex

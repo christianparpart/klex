@@ -37,9 +37,9 @@ namespace klex {
 
 RegExprParser::RegExprParser()
     : input_{},
+      currentChar_{input_.end()},
       line_{1},
-      column_{0},
-      currentChar_{input_.end()} {
+      column_{0} {
 }
 
 int RegExprParser::currentChar() const {
@@ -220,7 +220,7 @@ std::unique_ptr<RegExpr> RegExprParser::parseAtom() {
 
 std::unique_ptr<RegExpr> RegExprParser::parseCharacterClass() {
   consume(); // '['
-  const bool complement = consumeIf('^');
+  const bool complement = consumeIf('^'); // TODO
   std::unique_ptr<RegExpr> e = parseCharacterClassFragment();
   while (currentChar() != ']')
     e = std::make_unique<AlternationExpr>(std::move(e), parseCharacterClassFragment());

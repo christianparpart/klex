@@ -19,7 +19,7 @@ namespace klex {
 #define DEBUG(msg, ...) do { } while (0)
 #endif
 
-Lexer::Lexer(LexerDef info)
+LexerBase::LexerBase(LexerDef info)
     : transitions_{std::move(info.transitions)},
       initialStateId_{info.initialStateId},
       acceptStates_{std::move(info.acceptStates)},
@@ -33,16 +33,16 @@ Lexer::Lexer(LexerDef info)
       token_{ErrorTag} {
 }
 
-Lexer::Lexer(LexerDef info, std::unique_ptr<std::istream> stream)
-    : Lexer{std::move(info)} {
+LexerBase::LexerBase(LexerDef info, std::unique_ptr<std::istream> stream)
+    : LexerBase{std::move(info)} {
   open(std::move(stream));
 }
 
-Lexer::Lexer(LexerDef info, std::istream& stream)
-    : Lexer{std::move(info)} {
+LexerBase::LexerBase(LexerDef info, std::istream& stream)
+    : LexerBase{std::move(info)} {
 }
 
-void Lexer::open(std::unique_ptr<std::istream> stream) {
+void LexerBase::open(std::unique_ptr<std::istream> stream) {
   ownedStream_ = std::move(stream);
   stream_ = ownedStream_.get();
   oldOffset_ = 0;
@@ -78,7 +78,7 @@ static std::string stateName(StateId s) {
   return sstr.str();
 }
 
-Tag Lexer::recognize() {
+Tag LexerBase::recognize() {
   for (;;) {
     if (Tag tag = recognizeOne(); tag != IgnoreTag) {
       return tag;
@@ -86,7 +86,7 @@ Tag Lexer::recognize() {
   }
 }
 
-Tag Lexer::recognizeOne() {
+Tag LexerBase::recognizeOne() {
   // init
   oldOffset_ = offset_;
   word_.clear();
@@ -137,18 +137,18 @@ Tag Lexer::recognizeOne() {
   return token_ = ErrorTag;
 }
 
-int Lexer::type(StateId acceptState) const {
+int LexerBase::type(StateId acceptState) const {
   if (auto i = acceptStates_.find(acceptState); i != acceptStates_.end())
     return i->second;
 
   return ErrorTag;
 }
 
-bool Lexer::isAcceptState(StateId id) const {
+bool LexerBase::isAcceptState(StateId id) const {
   return acceptStates_.find(id) != acceptStates_.end();
 }
 
-Symbol Lexer::nextChar() {
+Symbol LexerBase::nextChar() {
   if (!buffered_.empty()) {
     offset_++;
     int ch = buffered_.back();
@@ -169,7 +169,7 @@ Symbol Lexer::nextChar() {
   return ch;
 }
 
-void Lexer::rollback() {
+void LexerBase::rollback() {
   if (word_.back() != -1) {
     offset_--;
     // TODO: rollback (line, column)
