@@ -62,7 +62,7 @@ LexerDef Compiler::generateTables(const DFA& dfa) {
 
   std::map<StateId, Tag> acceptStates;
   for (StateId s : dfa.acceptStates())
-    acceptStates.emplace(s, dfa.acceptTag(s));
+    acceptStates.emplace(s, *dfa.acceptTag(s));
 
   return LexerDef{dfa.initialState(), std::move(transitionMap), std::move(acceptStates)};
 }

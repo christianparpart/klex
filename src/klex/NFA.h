@@ -142,16 +142,18 @@ class NFA {
     acceptTags_[acceptState_] = acceptTag;
   }
 
-  Tag acceptTag(StateId s) const {
+  std::optional<Tag> acceptTag(StateId s) const {
     if (auto i = acceptTags_.find(s); i != acceptTags_.end())
       return i->second;
 
-    return 0;
+    return std::nullopt;
   }
 
   bool isAccepting(StateId s) const {
     return acceptTags_.find(s) != acceptTags_.end();
   }
+
+  const AcceptMap& acceptMap() const noexcept { return acceptTags_; }
 
  private:
   StateId createState();

@@ -51,13 +51,11 @@ class DFABuilder {
   /**
    * Determines the tag to use for the deterministic state representing @p q from non-deterministic FA @p fa.
    *
-   * @param fa the owning finite automaton being operated on
    * @param q the set of states that reflect a single state in the DFA equal to the input FA
-   * @param tag address to the Tag the resulting will be stored to
    *
-   * @returns whether or not the tag could be determined.
+   * @returns the determined tag or std::nullopt if none
    */
-  bool determineTag(std::vector<StateId> q, Tag* tag) const;
+  std::optional<Tag> determineTag(const StateIdVec& q) const;
 
   struct TransitionTable;
 

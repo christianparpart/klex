@@ -82,24 +82,28 @@ inline void DFABuilder::TransitionTable::insert(int q, Symbol c, int t) {
 */
 
 DFA DFABuilder::construct() {
-  std::vector<StateId> q_0 = nfa_.epsilonClosure({nfa_.initialStateId()});
+  StateIdVec q_0 = nfa_.epsilonClosure({nfa_.initialStateId()});
   DEBUG("q_0 = epsilonClosure({}) = {}", to_string(std::vector<StateId>{nfa_.initialStateId()}), q_0);
-  std::vector<std::vector<StateId>> Q = {q_0};          // resulting states
-  std::deque<std::vector<StateId>> workList = {q_0};
+  std::vector<StateIdVec> Q = {q_0};          // resulting states
+  std::deque<StateIdVec> workList = {q_0};
   TransitionTable T;
+
+  DEBUG("Dumping accept map ({}):", nfa_.acceptMap().size());
+  for ([[maybe_unused]] const auto& m : nfa_.acceptMap())
+    DEBUG(" n{} -> {}", m.first, m.second);
 
   DEBUG("alphabet = {}", nfa_.alphabet());
   DEBUG(" {:<8} | {:<14} | {:<24} | {:<}", "set name", "DFA state", "NFA states", "ε-closures(q, *)");
   DEBUG("{}", "------------------------------------------------------------------------");
 
   while (!workList.empty()) {
-    std::vector<StateId> q = workList.front();    // each set q represents a valid configuration from the NFA
+    StateIdVec q = workList.front();    // each set q represents a valid configuration from the NFA
     workList.pop_front();
     const int q_i = configurationNumber(Q, q);
 
     std::stringstream dbg;
     for (Symbol c : nfa_.alphabet()) {
-      std::vector<StateId> t = nfa_.epsilonClosure(nfa_.delta(q, c));
+      StateIdVec t = nfa_.epsilonClosure(nfa_.delta(q, c));
 
       int t_i = configurationNumber(Q, t);
 
@@ -124,21 +128,22 @@ DFA DFABuilder::construct() {
   dfa.createStates(Q.size());
 
   // map q_i to d_i and flag accepting states
-  int q_i = 0;
-  for (std::vector<StateId>& q : Q) {
+  StateId q_i = 0;
+  for (const StateIdVec& q : Q) {
     // d_i represents the corresponding state in the DFA for all states of q from the NFA
-    State* d_i = dfa.states()[q_i];
+    const StateId d_i = q_i;
     // std::cerr << fmt::format("map q{} to d{} for {} states, {}.\n", q_i, d_i->id(), q.size(), to_string(q, "d"));
 
     // if q contains an accepting state, then d is an accepting state in the DFA
     if (containsAcceptingState(q)) {
-      d_i->setAccept(true);
-      Tag tag{};
-      if (determineTag(q, &tag)) {
-        DEBUG("determineTag: q{} tag {} from {}.", q_i, tag, q);
-        d_i->setTag(tag);
+      if (std::optional<Tag> tag = determineTag(q); tag.has_value()) {
+        //DEBUG("determineTag: q{} tag {} from {}.", q_i, *tag, q);
+        dfa.setAccept(d_i, *tag);
       } else {
-        DEBUG("FIXME?: DFA accepting state {} merged from input states with different tags {}.", q_i, to_string(q));
+        std::cerr << fmt::format(
+            "FIXME?: DFA accepting state {} merged from input states with different tags {}.\n",
+            q_i, to_string(q));
+        abort();
       }
     }
 
@@ -152,15 +157,12 @@ DFA DFABuilder::construct() {
     const int t_i = transition.second;
     if (t_i != -1) {
       DEBUG("map d{} |--({})--> d{}", q_i, prettySymbol(c), t_i);
-      State* q = dfa.findState(q_i);
-      State* t = dfa.findState(t_i);
-
-      q->linkTo(c, t);
+      dfa.setTransition(q_i, c, t_i);
     }
   }
 
   // q_0 becomes d_0 (initial state)
-  dfa.setInitialState(dfa.findState(0));
+  dfa.setInitialState(0);
 
   return dfa;
 }
@@ -185,23 +187,22 @@ bool DFABuilder::containsAcceptingState(const std::vector<StateId>& Q) {
   return false;
 }
 
-bool DFABuilder::determineTag(std::vector<StateId> qn, Tag* tag) const {
-  Tag lowestTag = std::numeric_limits<Tag>::max();
+std::optional<Tag> DFABuilder::determineTag(const StateIdVec& qn) const {
+  std::optional<Tag> lowestTag{};
+
   for (StateId s : qn) {
-    DEBUG("determineTag: possible tag from n{} ({}): {}", s, nfa_.isAccepting(s) ? "accepting" : "na",
-        nfa_.acceptTag(s));
-    if (Tag t = nfa_.acceptTag(s); t > 0) {
-      if (t < lowestTag) {
-        lowestTag = t;
-      }
+    std::optional<Tag> t = nfa_.acceptTag(s);
+    if (!t.has_value()) {
+      DEBUG("determineTag: n{} is non-accepting", s);
+    } else if (!lowestTag || *t < lowestTag) {
+      DEBUG("determineTag: possible tag from n{}: {}", s, *t);
+      lowestTag = *t;
+    } else {
+      DEBUG("determineTag: weird n{}: {}", s, *t);
     }
   }
-  if (lowestTag != std::numeric_limits<Tag>::max()) {
-    *tag = lowestTag;
-    return true;
-  }
 
-  return false;
+  return *lowestTag;
 }
 
 } // namespace klex

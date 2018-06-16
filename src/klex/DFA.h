@@ -80,11 +80,16 @@ class DFA {
     return acceptTags_.find(s) != acceptTags_.end();
   }
 
-  Tag acceptTag(StateId s) const {
+  //! Flags given state as accepting-state with given Tag @p acceptTag.
+  void setAccept(StateId state, Tag acceptTag) {
+    acceptTags_[state] = acceptTag;
+  }
+
+  std::optional<Tag> acceptTag(StateId s) const {
     if (auto i = acceptTags_.find(s); i != acceptTags_.end())
       return i->second;
 
-    throw std::invalid_argument{"n"};
+    return std::nullopt;
   }
 
   std::optional<StateId> delta(StateId state, Symbol symbol) const {
@@ -93,6 +98,11 @@ class DFA {
       return i->second;
 
     return std::nullopt;
+  }
+
+  void setTransition(StateId from, Symbol symbol, StateId to) {
+    // TODO: raise if this transition already exists. (hence, only allow new)
+    states_[from].transitions[symbol] = to;
   }
 
  private:

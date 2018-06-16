@@ -106,7 +106,8 @@ void generateTokenDefCxx(std::ostream& os, const klex::RuleList& rules, const st
   os << "#pragma once\n";
   os << "enum class " << symbol << " {\n";
   for (const klex::Rule& rule : rules) {
-    os << fmt::format("  {:<20} = {:<4}, // {} \n", rule.name, rule.tag, rule.pattern);
+    if (rule.tag != klex::IgnoreTag)
+      os << fmt::format("  {:<20} = {:<4}, // {} \n", rule.name, rule.tag, rule.pattern);
   }
   os << "};\n";
 }
@@ -149,10 +150,8 @@ int main(int argc, const char* argv[]) {
   perfTimer.lap("Rule parsing", rules.size(), "rules");
 
   klex::Compiler builder;
-  for (const klex::Rule& rule : rules) {
-    // std::cerr << fmt::format("Rule at {}:{}: {}\n", rule.line, rule.column, rule.pattern);
+  for (const klex::Rule& rule : rules)
     builder.declare(rule.tag, *klex::RegExprParser{}.parse(rule.pattern, rule.line, rule.column));
-  }
   perfTimer.lap("NFA construction", builder.nfa().size(), "states");
 
   if (flags.getBool("debug-nfa")) {
@@ -164,8 +163,13 @@ int main(int argc, const char* argv[]) {
   klex::DFA dfa = builder.compileDFA();
   perfTimer.lap("DFA construction", dfa.size(), "states");
 
+  // FIXME
+#if 1
   klex::DFA dfamin = klex::DFAMinimizer{dfa}.construct();
   perfTimer.lap("DFA minimization", dfamin.size(), "states");
+#else
+  klex::DFA& dfamin = dfa;
+#endif
 
   if (std::string dotfile = flags.getString("debug-dfa"); !dotfile.empty()) {
     if (dotfile == "-") {

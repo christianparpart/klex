@@ -6,13 +6,14 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
+#include <klex/State.h>
+
 #include <list>
 #include <vector>
 
 namespace klex {
 
 class DFA;
-class State;
 
 class DFAMinimizer {
  public:
@@ -21,17 +22,16 @@ class DFAMinimizer {
   DFA construct();
 
  private:
-  std::vector<const State*> nonAcceptStates() const;
-  bool containsInitialState(const std::vector<const State*>& S) const;
-  std::list<std::vector<const State*>>::iterator findGroup(const State* s);
-  int partitionId(State* s) const;
-  std::list<std::vector<const State*>> split(const std::vector<const State*>& S) const;
+  StateIdVec nonAcceptStates() const;
+  bool containsInitialState(const StateIdVec& S) const;
+  std::list<StateIdVec>::iterator findGroup(StateId s);
+  int partitionId(StateId s) const;
+  std::list<StateIdVec> split(const StateIdVec& S) const;
 
  private:
   const DFA& dfa_;
-  std::list<std::vector<const State*>> T;
-  std::list<std::vector<const State*>> P;
-
+  std::list<StateIdVec> T;
+  std::list<StateIdVec> P;
 };
 
 } // namespace klex
