@@ -25,25 +25,12 @@ namespace klex {
 #endif
 
 struct DFABuilder::TransitionTable { // {{{
-  struct Input {
-    int configurationNumber;
-    Symbol symbol;
-  };
-
   void insert(int q, Symbol c, int t);
-  std::list<std::pair<Input, int>> transitions;
+  std::unordered_map<int, std::unordered_map<Symbol, int>> transitions;
 };
 
 inline void DFABuilder::TransitionTable::insert(int q, Symbol c, int t) {
-  auto i = std::find_if(transitions.begin(), transitions.end(),
-                        [=](const auto& input) {
-      return input.first.configurationNumber == q && input.first.symbol == c;
-  });
-  if (i == transitions.end()) {
-    transitions.emplace_back(Input{q, c}, t);
-  } else {
-    DEBUG("TransitionTable[q{}][{}] = q{}; already present", q, prettySymbol(c), t);
-  }
+	transitions[q][c] = t;
 }
 // }}}
 
@@ -149,15 +136,17 @@ DFA DFABuilder::construct() {
   }
 
   // observe mapping from q_i to d_i
-  for (const std::pair<TransitionTable::Input, int>& transition: T.transitions) {
-    const int q_i = transition.first.configurationNumber;
-    const Symbol c = transition.first.symbol;
-    const int t_i = transition.second;
-    if (t_i != -1) {
-      DEBUG("map d{} |--({})--> d{}", q_i, prettySymbol(c), t_i);
-      dfa.setTransition(q_i, c, t_i);
+	for (const std::pair<int, std::unordered_map<Symbol, int>>& t0 : T.transitions) {
+    for (const std::pair<Symbol, int>& t1 : t0.second) {
+      const int q_i = t0.first;
+      const Symbol c = t1.first;
+      const int t_i = t1.second;
+      if (t_i != -1) {
+        DEBUG("map d{} |--({})--> d{}", q_i, prettySymbol(c), t_i);
+        dfa.setTransition(q_i, c, t_i);
+      }
     }
-  }
+	}
 
   // q_0 becomes d_0 (initial state)
   dfa.setInitialState(0);

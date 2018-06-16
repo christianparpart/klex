@@ -1,6 +1,5 @@
 ### Current Work
 
-- 1.) fix TransitionTable performance
 - 2.) dot (`.`) character class
 
 ### The very incomplete TODO checklist
