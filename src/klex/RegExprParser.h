@@ -65,7 +65,7 @@ class RegExprParser {
   std::unique_ptr<RegExpr> parseClosure();                // atom ['*' | '?' | '{' NUM [',' NUM] '}']
   std::unique_ptr<RegExpr> parseAtom();                   // character | characterClass | '(' expr ')'
   std::unique_ptr<RegExpr> parseCharacterClass();         // '[' characterClassFragment+ ']'
-  std::unique_ptr<RegExpr> parseCharacterClassFragment(); // character | character '-' character
+  std::unique_ptr<RegExpr> parseCharacterClassFragment(SymbolSet& ss); // character | character '-' character
 
  private:
   std::string_view input_;

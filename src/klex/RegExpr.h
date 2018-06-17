@@ -6,6 +6,8 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
+#include <klex/Symbols.h>
+
 #include <limits>
 #include <memory>
 #include <set>
@@ -112,6 +114,21 @@ class CharacterExpr : public RegExpr {
 
  private:
   char value_;
+};
+
+class CharacterClassExpr : public RegExpr {
+ public:
+  explicit CharacterClassExpr(SymbolSet value)
+      : RegExpr{4},
+        value_{value} {}
+
+  const SymbolSet& value() const noexcept { return value_; }
+
+  std::string to_string() const override;
+  void accept(RegExprVisitor& visitor) override;
+
+ private:
+  SymbolSet value_;
 };
 
 class DotExpr : public RegExpr {
