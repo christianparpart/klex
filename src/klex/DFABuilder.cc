@@ -190,7 +190,7 @@ std::optional<Tag> DFABuilder::determineTag(const StateIdVec& qn) const {
     }
   }
 
-  return *lowestTag;
+  return lowestTag;
 }
 
 } // namespace klex
