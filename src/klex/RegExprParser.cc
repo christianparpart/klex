@@ -221,46 +221,55 @@ std::unique_ptr<RegExpr> RegExprParser::parseAtom() {
 std::unique_ptr<RegExpr> RegExprParser::parseCharacterClass() {
   consume(); // '['
   const bool complement = consumeIf('^'); // TODO
-  std::unique_ptr<RegExpr> e = parseCharacterClassFragment();
+
+  SymbolSet ss;
+  parseCharacterClassFragment(ss);
   while (currentChar() != ']')
-    e = std::make_unique<AlternationExpr>(std::move(e), parseCharacterClassFragment());
+    parseCharacterClassFragment(ss);
+
+  if (complement)
+    ss.complement();
+
   consume(']');
-  return e;
+  return std::make_unique<CharacterClassExpr>(std::move(ss));
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseCharacterClassFragment() {
+std::unique_ptr<RegExpr> RegExprParser::parseCharacterClassFragment(SymbolSet& ss) {
   if (currentChar() == '\\') {
     consume();
     switch (currentChar()) {
       case 's':
         consume();
-        return std::make_unique<CharacterExpr>(' ');
+        ss.insert(' ');
+        return;
       case 't':
         consume();
-        return std::make_unique<CharacterExpr>('\t');
+        ss.insert('\t');
+        return;
       case 'n':
         consume();
-        return std::make_unique<CharacterExpr>('\n');
+        ss.insert('\n');
+        return;
       case 'r':
         consume();
-        return std::make_unique<CharacterExpr>('\r');
+        ss.insert('\r');
+        return;
       default:
-        return std::make_unique<CharacterExpr>(consume());
+        ss.insert(consume());
+        return;
     }
   }
 
   char c1 = consume();
-  if (currentChar() != '-')
-    return std::make_unique<CharacterExpr>(c1);
+  if (currentChar() != '-') {
+    ss.insert(c1);
+  }
 
   consume();
   char c2 = consume();
 
-  std::unique_ptr<RegExpr> e = std::make_unique<CharacterExpr>(c1);
-  for (char c_i = c1 + 1; c_i <= c2; c_i++)
-    e = std::make_unique<AlternationExpr>(std::move(e),
-            std::make_unique<CharacterExpr>(c_i));
-  return e;
+  for (char c_i = c1; c_i <= c2; c_i++)
+    ss.insert(c_i);
 }
 
 } // namespace klex

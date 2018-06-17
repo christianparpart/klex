@@ -41,6 +41,9 @@ class SymbolSet {
   explicit SymbolSet(DotMode);
   SymbolSet() : set_(256, false) {}
 
+  //! Transforms into the complement set.
+  void complement();
+
   //! Inserts given Symbol @p s into this set.
   void insert(Symbol s) { set_[(size_t) s] = true; }
 
