@@ -7,6 +7,7 @@
 
 #include <klex/RegExprParser.h>
 #include <klex/RegExpr.h>
+#include <klex/Symbols.h>
 
 #include <sstream>
 #include <limits>
@@ -234,7 +235,7 @@ std::unique_ptr<RegExpr> RegExprParser::parseCharacterClass() {
   return std::make_unique<CharacterClassExpr>(std::move(ss));
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseCharacterClassFragment(SymbolSet& ss) {
+void RegExprParser::parseCharacterClassFragment(SymbolSet& ss) {
   if (currentChar() == '\\') {
     consume();
     switch (currentChar()) {

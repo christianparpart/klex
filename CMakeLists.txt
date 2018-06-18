@@ -79,6 +79,7 @@ if(KLEX_TESTS)
   add_executable(klex_test
       src/klex/NFA_test.cc
       src/klex/RuleParser_test.cc
+      src/klex/Symbols_test.cc
       src/klex/klex_test.cc
       src/klex/util/AnsiColor.cc
       src/klex/util/testing.cc

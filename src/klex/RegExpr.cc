@@ -100,6 +100,14 @@ std::string EndOfLineExpr::to_string() const {
   return "$";
 }
 
+std::string CharacterClassExpr::to_string() const {
+  return value_.to_string();
+}
+
+void CharacterClassExpr::accept(RegExprVisitor& visitor) {
+  visitor.visit(*this);
+}
+
 void DotExpr::accept(RegExprVisitor& visitor) {
   return visitor.visit(*this);
 }
