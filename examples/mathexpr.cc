@@ -19,7 +19,20 @@
 #include <stdexcept>
 #include <fmt/format.h>
 
-enum class Token { Space = 1, Eof, Plus, Minus, Mul, Div, RndOpen, RndClose, Number, INVALID };
+enum class Token { Eof = 1, Plus, Minus, Mul, Div, RndOpen, RndClose, Number, INVALID };
+std::string RULES = R"(
+    Space(ignore) ::= [\s\t]+
+    Eof           ::= <<EOF>>
+    Plus          ::= "+"
+    Minus         ::= "-"
+    Mul           ::= "*"
+    Div           ::= "/"
+    RndOpen       ::= "("
+    RndClose      ::= \)
+    Number        ::= [0-9]+
+    INVALID       ::= .
+)";
+
 using Lexer = klex::Lexer<Token>;
 using Number = int;
 
@@ -56,19 +69,23 @@ Number expr(Lexer&);
 void consume(Lexer& lexer, Token t) {
   if (lexer.token() != t)
     throw std::runtime_error{fmt::format("Unexpected token {}. Expected {} instead.",
-                                         (int)lexer.token(), t)};
+                                         lexer.token(), t)};
   lexer.recognize();
 }
 
 Number primaryExpr(Lexer& lexer) {
   switch (lexer.token()) {
-    case Token::Number:
-      return std::stoi(lexer.word());
+    case Token::Number: {
+      Number y = std::stoi(lexer.word());
+      lexer.recognize();
+      return y;
+    }
     case Token::RndOpen: {
+      lexer.recognize();
       Number y = expr(lexer);
       consume(lexer, Token::RndClose);
       return y;
-    } 
+    }
     default:
       throw std::runtime_error{fmt::format("Unexpected token {}. Expected primary expression instead.",
                                            lexer.token())};
@@ -78,12 +95,14 @@ Number primaryExpr(Lexer& lexer) {
 Number mulExpr(Lexer& lexer) {
   Number lhs = primaryExpr(lexer);
   for (;;) {
-    switch (lexer.recognize()) {
+    switch (lexer.token()) {
       case Token::Mul:
-        lhs = lhs + primaryExpr(lexer);
+        lexer.recognize();
+        lhs = lhs * primaryExpr(lexer);
         break;
       case Token::Div:
-        lhs = lhs - primaryExpr(lexer);
+        lexer.recognize();
+        lhs = lhs / primaryExpr(lexer);
         break;
       default:
         return lhs;
@@ -94,11 +113,13 @@ Number mulExpr(Lexer& lexer) {
 Number addExpr(Lexer& lexer) {
   Number lhs = mulExpr(lexer);
   for (;;) {
-    switch (lexer.recognize()) {
+    switch (lexer.token()) {
       case Token::Plus:
+        lexer.recognize();
         lhs = lhs + mulExpr(lexer);
         break;
       case Token::Minus:
+        lexer.recognize();
         lhs = lhs - mulExpr(lexer);
         break;
       default:
@@ -114,25 +135,16 @@ Number expr(Lexer& lexer) {
 int main(int argc, const char* argv[]) {
   klex::util::Flags flags;
   flags.defineBool("dfa", 'x', "Dumps DFA dotfile and exits.");
+  flags.enableParameters("EXPRESSION", "Mathematical expression to calculate");
   flags.parse(argc, argv);
 
   // TODO: ensure rule position equals token ID
-  klex::RuleParser rp{std::make_unique<std::stringstream>(R"(
-    Space(ignore) ::= [\s\t]+
-    Eof           ::= <<EOF>>
-    Plus          ::= "+"
-    Minus         ::= "-"
-    Mul           ::= "*"
-    Div           ::= "/"
-    RndOpen       ::= "("
-    RndClose      ::= \)
-    Number        ::= [0-9]+
-    INVALID       ::= .
-  )")};
-  klex::Tag i = 10;
+  klex::RuleParser rp{std::make_unique<std::stringstream>(RULES)};
   klex::Compiler cc;
-  for (const klex::Rule& rule : rp.parseRules())
-    cc.declare(i++, rule.pattern);
+  for (const klex::Rule& rule : rp.parseRules()) {
+    std::cerr << fmt::format("{}\n", rule);
+    cc.declare(rule.tag, rule.pattern);
+  }
 
   if (flags.getBool("dfa")) {
     klex::DotWriter writer{ std::cout };
@@ -143,16 +155,14 @@ int main(int argc, const char* argv[]) {
 
   const klex::LexerDef def = cc.compile();
 
-  //Lexer lexer { def, std::cin };
-  Lexer lexer { def, std::make_unique<std::stringstream>("  12 + 3 * 4") };
+  // Lexer lexer { def, std::cin };
+  std::string input = argc == 1 ? std::string("2+3*4") : flags.parameters()[0];
+  Lexer lexer { def, std::make_unique<std::stringstream>(input) };
 
-  for (Token t = lexer.recognize(); t != Token::Eof; t = lexer.recognize()) {
-    std::cerr << fmt::format("[{}-{}]: token {} (\"{}\")\n",
-                             lexer.offset().first,
-                             lexer.offset().second,
-                             int(t), lexer.word());
-  }
-  printf("last token: %d\n", (int) lexer.token());
+  lexer.recognize();
+  Number n = expr(lexer);
+  consume(lexer, Token::Eof);
+  std::cerr << fmt::format("{} = {}\n", input, n);
 
   return EXIT_SUCCESS;
 }
