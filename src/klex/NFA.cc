@@ -25,12 +25,18 @@ namespace klex {
 Alphabet NFA::alphabet() const {
   Alphabet alphabet;
 
-  for (const TransitionMap& transitions : states_)
-    for (const std::pair<Symbol, StateIdVec>& t : transitions)
-      if (t.first != Symbols::Epsilon)
-        alphabet.insert(t.first);
+  for (const TransitionMap& transitions : states_) {
+    for (const std::pair<Symbol, StateIdVec>& t : transitions) {
+      switch (t.first) {
+        case Symbols::Epsilon:
+          break;
+        default:
+          alphabet.insert(t.first);
+      }
+    }
+  }
 
-  return alphabet;
+  return std::move(alphabet);
 }
 
 NFA NFA::clone() const {

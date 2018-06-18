@@ -52,7 +52,7 @@ LexerDef Compiler::generateTables(const DFA& dfa) {
   const Alphabet alphabet = dfa.alphabet();
   TransitionMap transitionMap;
 
-  for (StateId state = 0, sE = dfa.lastState(); state != sE; ++state) {
+  for (StateId state = 0, sE = dfa.lastState(); state <= sE; ++state) {
     for (Symbol c : alphabet) {
       if (std::optional<StateId> nextState = dfa.delta(state, c); nextState.has_value()) {
         transitionMap.define(state, c, nextState.value());

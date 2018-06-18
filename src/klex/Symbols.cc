@@ -32,9 +32,11 @@ std::string prettySymbol(Symbol input) {
   }
 }
 
-static std::string _prettyCharRange(Symbol ymin, Symbol ymax) {
+std::string prettyCharRange(Symbol ymin, Symbol ymax) {
+  assert(ymin <= ymax);
+
   std::stringstream sstr;
-  switch (std::abs(ymax - ymin)) {
+  switch (ymax - ymin) {
     case 0:
       sstr << prettySymbol(ymin);
       break;
@@ -74,30 +76,19 @@ static std::string _groupCharacterClassRanges(const std::vector<bool>& syms) {
     }
     else { // gap found
       if (k) {
-        sstr << _prettyCharRange(ymin, ymax);
+        sstr << prettyCharRange(ymin, ymax);
       }
       ymin = ymax = c;
     }
     k++;
   }
-  sstr << _prettyCharRange(ymin, ymax);
+  sstr << prettyCharRange(ymin, ymax);
 
   return sstr.str();
 }
 
 SymbolSet::SymbolSet(DotMode) : set_(256, true) {
   clear('\n');
-}
-
-bool SymbolSet::empty() const {
-  return size() == 0;
-}
-
-size_t SymbolSet::size() const {
-  size_t n = 0;
-  for (auto i = begin(), e = end(); i != e; ++i)
-    n++;
-  return n;
 }
 
 bool SymbolSet::isDot() const noexcept {
@@ -113,6 +104,7 @@ std::string SymbolSet::to_string() const {
 }
 
 void SymbolSet::complement() {
+  // flip bits
   for (size_t i = 0, e = set_.size(); i != e; ++i) {
     set_[i] = !set_[i];
   }
@@ -122,6 +114,9 @@ void SymbolSet::complement() {
   for (Symbol s : *this) {
     hash_ = (hash_ * 16777619) ^ s;
   }
+
+  // flip size
+  size_ = set_.size() - size_;
 }
 
 } // namespace klex

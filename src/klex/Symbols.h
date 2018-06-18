@@ -16,6 +16,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+#include <cassert>
 
 namespace klex {
 
@@ -23,13 +24,25 @@ namespace klex {
 using Symbol = int;
 
 std::string prettySymbol(Symbol input);
+std::string prettyCharRange(Symbol ymin, Symbol ymax);
 
 // new way of wrapping up Symbols
 struct Symbols {
-  constexpr static Symbol Epsilon = 0x00;
-  constexpr static Symbol EndOfFile = 0x03;
-  constexpr static Symbol Error = 0x07;
+  constexpr static Symbol Epsilon = -1;
+  constexpr static Symbol EndOfFile = -2;
+  constexpr static Symbol Error = -3;
   constexpr static Symbol Character(char ch) { return Symbol(ch); }
+
+  constexpr static bool isSpecial(Symbol s) {
+    switch (s) {
+      case Symbols::EndOfFile:
+      case Symbols::Epsilon:
+      case Symbols::Error:
+        return true;
+      default:
+        return false;
+    }
+  }
 };
 
 /**
@@ -46,8 +59,8 @@ class SymbolSet {
     std::for_each(list.begin(), list.end(), [this](Symbol s) { insert(s); });
   }
 
-  bool empty() const;
-  size_t size() const;
+  bool empty() const noexcept { return size_ == 0; }
+  size_t size() const noexcept { return size_; }
 
   //! Transforms into the complement set.
   void complement();
@@ -57,6 +70,7 @@ class SymbolSet {
     if (!contains(s)) {
       set_[s] = true;
       hash_ = (hash_ * 16777619) ^ s;
+      size_++;
     }
   }
 
@@ -70,7 +84,10 @@ class SymbolSet {
   void clear(Symbol s) { set_[(size_t) s] = false; }
 
   //! @returns whether or not given Symbol @p s is in this set.
-  bool contains(Symbol s) const { return set_[(size_t) s]; }
+  bool contains(Symbol s) const {
+    assert(s >= 0 && s <= 255 && "Only ASCII allowed.");
+    return set_[(size_t) s];
+  }
 
   //! Tests whether or not this SymbolSet can be represented as dot (.), i.e. all but \n.
   bool isDot() const noexcept;
@@ -128,6 +145,7 @@ class SymbolSet {
  private:
   // XXX we chose vector<bool> as it is an optimized bit vector
   std::vector<bool> set_;
+  size_t size_;
   size_t hash_;
 };
 

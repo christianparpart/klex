@@ -70,7 +70,7 @@ int RegExprParser::consume() {
     column_++;
   }
   ++currentChar_;
-  //DEBUG("consume: '{}'", (char)ch);
+  DEBUG("consume: '{}'", (char)ch);
   return ch;
 }
 
@@ -225,7 +225,7 @@ std::unique_ptr<RegExpr> RegExprParser::parseCharacterClass() {
 
   SymbolSet ss;
   parseCharacterClassFragment(ss);
-  while (currentChar() != ']')
+  while (!eof() && currentChar() != ']')
     parseCharacterClassFragment(ss);
 
   if (complement)
@@ -264,6 +264,7 @@ void RegExprParser::parseCharacterClassFragment(SymbolSet& ss) {
   char c1 = consume();
   if (currentChar() != '-') {
     ss.insert(c1);
+    return;
   }
 
   consume();

@@ -74,3 +74,11 @@ TEST(SymbolSet, hash_map) {
   EXPECT_EQ(1, map[s1]);
   EXPECT_EQ(2, map[s2]);
 }
+
+TEST(SymbolSet, compare) {
+  SymbolSet s1 { 'a', 'b' };
+  SymbolSet s2 { 'a', 'b' };
+  SymbolSet s3 { 'a', 'c' };
+  ASSERT_TRUE(s1 == s2);
+  ASSERT_TRUE(s1 != s3);
+}

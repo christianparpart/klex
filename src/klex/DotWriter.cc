@@ -6,29 +6,14 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/DotWriter.h>
+#include <klex/Symbols.h>
 
 #include <algorithm>
+#include <cassert>
 #include <sstream>
 #include <fmt/format.h>
 
 namespace klex {
-
-static std::string symbolText(Symbol input) {
-  switch (input) {
-    case Symbols::EndOfFile:
-      return "<EOF>";
-    case Symbols::Epsilon:
-      return "ε";
-    case ' ':
-      return "\\s";
-    case '\t':
-      return "\\t";
-    case '\n':
-      return "\\n";
-    default:
-      return fmt::format("{}", (char) input);
-  }
-}
 
 template<typename StringType>
 static std::string escapeString(const StringType& str) {
@@ -59,28 +44,6 @@ static std::string escapeString(const StringType& str) {
     }
   }
   return stream_.str();
-}
-
-static std::string prettyCharRange(Symbol ymin, Symbol ymax) {
-  std::stringstream sstr;
-  switch (std::abs(ymax - ymin)) {
-    case 0:
-      sstr << symbolText(ymin);
-      break;
-    case 1:
-      sstr << symbolText(ymin)
-           << symbolText(ymin + 1);
-      break;
-    case 2:
-      sstr << symbolText(ymin)
-           << symbolText(ymin + 1)
-           << symbolText(ymax);
-      break;
-    default:
-      sstr << symbolText(ymin) << '-' << symbolText(ymax);
-      break;
-  }
-  return sstr.str();
 }
 
 static std::string groupCharacterClassRanges(std::vector<Symbol> chars) {
