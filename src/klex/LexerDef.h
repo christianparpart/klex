@@ -9,6 +9,7 @@
 #include <klex/TransitionMap.h>
 #include <klex/State.h>
 #include <map>
+#include <string>
 
 namespace klex {
 
@@ -22,6 +23,7 @@ struct LexerDef {
   StateId initialStateId;
   TransitionMap transitions;
   AcceptStateMap acceptStates;
+  std::map<Tag, std::string> tagNames;
 };
 
 } // namespace klex
