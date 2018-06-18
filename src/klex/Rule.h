@@ -6,7 +6,8 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <klex/State.h> // fa::Tag
+#include <klex/LexerDef.h>    // IgnoreTag
+#include <klex/State.h>       // Tag
 #include <string>
 #include <vector>
 
@@ -32,10 +33,10 @@ namespace fmt {
 
     template <typename FormatContext>
     constexpr auto format(const klex::Rule& v, FormatContext &ctx) {
-      return format_to(ctx.begin(), "{{{}, \"{}\", \"{}\"}}",
-          v.tag,
-          v.name,
-          v.pattern);
+      if (v.tag == klex::IgnoreTag)
+        return format_to(ctx.begin(), "{}({}) ::= {}", v.name, "ignore", v.pattern);
+      else
+        return format_to(ctx.begin(), "{}({}) ::= {}", v.name, v.tag, v.pattern);
     }
   };
 }
