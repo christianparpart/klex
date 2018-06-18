@@ -23,6 +23,7 @@ LexerBase::LexerBase(LexerDef info)
     : transitions_{std::move(info.transitions)},
       initialStateId_{info.initialStateId},
       acceptStates_{std::move(info.acceptStates)},
+      tagNames_{std::move(info.tagNames)},
       word_{},
       ownedStream_{},
       stream_{nullptr},

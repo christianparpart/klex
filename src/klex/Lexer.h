@@ -9,6 +9,7 @@
 #include <klex/LexerDef.h>
 
 #include <iostream>
+#include <stdexcept>
 #include <map>
 #include <memory>
 #include <string_view>
@@ -68,6 +69,15 @@ class LexerBase {
   //! @returns the last recognized token.
   Tag token() const noexcept { return token_; }
 
+  const std::string& name() const { return name(token_); }
+
+  const std::string& name(Tag tag) const {
+    if (auto i = tagNames_.find(tag); i != tagNames_.end())
+      return i->second;
+
+    throw std::invalid_argument{"tag"};
+  }
+
   /**
    * Runtime exception that is getting thrown when a word could not be recognized.
    */
@@ -92,6 +102,7 @@ class LexerBase {
   TransitionMap transitions_;
   StateId initialStateId_;
   std::map<StateId, Tag> acceptStates_;
+  std::map<Tag, std::string> tagNames_;
   std::string word_;
   std::unique_ptr<std::istream> ownedStream_;
   std::istream* stream_;

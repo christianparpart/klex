@@ -10,10 +10,13 @@
 #include <klex/LexerDef.h>
 #include <klex/NFA.h>
 
+#include <map>
+#include <string>
 #include <string_view>
 
 namespace klex {
 
+class Rule;
 class RegExpr;
 
 class Compiler {
@@ -22,16 +25,19 @@ class Compiler {
 
   void declare(Tag tag, std::string_view pattern);
   void declare(Tag tag, const RegExpr& pattern);
+  void declare(const Rule& rule);
 
   const NFA& nfa() const { return fa_; }
+  const std::map<Tag, std::string> names() const noexcept { return names_; }
 
   DFA compileDFA();
   LexerDef compile();
 
-  static LexerDef generateTables(const DFA& dfa);
+  static LexerDef generateTables(const DFA& dfa, const std::map<Tag, std::string> names);
 
  private:
   NFA fa_;
+  std::map<Tag, std::string> names_;
 };
 
 } // namespace klex

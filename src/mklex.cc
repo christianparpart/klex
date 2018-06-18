@@ -76,6 +76,13 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
     }
     os << "\n";
   }
+  os << "  },\n";
+  os << "  // tag-to-name mappings\n";
+  os << "  std::map<klex::Tag, std::string> {\n";
+  for (const std::pair<klex::Tag, std::string>& tagName : lexerDef.tagNames) {
+    if (tagName.first != klex::IgnoreTag)
+      os << fmt::format("    {{ {}, \"{}\" }},\n", tagName.first, tagName.second);
+  }
   os << "  }\n";
   os << "};\n";
 }
@@ -107,12 +114,23 @@ struct PerfTimer {
 void generateTokenDefCxx(std::ostream& os, const klex::RuleList& rules, const std::string& symbol) {
   // TODO: is symbol contains ::, everything before the last :: is considered a (nested) namespace
   os << "#pragma once\n";
+  os << "#include <cstdlib>       // for abort()\n";
+  os << "#include <string_view>\n";
   os << "enum class " << symbol << " {\n";
   for (const klex::Rule& rule : rules) {
     if (rule.tag != klex::IgnoreTag)
       os << fmt::format("  {:<20} = {:<4}, // {} \n", rule.name, rule.tag, rule.pattern);
   }
   os << "};\n";
+
+  os << "inline constexpr std::string_view to_string(Token t) {\n";
+  os << "  switch (t) { \n";
+  for (const klex::Rule& rule : rules)
+    if (rule.tag != klex::IgnoreTag)
+      os << "    case " << symbol << "::" << rule.name << ": return \"" << rule.name << "\";\n";
+  os << "    default: abort();\n";
+  os << "  }\n";
+  os << "}\n";
 }
 
 std::optional<int> prepareAndParseCLI(klex::util::Flags& flags, int argc, const char* argv[]) {
@@ -154,7 +172,7 @@ int main(int argc, const char* argv[]) {
 
   klex::Compiler builder;
   for (const klex::Rule& rule : rules)
-    builder.declare(rule.tag, *klex::RegExprParser{}.parse(rule.pattern, rule.line, rule.column));
+    builder.declare(rule);
   perfTimer.lap("NFA construction", builder.nfa().size(), "states");
 
   if (flags.getBool("debug-nfa")) {
@@ -188,7 +206,7 @@ int main(int argc, const char* argv[]) {
     generateTokenDefCxx(std::cerr, rules, flags.getString("token-name"));
   }
 
-  klex::LexerDef lexerDef = klex::Compiler::generateTables(dfamin);
+  klex::LexerDef lexerDef = klex::Compiler::generateTables(dfamin, builder.names());
   if (std::string tableFile = flags.getString("output-table"); tableFile != "-") {
     if (auto p = fs::path{tableFile}.remove_filename(); p != "")
       fs::create_directories(p);
