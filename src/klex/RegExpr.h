@@ -165,6 +165,7 @@ class RegExprVisitor {
   virtual void visit(ConcatenationExpr& concatenationExpr) = 0;
   virtual void visit(AlternationExpr& alternationExpr) = 0;
   virtual void visit(CharacterExpr& characterExpr) = 0;
+  virtual void visit(CharacterClassExpr& characterClassExpr) = 0;
   virtual void visit(ClosureExpr& closureExpr) = 0;
   virtual void visit(EndOfFileExpr& eofExpr) = 0;
   virtual void visit(EndOfLineExpr& eolExpr) = 0;

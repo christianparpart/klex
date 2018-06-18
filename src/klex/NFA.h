@@ -68,6 +68,14 @@ class NFA {
     addTransition(initialState_, value, acceptState_);
   }
 
+  explicit NFA(SymbolSet value)
+      : NFA{} {
+    initialState_ = createState();
+    acceptState_ = createState();
+    for (Symbol s : value)
+      addTransition(initialState_, s, acceptState_);
+  }
+
   void addTransition(StateId from, Symbol s, StateId to) {
     states_[from][s].push_back(to);
   }

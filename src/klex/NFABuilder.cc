@@ -34,6 +34,10 @@ void NFABuilder::visit(CharacterExpr& characterExpr) {
   fa_ = NFA{characterExpr.value()};
 }
 
+void NFABuilder::visit(CharacterClassExpr& characterClassExpr) {
+  fa_ = NFA{characterClassExpr.value()};
+}
+
 void NFABuilder::visit(ClosureExpr& closureExpr) {
   const unsigned xmin = closureExpr.minimumOccurrences();
   const unsigned xmax = closureExpr.maximumOccurrences();

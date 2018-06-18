@@ -89,6 +89,17 @@ SymbolSet::SymbolSet(DotMode) : set_(256, true) {
   clear('\n');
 }
 
+bool SymbolSet::empty() const {
+  return size() == 0;
+}
+
+size_t SymbolSet::size() const {
+  size_t n = 0;
+  for (auto i = begin(), e = end(); i != e; ++i)
+    n++;
+  return n;
+}
+
 bool SymbolSet::isDot() const noexcept {
   static SymbolSet dot{SymbolSet::Dot};
   return *this == dot;
@@ -99,6 +110,18 @@ std::string SymbolSet::to_string() const {
     return ".";
 
   return _groupCharacterClassRanges(set_);
+}
+
+void SymbolSet::complement() {
+  for (size_t i = 0, e = set_.size(); i != e; ++i) {
+    set_[i] = !set_[i];
+  }
+
+  // recalculate hash
+  hash_ = 2166136261;
+  for (Symbol s : *this) {
+    hash_ = (hash_ * 16777619) ^ s;
+  }
 }
 
 } // namespace klex

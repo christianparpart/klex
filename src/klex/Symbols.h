@@ -8,6 +8,7 @@
 
 #include <fmt/format.h>
 
+#include <algorithm>
 #include <list>
 #include <memory>
 #include <set>
@@ -39,13 +40,31 @@ class SymbolSet {
   enum DotMode { Dot };
 
   explicit SymbolSet(DotMode);
-  SymbolSet() : set_(256, false) {}
+  SymbolSet() : set_(256, false), hash_{2166136261} {}
+
+  SymbolSet(std::initializer_list<Symbol> list) : SymbolSet() {
+    std::for_each(list.begin(), list.end(), [this](Symbol s) { insert(s); });
+  }
+
+  bool empty() const;
+  size_t size() const;
 
   //! Transforms into the complement set.
   void complement();
 
   //! Inserts given Symbol @p s into this set.
-  void insert(Symbol s) { set_[(size_t) s] = true; }
+  void insert(Symbol s) {
+    if (!contains(s)) {
+      set_[s] = true;
+      hash_ = (hash_ * 16777619) ^ s;
+    }
+  }
+
+  void insert(const std::pair<Symbol, Symbol>& range) {
+    for (Symbol s = range.first; s <= range.second; ++s) {
+      insert(s);
+    }
+  }
 
   //! Removes given Symbol @p s from this set.
   void clear(Symbol s) { set_[(size_t) s] = false; }
@@ -62,9 +81,54 @@ class SymbolSet {
   bool operator==(const SymbolSet& rhs) const noexcept { return set_ == rhs.set_; }
   bool operator!=(const SymbolSet& rhs) const noexcept { return set_ != rhs.set_; }
 
+  class const_iterator { // {{{
+   public:
+    const_iterator(std::vector<bool>::const_iterator beg,
+                   std::vector<bool>::const_iterator end,
+                   size_t n)
+        : beg_{std::move(beg)}, end_{std::move(end)}, offset_{n} {
+      while (beg_ != end_ && !*beg_) {
+        ++beg_;
+        ++offset_;
+      }
+    }
+
+    Symbol operator*() const { return static_cast<Symbol>(offset_); }
+
+    const_iterator& operator++(int) {
+      do {
+        ++beg_;
+        ++offset_;
+      } while (beg_ != end_ && !*beg_);
+      return *this;
+    }
+
+    const_iterator& operator++() {
+      do {
+        beg_++;
+        offset_++;
+      } while (beg_ != end_ && !*beg_);
+      return *this;
+    }
+
+    bool operator==(const const_iterator& rhs) const noexcept { return beg_ == rhs.beg_; }
+    bool operator!=(const const_iterator& rhs) const noexcept { return beg_ != rhs.beg_; }
+
+   private:
+    std::vector<bool>::const_iterator beg_;
+    std::vector<bool>::const_iterator end_;
+    size_t offset_;
+  }; // }}}
+
+  const_iterator begin() const { return const_iterator(set_.begin(), set_.end(), 0); }
+  const_iterator end() const { return const_iterator(set_.end(), set_.end(), set_.size()); }
+
+  size_t hash() const noexcept { return hash_; }
+
  private:
   // XXX we chose vector<bool> as it is an optimized bit vector
   std::vector<bool> set_;
+  size_t hash_;
 };
 
 } // namespace klex
@@ -82,3 +146,11 @@ namespace fmt {
   };
 }
 
+namespace std {
+  template<>
+  struct hash<klex::SymbolSet> {
+    size_t operator()(const klex::SymbolSet& set) const {
+      return set.hash();
+    }
+  };
+}
