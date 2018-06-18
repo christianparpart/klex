@@ -103,17 +103,17 @@ class ClosureExpr : public RegExpr {
 
 class CharacterExpr : public RegExpr {
  public:
-  explicit CharacterExpr(char value)
+  explicit CharacterExpr(Symbol value)
       : RegExpr{4},
         value_{value} {}
 
-  char value() const noexcept { return value_; }
+  Symbol value() const noexcept { return value_; }
 
   std::string to_string() const override;
   void accept(RegExprVisitor& visitor) override;
 
  private:
-  char value_;
+  Symbol value_;
 };
 
 class CharacterClassExpr : public RegExpr {

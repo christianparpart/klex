@@ -21,13 +21,10 @@ class Alphabet {
   using set_type = std::set<Symbol>;
   using iterator = set_type::iterator;
 
-  void insert(char ch) { alphabet_.insert(ch); }
+  size_t size() const noexcept { return alphabet_.size(); }
 
-  void merge(const set_type& syms) {
-    for (Symbol s : syms) {
-      alphabet_.insert(s);
-    }
-  }
+  void insert(char ch);
+  void merge(const set_type& syms);
 
   std::string to_string() const;
 

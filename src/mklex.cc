@@ -26,11 +26,14 @@
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 
-std::string charLiteral(int ch) {
+std::string charLiteral(klex::Symbol ch) {
   if (std::isprint(ch))
     return fmt::format("'{}'", (char)ch);
 
   switch (ch) {
+    case klex::Symbols::EndOfFile:
+    case klex::Symbols::Error:
+      return fmt::format("{}", (int)ch);
     case ' ':
       return std::string{' ', 1};
     case '\t':
@@ -38,7 +41,7 @@ std::string charLiteral(int ch) {
     case '\n':
       return std::string{"'\\n'"};
     default:
-      return fmt::format("0x{:>02x}", ch);
+      return fmt::format("{}", (int)ch);
   }
 }
 

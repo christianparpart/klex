@@ -77,7 +77,9 @@ DFA DFABuilder::construct() {
   for ([[maybe_unused]] const auto& m : nfa_.acceptMap())
     DEBUG(" n{} -> {}", m.first, m.second);
 
-  DEBUG("alphabet = {}", nfa_.alphabet());
+  const Alphabet alphabet = nfa_.alphabet();
+  DEBUG("alphabet size: {}", alphabet.size());
+  DEBUG("alphabet = {}", alphabet);
   DEBUG(" {:<8} | {:<14} | {:<24} | {:<}", "set name", "DFA state", "NFA states", "ε-closures(q, *)");
   DEBUG("{}", "------------------------------------------------------------------------");
 
@@ -88,7 +90,7 @@ DFA DFABuilder::construct() {
     const int q_i = configurationNumber(Q, q);
 
     std::stringstream dbg;
-    for (Symbol c : nfa_.alphabet()) {
+    for (Symbol c : alphabet) {
       nfa_.epsilonClosure(nfa_.delta(q, c), &t);
 
       int t_i = configurationNumber(Q, t);
