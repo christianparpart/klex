@@ -14,18 +14,14 @@ extern klex::LexerDef lexerDef; // generated via mklex
 
 int main(int argc, const char* argv[]) {
 
-  klex::Lexer lexer {lexerDef};
+  klex::Lexer<Token> lexer {lexerDef};
   lexer.open(std::make_unique<std::ifstream>(argv[1]));
 
-  int i = 0;
-  for (int t = lexer.recognize(); t > 0; t = lexer.recognize()) {
+  for (Token t = lexer.recognize(); t != Token::Eof; t = lexer.recognize()) {
     std::cerr << fmt::format("[{}-{}]: token {} (\"{}\")\n",
                              lexer.offset().first,
                              lexer.offset().second,
-                             t, lexer.word());
-    i++;
-    if (i == 10)
-      break;
+                             to_string(t), lexer.word());
   }
 
   return EXIT_SUCCESS;
