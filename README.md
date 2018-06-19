@@ -45,7 +45,7 @@ Identifier      ::= [a-zA-Z_][a-zA-Z0-9_]*
 
 ### libklex API
 
-You can compile the above grammar with `klex -tmyrules.h -Tmytokens.h` and then compile the code below:
+You can compile the above grammar with `klex -f rules.klex -t myrules.h -T mytokens.h` and then compile the code below:
 
 ```!cpp
 #include <klex/Lexer.h>
