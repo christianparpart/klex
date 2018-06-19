@@ -7,7 +7,6 @@
 
 #include <klex/Compiler.h>
 #include <klex/DFA.h>
-#include <klex/DFAMinimizer.h>
 #include <klex/RuleParser.h>
 #include <klex/DotWriter.h>
 #include <klex/Lexer.h>
@@ -142,14 +141,13 @@ int main(int argc, const char* argv[]) {
   flags.enableParameters("EXPRESSION", "Mathematical expression to calculate");
   flags.parse(argc, argv);
 
-  // TODO: ensure rule position equals token ID
   klex::RuleParser rp{std::make_unique<std::stringstream>(RULES)};
   klex::Compiler cc;
   cc.declareAll(rp.parseRules());
 
   if (flags.getBool("dfa")) {
-    klex::DotWriter writer{ std::cout };
-    klex::DFA dfa = klex::DFAMinimizer{cc.compileDFA()}.construct();
+    klex::DotWriter writer { std::cout };
+    klex::DFA dfa = cc.compileMinimalDFA();
     dfa.visit(writer);
     return EXIT_SUCCESS;
   }
