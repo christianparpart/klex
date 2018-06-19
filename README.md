@@ -11,14 +11,13 @@ mklex - klex lexer generator
  -v, --verbose                Prints some more verbose output
  -h, --help                   Prints this help and exits
  -f, --file=PATTERN_FILE      Input file with lexer rules
- -t, --output-table=FILE      Output file that will contain the compiled tables
- -T, --output-token=FILE      Output file that will contain the compiled tables
- -n, --table-name=IDENTIFIER  Symbol name for generated table. [lexerDef]
- -N, --token-name=IDENTIFIER  Symbol name for generated token enum type. [Token]
- -x, --debug-dfa=DOT_FILE     Writes dot graph of final finite automaton. Use - to
-                              represent stdout. []
+ -t, --output-table=FILE      Output file that will contain the compiled tables (use - to represent stderr)
+ -T, --output-token=FILE      Output file that will contain the compiled tables (use - to represent stderr)
+ -n, --table-name=IDENTIFIER  Symbol name for generated table (may include namespace). [lexerDef]
+ -N, --token-name=IDENTIFIER  Symbol name for generated token enum type (may include namespace). [Token]
+ -x, --debug-dfa=DOT_FILE     Writes dot graph of final finite automaton. Use - to represent stdout. []
+ -d, --debug-nfa              Writes dot graph of non-deterministic finite automaton to stdout and exits.
  -p, --perf                   Print performance counters to stderr.
- -d, --debug-nfa              Print NFA and exit.
 ```
 
 ### Example klex Grammar

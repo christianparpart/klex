@@ -161,13 +161,13 @@ std::optional<int> prepareAndParseCLI(klex::util::Flags& flags, int argc, const 
   flags.defineBool("verbose", 'v', "Prints some more verbose output");
   flags.defineBool("help", 'h', "Prints this help and exits");
   flags.defineString("file", 'f', "PATTERN_FILE", "Input file with lexer rules");
-  flags.defineString("output-table", 't', "FILE", "Output file that will contain the compiled tables");
-  flags.defineString("output-token", 'T', "FILE", "Output file that will contain the compiled tables");
+  flags.defineString("output-table", 't', "FILE", "Output file that will contain the compiled tables (use - to represent stderr)");
+  flags.defineString("output-token", 'T', "FILE", "Output file that will contain the compiled tables (use - to represent stderr)");
   flags.defineString("table-name", 'n', "IDENTIFIER", "Symbol name for generated table (may include namespace).", "lexerDef");
   flags.defineString("token-name", 'N', "IDENTIFIER", "Symbol name for generated token enum type (may include namespace).", "Token");
   flags.defineString("debug-dfa", 'x', "DOT_FILE", "Writes dot graph of final finite automaton. Use - to represent stdout.", "");
+  flags.defineBool("debug-nfa", 'd', "Writes dot graph of non-deterministic finite automaton to stdout and exits.");
   flags.defineBool("perf", 'p', "Print performance counters to stderr.");
-  flags.defineBool("debug-nfa", 'd', "Print NFA and exit.");
   flags.parse(argc, argv);
 
   if (flags.getBool("help")) {
