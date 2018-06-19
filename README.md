@@ -42,9 +42,13 @@ NumberLiteral   ::= 0|[1-9][0-9]*
 Identifier      ::= [a-zA-Z_][a-zA-Z0-9_]*
 ```
 
-### libklex API
+### klex Lexer API
 
-You can compile the above grammar with `klex -f rules.klex -t myrules.h -T mytokens.h` and then compile the code below:
+The great thing about the Lexer API is, that it is header-only, as the most complex parts are done
+at compilation already.
+
+You can compile the above grammar with `klex -f rules.klex -t myrules.h -T mytokens.h`
+and then compile the code below:
 
 ```cpp
 #include <klex/Lexer.h>
@@ -62,6 +66,48 @@ int main(int argc, const char* argv[]) {
                              lexer.offset().second,
                              to_string(t), lexer.word());
   }
+
+  return EXIT_SUCCESS;
+}
+```
+
+### klex lexer generator API
+
+See [examples/mathexpr.cc](https://github.com/christianparpart/klex/blob/master/examples/mathexpr.cc)
+as a great example. Here's a snippet:
+
+```cpp
+enum class Token { Eof = 1, Plus, Minus, Mul, Div, RndOpen, RndClose, Number, INVALID };
+std::string RULES = R"(
+    Space(ignore) ::= [\s\t]+
+    Eof           ::= <<EOF>>
+    Plus          ::= "+"
+    Minus         ::= "-"
+    Mul           ::= "*"
+    Div           ::= "/"
+    RndOpen       ::= "("
+    RndClose      ::= \)
+    Number        ::= -?([0-9]+|[0-9]{1,3}(_[0-9]{3})*)
+    INVALID       ::= .
+)";
+
+using Number = long long int;
+Number expr(Lexer<Token>& lexer) {
+	// [... use Token and your lexer here ...]
+}
+
+int main(int argc, const char* argv[]) {
+  klex::RuleParser rp{std::make_unique<std::stringstream>(RULES)};
+  klex::Compiler cc;
+  cc.declareAll(rp.parseRules());
+
+  Lexer lexer { cc.compile(), std::make_unique<std::stringstream>("2 + 3 * (5 - 1)") };
+
+  lexer.recognize();
+  Number y = expr(lexer);
+  consume(lexer, Token::Eof);
+
+  std::cerr << fmt::format("{} = {}\n", input, y);
 
   return EXIT_SUCCESS;
 }
