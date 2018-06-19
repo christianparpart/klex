@@ -47,7 +47,7 @@ Identifier      ::= [a-zA-Z_][a-zA-Z0-9_]*
 
 You can compile the above grammar with `klex -f rules.klex -t myrules.h -T mytokens.h` and then compile the code below:
 
-```!cpp
+```cpp
 #include <klex/Lexer.h>
 #include <fstream>
 #include <memory>
