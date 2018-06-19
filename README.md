@@ -44,6 +44,9 @@ Identifier      ::= [a-zA-Z_][a-zA-Z0-9_]*
 ```
 
 ### libklex API
+
+You can compile the above grammar with `klex -tmyrules.h -Tmytokens.h` and then compile the code below:
+
 ```!cpp
 #include <klex/Lexer.h>
 #include <fstream>
@@ -52,9 +55,15 @@ Identifier      ::= [a-zA-Z_][a-zA-Z0-9_]*
 #include "mytokens.h"
 
 int main(int argc, const char* argv[]) {
-  lexer::Lexer lex{myrules, std::make_unique<std::ifstream>(argv[1])};
-  while (lex.recognize() != Token::Eof) {
-    lex.dump();
+  klex::Lexer<Token> lexer {lexerDef, std::make_unique<std::ifstream>(argv[1])};
+
+  for (Token t = lexer.recognize(); t != Token::Eof; t = lexer.recognize()) {
+    std::cerr << fmt::format("[{}-{}]: token {} (\"{}\")\n",
+                             lexer.offset().first,
+                             lexer.offset().second,
+                             to_string(t), lexer.word());
   }
+
+  return EXIT_SUCCESS;
 }
 ```
