@@ -13,7 +13,6 @@
 extern klex::LexerDef lexerDef; // generated via mklex
 
 int main(int argc, const char* argv[]) {
-
   klex::Lexer<Token> lexer {lexerDef};
   lexer.open(std::make_unique<std::ifstream>(argv[1]));
 
