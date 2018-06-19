@@ -147,7 +147,7 @@ int main(int argc, const char* argv[]) {
   klex::Compiler cc;
   for (const klex::Rule& rule : rp.parseRules()) {
     std::cerr << fmt::format("{}\n", rule);
-    cc.declare(rule.tag, rule.pattern);
+    cc.declare(rule);
   }
 
   if (flags.getBool("dfa")) {

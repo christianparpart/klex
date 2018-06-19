@@ -163,8 +163,8 @@ std::optional<int> prepareAndParseCLI(klex::util::Flags& flags, int argc, const 
   flags.defineString("file", 'f', "PATTERN_FILE", "Input file with lexer rules");
   flags.defineString("output-table", 't', "FILE", "Output file that will contain the compiled tables");
   flags.defineString("output-token", 'T', "FILE", "Output file that will contain the compiled tables");
-  flags.defineString("table-name", 'n', "IDENTIFIER", "Symbol name for generated table.", "lexerDef");
-  flags.defineString("token-name", 'N', "IDENTIFIER", "Symbol name for generated token enum type.", "Token");
+  flags.defineString("table-name", 'n', "IDENTIFIER", "Symbol name for generated table (may include namespace).", "lexerDef");
+  flags.defineString("token-name", 'N', "IDENTIFIER", "Symbol name for generated token enum type (may include namespace).", "Token");
   flags.defineString("debug-dfa", 'x', "DOT_FILE", "Writes dot graph of final finite automaton. Use - to represent stdout.", "");
   flags.defineBool("perf", 'p', "Print performance counters to stderr.");
   flags.defineBool("debug-nfa", 'd', "Print NFA and exit.");

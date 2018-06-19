@@ -23,8 +23,6 @@ class Compiler {
  public:
   Compiler() : fa_{} {}
 
-  void declare(Tag tag, std::string_view pattern);
-  void declare(Tag tag, const RegExpr& pattern);
   void declare(const Rule& rule);
 
   const NFA& nfa() const { return fa_; }

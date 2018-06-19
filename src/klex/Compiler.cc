@@ -20,29 +20,21 @@
 
 namespace klex {
 
-void Compiler::declare(Tag tag, std::string_view pattern) {
-  std::unique_ptr<RegExpr> expr = RegExprParser{}.parse(pattern);
-  declare(tag, *expr);
-}
-
 void Compiler::declare(const Rule& rule) {
-  declare(rule.tag, *klex::RegExprParser{}.parse(rule.pattern, rule.line, rule.column));
-
-  if (names_.find(rule.tag) == names_.end())
-    names_[rule.tag] = rule.name;
-  else
-    names_[rule.tag] = fmt::format("{}, {}", names_[rule.tag], rule.name);
-}
-
-void Compiler::declare(Tag tag, const RegExpr& pattern) {
-  NFA nfa = NFABuilder{}.construct(&pattern);
-  nfa.setAccept(tag);
+  std::unique_ptr<RegExpr> re = klex::RegExprParser{}.parse(rule.pattern, rule.line, rule.column);
+  NFA nfa = NFABuilder{}.construct(re.get());
+  nfa.setAccept(rule.tag);
 
   if (fa_.empty()) {
     fa_ = std::move(nfa);
   } else {
     fa_.alternate(std::move(nfa));
   }
+
+  if (auto i = names_.find(rule.tag); i != names_.end())
+    names_[rule.tag] = fmt::format("{}, {}", i->second, rule.name);
+  else
+    names_[rule.tag] = rule.name;
 }
 
 DFA Compiler::compileDFA() {
