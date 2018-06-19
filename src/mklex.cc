@@ -45,11 +45,49 @@ std::string charLiteral(klex::Symbol ch) {
   }
 }
 
+struct PerfTimer {
+  using Duration = std::chrono::duration<double>;
+  using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
+
+  explicit PerfTimer(bool _enabled) : enabled{_enabled} {
+    if (_enabled)
+      start = std::chrono::high_resolution_clock::now();
+  }
+
+  bool enabled;
+  TimePoint start;
+  TimePoint end;
+
+  void lap(std::string_view message, size_t count, std::string_view item) {
+    if (enabled) {
+      end = std::chrono::high_resolution_clock::now();
+      const Duration duration = end - start;
+      std::swap(end, start);
+
+      std::cerr << fmt::format("{}: {} seconds ({} {})\n", message, duration.count(), count, item);
+    }
+  }
+};
+
+std::pair<std::string, std::string> splitNamespace(const std::string& fullyQualifiedName) {
+  size_t n = fullyQualifiedName.rfind("::");
+  if (n != std::string::npos)
+    return std::make_pair(fullyQualifiedName.substr(0, n), fullyQualifiedName.substr(n + 2));
+  else
+    return std::make_pair(std::string(), fullyQualifiedName);
+}
+
 void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const klex::RuleList& rules,
-                         const std::string& symbolName) {
+                         const std::string& fullyQualifiedSymbolName) {
+  auto [ns, tableName] = splitNamespace(fullyQualifiedSymbolName);
+
   os << "#include <klex/LexerDef.h>\n";
   os << "\n";
-  os << "klex::LexerDef " << symbolName << " {\n";
+
+  if (!ns.empty())
+    os << "namespace " << ns << "{\n\n";
+
+  os << "klex::LexerDef " << tableName << " {\n";
   os << "  // initial state\n";
   os << "  " << lexerDef.initialStateId << ",\n";
   os << "  // state transition table \n";
@@ -85,52 +123,38 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
   }
   os << "  }\n";
   os << "};\n";
+
+  if (!ns.empty())
+    os << "\n} // namespace " << ns << "\n";
 }
-
-struct PerfTimer {
-  using Duration = std::chrono::duration<double>;
-  using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
-
-  explicit PerfTimer(bool _enabled) : enabled{_enabled} {
-    if (_enabled)
-      start = std::chrono::high_resolution_clock::now();
-  }
-
-  bool enabled;
-  TimePoint start;
-  TimePoint end;
-
-  void lap(std::string_view message, size_t count, std::string_view item) {
-    if (enabled) {
-      end = std::chrono::high_resolution_clock::now();
-      const Duration duration = end - start;
-      std::swap(end, start);
-
-      std::cerr << fmt::format("{}: {} seconds ({} {})\n", message, duration.count(), count, item);
-    }
-  }
-};
 
 void generateTokenDefCxx(std::ostream& os, const klex::RuleList& rules, const std::string& symbol) {
   // TODO: is symbol contains ::, everything before the last :: is considered a (nested) namespace
-  os << "#pragma once\n";
+  auto [ns, typeName] = splitNamespace(symbol);
+
+  os << "#pragma once\n\n";
   os << "#include <cstdlib>       // for abort()\n";
-  os << "#include <string_view>\n";
-  os << "enum class " << symbol << " {\n";
+  os << "#include <string_view>\n\n";
+  if (!ns.empty())
+    os << "namespace " << ns << " {\n\n";
+  os << "enum class " << typeName << " {\n";
   for (const klex::Rule& rule : rules) {
     if (rule.tag != klex::IgnoreTag)
       os << fmt::format("  {:<20} = {:<4}, // {} \n", rule.name, rule.tag, rule.pattern);
   }
-  os << "};\n";
+  os << "};\n\n";
 
-  os << "inline constexpr std::string_view to_string(Token t) {\n";
+  os << "inline constexpr std::string_view to_string(" << typeName << " t) {\n";
   os << "  switch (t) { \n";
   for (const klex::Rule& rule : rules)
     if (rule.tag != klex::IgnoreTag)
-      os << "    case " << symbol << "::" << rule.name << ": return \"" << rule.name << "\";\n";
+      os << "    case " << typeName << "::" << rule.name << ": return \"" << rule.name << "\";\n";
   os << "    default: abort();\n";
   os << "  }\n";
   os << "}\n";
+
+  if (!ns.empty())
+    os << "\n} // namespace " << ns << "\n";
 }
 
 std::optional<int> prepareAndParseCLI(klex::util::Flags& flags, int argc, const char* argv[]) {
