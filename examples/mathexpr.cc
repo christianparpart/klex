@@ -145,10 +145,7 @@ int main(int argc, const char* argv[]) {
   // TODO: ensure rule position equals token ID
   klex::RuleParser rp{std::make_unique<std::stringstream>(RULES)};
   klex::Compiler cc;
-  for (const klex::Rule& rule : rp.parseRules()) {
-    std::cerr << fmt::format("{}\n", rule);
-    cc.declare(rule);
-  }
+  cc.declareAll(rp.parseRules());
 
   if (flags.getBool("dfa")) {
     klex::DotWriter writer{ std::cout };

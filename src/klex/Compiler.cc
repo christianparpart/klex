@@ -20,6 +20,11 @@
 
 namespace klex {
 
+void Compiler::declareAll(const RuleList& rules) {
+  for (const klex::Rule& rule : rules)
+    declare(rule);
+}
+
 void Compiler::declare(const Rule& rule) {
   std::unique_ptr<RegExpr> re = klex::RegExprParser{}.parse(rule.pattern, rule.line, rule.column);
   NFA nfa = NFABuilder{}.construct(re.get());
@@ -41,13 +46,12 @@ DFA Compiler::compileDFA() {
   return DFABuilder{std::move(fa_)}.construct();
 }
 
+DFA Compiler::compileMinimalDFA() {
+  return klex::DFAMinimizer{compileDFA()}.construct();
+}
+
 LexerDef Compiler::compile() {
-  DFA dfa = DFABuilder{std::move(fa_)}.construct();
-  // return compile(dfa);
-  DFA dfamin = DFAMinimizer{dfa}.construct();
-  return generateTables(dfamin, std::move(names_));
-  //return generateTables(MinDFABuilder::construct(DFABuilder{}.construct(std::move(fa_))), std::move(names_));
-  //return generateTables(DFABuilder{}.construct(std::move(fa_)), std::move(names_));
+  return generateTables(compileMinimalDFA(), std::move(names_));
 }
 
 LexerDef Compiler::generateTables(const DFA& dfa, const std::map<Tag, std::string> names) {

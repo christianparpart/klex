@@ -85,7 +85,7 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
   os << "\n";
 
   if (!ns.empty())
-    os << "namespace " << ns << "{\n\n";
+    os << "namespace " << ns << " {\n\n";
 
   os << "klex::LexerDef " << tableName << " {\n";
   os << "  // initial state\n";
@@ -195,8 +195,7 @@ int main(int argc, const char* argv[]) {
   perfTimer.lap("Rule parsing", rules.size(), "rules");
 
   klex::Compiler builder;
-  for (const klex::Rule& rule : rules)
-    builder.declare(rule);
+  builder.declareAll(rules);
   perfTimer.lap("NFA construction", builder.nfa().size(), "states");
 
   if (flags.getBool("debug-nfa")) {
@@ -221,15 +220,6 @@ int main(int argc, const char* argv[]) {
     }
   }
 
-  if (std::string tokenFile = flags.getString("output-token"); tokenFile != "-") {
-    if (auto p = fs::path{tokenFile}.remove_filename(); p != "")
-      fs::create_directories(p);
-    std::ofstream ofs {tokenFile};
-    generateTokenDefCxx(ofs, rules, flags.getString("token-name"));
-  } else {
-    generateTokenDefCxx(std::cerr, rules, flags.getString("token-name"));
-  }
-
   klex::LexerDef lexerDef = klex::Compiler::generateTables(dfamin, builder.names());
   if (std::string tableFile = flags.getString("output-table"); tableFile != "-") {
     if (auto p = fs::path{tableFile}.remove_filename(); p != "")
@@ -238,6 +228,15 @@ int main(int argc, const char* argv[]) {
     generateTableDefCxx(ofs, lexerDef, rules, flags.getString("table-name"));
   } else {
     generateTableDefCxx(std::cerr, lexerDef, rules, flags.getString("table-name"));
+  }
+
+  if (std::string tokenFile = flags.getString("output-token"); tokenFile != "-") {
+    if (auto p = fs::path{tokenFile}.remove_filename(); p != "")
+      fs::create_directories(p);
+    std::ofstream ofs {tokenFile};
+    generateTokenDefCxx(ofs, rules, flags.getString("token-name"));
+  } else {
+    generateTokenDefCxx(std::cerr, rules, flags.getString("token-name"));
   }
 
   return EXIT_SUCCESS;

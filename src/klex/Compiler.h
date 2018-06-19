@@ -7,6 +7,7 @@
 #pragma once
 
 #include <klex/State.h>
+#include <klex/Rule.h>
 #include <klex/LexerDef.h>
 #include <klex/NFA.h>
 
@@ -16,19 +17,20 @@
 
 namespace klex {
 
-class Rule;
 class RegExpr;
 
 class Compiler {
  public:
   Compiler() : fa_{} {}
 
+  void declareAll(const RuleList& rules);
   void declare(const Rule& rule);
 
   const NFA& nfa() const { return fa_; }
   const std::map<Tag, std::string> names() const noexcept { return names_; }
 
   DFA compileDFA();
+  DFA compileMinimalDFA();
   LexerDef compile();
 
   static LexerDef generateTables(const DFA& dfa, const std::map<Tag, std::string> names);

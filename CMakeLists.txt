@@ -99,9 +99,7 @@ if(KLEX_EXAMPLES)
 
   add_executable(example_flowlexer examples/flowlexer.cc ${FLOW_TABLE_SRC})
   set_target_properties(example_flowlexer PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
-  # target_link_libraries(example_flowlexer klex)
   target_include_directories(example_flowlexer PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/examples)
-  # add_dependencies(example_flowlexer mklex)
   target_link_libraries(example_flowlexer PUBLIC fmt::fmt-header-only stdc++fs)
   set_target_properties(example_flowlexer PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 
