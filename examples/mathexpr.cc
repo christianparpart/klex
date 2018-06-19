@@ -12,12 +12,14 @@
 #include <klex/DotWriter.h>
 #include <klex/Lexer.h>
 #include <klex/util/Flags.h>
-#include <string_view>
+
+#include <algorithm>
+#include <fmt/format.h>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
-#include <fmt/format.h>
+#include <string_view>
 
 enum class Token { Eof = 1, Plus, Minus, Mul, Div, RndOpen, RndClose, Number, INVALID };
 std::string RULES = R"(
@@ -29,12 +31,12 @@ std::string RULES = R"(
     Div           ::= "/"
     RndOpen       ::= "("
     RndClose      ::= \)
-    Number        ::= [0-9]+
+    Number        ::= -?([0-9]+|[0-9]{1,3}(_[0-9]{3})*)
     INVALID       ::= .
 )";
 
 using Lexer = klex::Lexer<Token>;
-using Number = int;
+using Number = long long int;
 
 std::string to_string(Token t) {
   switch (t) {
@@ -76,7 +78,9 @@ void consume(Lexer& lexer, Token t) {
 Number primaryExpr(Lexer& lexer) {
   switch (lexer.token()) {
     case Token::Number: {
-      Number y = std::stoi(lexer.word());
+      std::string s;
+      std::for_each(lexer.word().begin(), lexer.word().end(), [&](char ch) { if (ch != '_') s += ch; });
+      Number y = std::stoi(s);
       lexer.recognize();
       return y;
     }
