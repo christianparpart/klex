@@ -10,9 +10,8 @@
 
 namespace klex {
 
-std::string to_string(const std::vector<StateId>& S, std::string_view stateLabelPrefix) {
-  std::vector<StateId> names = S;
-
+std::string to_string(const StateIdVec& S, std::string_view stateLabelPrefix) {
+  StateIdVec names = S;
   std::sort(names.begin(), names.end());
 
   std::stringstream sstr;

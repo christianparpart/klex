@@ -28,7 +28,7 @@ using AcceptMap = std::map<StateId, Tag>;
 /**
  * Returns a human readable string of @p S, such as "{n0, n1, n2}".
  */
-std::string to_string(const std::vector<StateId>& S, std::string_view stateLabelPrefix = "n");
+std::string to_string(const StateIdVec& S, std::string_view stateLabelPrefix = "n");
 
 } // namespace klex
 
