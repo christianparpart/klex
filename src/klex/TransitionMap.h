@@ -61,3 +61,5 @@ class TransitionMap {
 };
 
 } // namespace klex
+
+#include <klex/TransitionMap-inl.h>

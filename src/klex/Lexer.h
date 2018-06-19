@@ -8,10 +8,11 @@
 
 #include <klex/LexerDef.h>
 
+#include <deque>
 #include <iostream>
-#include <stdexcept>
 #include <map>
 #include <memory>
+#include <stdexcept>
 #include <string_view>
 #include <vector>
 
@@ -69,8 +70,10 @@ class LexerBase {
   //! @returns the last recognized token.
   Tag token() const noexcept { return token_; }
 
+  //! @returns the name of the current token.
   const std::string& name() const { return name(token_); }
 
+  //! @returns the name of the token represented by Tag @p tag.
   const std::string& name(Tag tag) const {
     if (auto i = tagNames_.find(tag); i != tagNames_.end())
       return i->second;
@@ -97,6 +100,9 @@ class LexerBase {
   Symbol nextChar();
   void rollback();
   bool isAcceptState(StateId state) const;
+  static std::string stateName(StateId s);
+  static constexpr StateId BadState = 101010;
+  std::string toString(const std::deque<StateId>& stack);
 
  private:
   TransitionMap transitions_;
@@ -141,10 +147,12 @@ class Lexer : public LexerBase {
   /**
    * Recognizes one token (ignored patterns are skipped).
    */
-  Token recognize() { return static_cast<Token>(LexerBase::recognize()); }
+  inline Token recognize() { return static_cast<Token>(LexerBase::recognize()); }
 
   //! @returns the last recognized token.
-  Token token() const noexcept { return static_cast<Token>(LexerBase::token()); }
+  inline Token token() const noexcept { return static_cast<Token>(LexerBase::token()); }
 };
 
 } // namespace klex
+
+#include <klex/Lexer-inl.h>

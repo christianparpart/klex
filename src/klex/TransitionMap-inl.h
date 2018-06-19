@@ -11,11 +11,11 @@
 
 namespace klex {
 
-void TransitionMap::define(StateId currentState, Symbol charCat, StateId nextState) {
+inline void TransitionMap::define(StateId currentState, Symbol charCat, StateId nextState) {
   mapping_[currentState][charCat] = nextState;
 }
 
-StateId TransitionMap::apply(StateId currentState, Symbol charCat) const {
+inline StateId TransitionMap::apply(StateId currentState, Symbol charCat) const {
   if (auto i = mapping_.find(currentState); i != mapping_.end())
     if (auto k = i->second.find(charCat); k != i->second.end())
       return k->second;
@@ -23,7 +23,7 @@ StateId TransitionMap::apply(StateId currentState, Symbol charCat) const {
   return ErrorState;
 }
 
-std::vector<StateId> TransitionMap::states() const {
+inline std::vector<StateId> TransitionMap::states() const {
   std::vector<StateId> v;
   v.reserve(mapping_.size());
   for (const auto& i : mapping_)
@@ -32,7 +32,7 @@ std::vector<StateId> TransitionMap::states() const {
   return v;
 }
 
-std::map<Symbol, StateId> TransitionMap::map(StateId s) const {
+inline std::map<Symbol, StateId> TransitionMap::map(StateId s) const {
   std::map<Symbol, StateId> m;
   if (auto mapping = mapping_.find(s); mapping != mapping_.end())
     for (const auto& i : mapping->second)

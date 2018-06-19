@@ -13,13 +13,7 @@
 
 namespace klex {
 
-#if 0
-#define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
-#else
-#define DEBUG(msg, ...) do { } while (0)
-#endif
-
-LexerBase::LexerBase(LexerDef info)
+inline LexerBase::LexerBase(LexerDef info)
     : transitions_{std::move(info.transitions)},
       initialStateId_{info.initialStateId},
       acceptStates_{std::move(info.acceptStates)},
@@ -34,16 +28,16 @@ LexerBase::LexerBase(LexerDef info)
       token_{0} {
 }
 
-LexerBase::LexerBase(LexerDef info, std::unique_ptr<std::istream> stream)
+inline LexerBase::LexerBase(LexerDef info, std::unique_ptr<std::istream> stream)
     : LexerBase{std::move(info)} {
   open(std::move(stream));
 }
 
-LexerBase::LexerBase(LexerDef info, std::istream& stream)
+inline LexerBase::LexerBase(LexerDef info, std::istream& stream)
     : LexerBase{std::move(info)} {
 }
 
-void LexerBase::open(std::unique_ptr<std::istream> stream) {
+inline void LexerBase::open(std::unique_ptr<std::istream> stream) {
   ownedStream_ = std::move(stream);
   stream_ = ownedStream_.get();
   oldOffset_ = 0;
@@ -52,9 +46,7 @@ void LexerBase::open(std::unique_ptr<std::istream> stream) {
   column_ = 0;
 }
 
-constexpr StateId BadState { 101010 }; //static_cast<StateId>(-2);
-
-static std::string stateName(StateId s) {
+inline std::string LexerBase::stateName(StateId s) {
   switch (s) {
     case BadState:
       return "Bad";
@@ -65,7 +57,7 @@ static std::string stateName(StateId s) {
   }
 }
 
-[[maybe_unused]] static std::string toString(std::deque<StateId> stack) {
+inline std::string LexerBase::toString(const std::deque<StateId>& stack) {
   std::stringstream sstr;
   sstr << "{";
   int i = 0;
@@ -79,7 +71,7 @@ static std::string stateName(StateId s) {
   return sstr.str();
 }
 
-Tag LexerBase::recognize() {
+inline Tag LexerBase::recognize() {
   for (;;) {
     if (Tag tag = recognizeOne(); tag != IgnoreTag) {
       return tag;
@@ -87,7 +79,7 @@ Tag LexerBase::recognize() {
   }
 }
 
-Tag LexerBase::recognizeOne() {
+inline Tag LexerBase::recognizeOne() {
   // init
   oldOffset_ = offset_;
   word_.clear();
@@ -108,7 +100,7 @@ Tag LexerBase::recognizeOne() {
     stack.push_back(state);
     savedLine = line_;
     savedCol = column_;
-    DEBUG("recognize: state {} char '{}' {}", stateName(state), prettySymbol(ch), isAcceptState(state) ? "accepting" : "");
+    // DEBUG("recognize: state {} char '{}' {}", stateName(state), prettySymbol(ch), isAcceptState(state) ? "accepting" : "");
     state = transitions_.apply(state, ch);
   }
 
@@ -119,10 +111,10 @@ Tag LexerBase::recognizeOne() {
   }
 
   while (state != BadState && !isAcceptState(state)) {
-    DEBUG("recognize: trackback: current state {} {}; stack: {}",
-          stateName(state),
-          isAcceptState(state) ? "accepting" : "non-accepting",
-          toString(stack));
+    // DEBUG("recognize: trackback: current state {} {}; stack: {}",
+    //       stateName(state),
+    //       isAcceptState(state) ? "accepting" : "non-accepting",
+    //       toString(stack));
 
     state = stack.back();
     stack.pop_back();
@@ -131,7 +123,7 @@ Tag LexerBase::recognizeOne() {
       word_.resize(word_.size() - 1);
     }
   }
-  DEBUG("recognize: final state {} {}", stateName(state), isAcceptState(state) ? "accepting" : "non-accepting");
+  // DEBUG("recognize: final state {} {}", stateName(state), isAcceptState(state) ? "accepting" : "non-accepting");
 
   if (!isAcceptState(state))
     throw LexerError{offset_, line_, column_};
@@ -144,32 +136,32 @@ Tag LexerBase::recognizeOne() {
   abort();
 }
 
-bool LexerBase::isAcceptState(StateId id) const {
+inline bool LexerBase::isAcceptState(StateId id) const {
   return acceptStates_.find(id) != acceptStates_.end();
 }
 
-Symbol LexerBase::nextChar() {
+inline Symbol LexerBase::nextChar() {
   if (!buffered_.empty()) {
     offset_++;
     int ch = buffered_.back();
     buffered_.resize(buffered_.size() - 1);
-    DEBUG("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
+    // DEBUG("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
     return ch;
   }
 
   if (!stream_->good()) { // EOF or I/O error
-    DEBUG("Lexer:{}: advance '{}'", offset_, "EOF");
+    // DEBUG("Lexer:{}: advance '{}'", offset_, "EOF");
     return Symbols::EndOfFile;
   }
 
   int ch = stream_->get();
   if (ch >= 0)
     offset_++;
-  DEBUG("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
+  // DEBUG("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
   return ch;
 }
 
-void LexerBase::rollback() {
+inline void LexerBase::rollback() {
   if (word_.back() != -1) {
     offset_--;
     // TODO: rollback (line, column)
