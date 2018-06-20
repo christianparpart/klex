@@ -53,7 +53,7 @@ class SymbolSet {
   enum DotMode { Dot };
 
   explicit SymbolSet(DotMode);
-  SymbolSet() : set_(256, false), hash_{2166136261} {}
+  SymbolSet() : set_(256, false), size_{0}, hash_{2166136261} {}
 
   SymbolSet(std::initializer_list<Symbol> list) : SymbolSet() {
     std::for_each(list.begin(), list.end(), [this](Symbol s) { insert(s); });
