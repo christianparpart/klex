@@ -6,6 +6,7 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
+#include <klex/Symbols.h>
 #include <set>
 #include <string>
 #include <fmt/format.h>
@@ -17,13 +18,12 @@ namespace klex {
  */
 class Alphabet {
  public:
-  using Symbol = char;
   using set_type = std::set<Symbol>;
   using iterator = set_type::iterator;
 
   size_t size() const noexcept { return alphabet_.size(); }
 
-  void insert(char ch);
+  void insert(Symbol ch);
   void merge(const set_type& syms);
 
   std::string to_string() const;

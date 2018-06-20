@@ -6,6 +6,7 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/Alphabet.h>
+#include <klex/Symbols.h>
 #include <sstream>
 #include <iostream>
 #include <iomanip>
@@ -18,9 +19,9 @@ namespace klex {
 #define DEBUG(msg, ...) do { } while (0)
 #endif
 
-void Alphabet::insert(char ch) {
+void Alphabet::insert(Symbol ch) {
   if (alphabet_.find(ch) == alphabet_.end()) {
-    DEBUG("Alphabet: insert '{:}'", (ch));
+    DEBUG("Alphabet: insert '{:}'", prettySymbol(ch));
     alphabet_.insert(ch);
   }
 }
@@ -36,18 +37,8 @@ std::string Alphabet::to_string() const {
 
   sstr << '{';
 
-  for (Symbol c : alphabet_) {
-    if (c == '\0')
-      sstr << "ε";
-    else if (std::isprint(c))
-      sstr << c;
-    else {
-      char buf[10];
-      snprintf(buf, sizeof(buf), "\\x%02x", c);
-      sstr << buf;
-      //sstr << "\\x" << std::hex << std::setfill('0') << std::setw(2) << uint8_t(c);
-    }
-  }
+  for (Symbol c : alphabet_)
+    sstr << prettySymbol(c);
 
   sstr << '}';
 
