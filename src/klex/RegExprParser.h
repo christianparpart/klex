@@ -28,28 +28,32 @@ class RegExprParser {
 
   class UnexpectedToken : public std::runtime_error {
    public:
-    UnexpectedToken(unsigned int line, unsigned int column, int actual, int expected)
+    UnexpectedToken(unsigned int line, unsigned int column, std::string actual, std::string expected)
         : std::runtime_error{fmt::format("[{}:{}] Unexpected token {}. Expected {} instead.",
                                          line, column,
-                                         actual == -1 ? "EOF"
-                                                      : fmt::format("{}", static_cast<char>(actual)),
-                                         static_cast<char>(expected))},
+                                         actual, expected)},
           line_{line},
           column_{column},
-          actual_{actual},
-          expected_{expected}
+          actual_{std::move(actual)},
+          expected_{std::move(expected)}
     {}
+
+    UnexpectedToken(unsigned int line, unsigned int column, int actual, int expected)
+        : UnexpectedToken{line, column,
+                          actual == -1 ? "EOF"
+                                       : fmt::format("{}", static_cast<char>(actual)),
+                          std::string(1, static_cast<char>(expected))} {}
 
     unsigned int line() const noexcept { return line_; }
     unsigned int column() const noexcept { return column_; }
-    int actual() const noexcept { return actual_; }
-    int expected() const noexcept { return expected_; }
+    const std::string& actual() const noexcept { return actual_; }
+    const std::string& expected() const noexcept { return expected_; }
 
    private:
     unsigned int line_;
     unsigned int column_;
-    int actual_;
-    int expected_;
+    std::string actual_;
+    std::string expected_;
   };
 
  private:
@@ -66,7 +70,8 @@ class RegExprParser {
   std::unique_ptr<RegExpr> parseClosure();                // atom ['*' | '?' | '{' NUM [',' NUM] '}']
   std::unique_ptr<RegExpr> parseAtom();                   // character | characterClass | '(' expr ')'
   std::unique_ptr<RegExpr> parseCharacterClass();         // '[' characterClassFragment+ ']'
-  void parseCharacterClassFragment(SymbolSet& ss);        // character | character '-' character
+  void parseCharacterClassFragment(SymbolSet& ss);        // namedClass | character | character '-' character
+  void parseNamedCharacterClass(SymbolSet& ss);           // '[' ':' NAME ':' ']'
 
  private:
   std::string_view input_;
