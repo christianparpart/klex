@@ -9,7 +9,6 @@
 #include <klex/DFAMinimizer.h>
 #include <klex/State.h>
 
-#include <list>
 #include <map>
 #include <sstream>
 #include <iostream>

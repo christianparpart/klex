@@ -9,7 +9,6 @@
 #include <klex/State.h>
 #include <klex/Alphabet.h>
 
-#include <list>
 #include <vector>
 #include <optional>
 
