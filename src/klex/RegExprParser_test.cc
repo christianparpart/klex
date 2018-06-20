@@ -33,6 +33,13 @@ TEST(RegExprParser, escapeSequences) {
   EXPECT_EQ("\\v", e->value().to_string());
 }
 
+TEST(RegExprParser, escapeSequences_hex) {
+  std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[\\x20]");
+  auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
+  ASSERT_TRUE(e != nullptr);
+  EXPECT_EQ("\\s", e->value().to_string());
+}
+
 TEST(RegExprParser, escapeSequences_nul) {
   std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[\\0]");
   auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -40,9 +47,16 @@ TEST(RegExprParser, escapeSequences_nul) {
   EXPECT_EQ("\\0", e->value().to_string());
 }
 
-TEST(RegExprParser, escapeSequences_hex) {
-  std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[\\x20]");
+TEST(RegExprParser, escapeSequences_octal) {
+  // with leading zero
+  std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[\\040]");
   auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
   ASSERT_TRUE(e != nullptr);
   EXPECT_EQ("\\s", e->value().to_string());
+
+  // with leading non-zero
+  re = RegExprParser{}.parse("[\\172]");
+  e = dynamic_cast<const CharacterClassExpr*>(re.get());
+  ASSERT_TRUE(e != nullptr);
+  EXPECT_EQ("z", e->value().to_string());
 }

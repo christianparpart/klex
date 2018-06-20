@@ -321,9 +321,6 @@ Symbol RegExprParser::parseSingleCharacter() {
     case 'v':
       consume();
       return '\v';
-    case '0':
-      consume();
-      return '\0';
     case 'x': {
       consume();
 
@@ -337,6 +334,24 @@ Symbol RegExprParser::parseSingleCharacter() {
       buf[2] = 0;
 
       return static_cast<Symbol>(strtoul(buf, nullptr, 16));
+    }
+    case '0': {
+      const Symbol x0 = consume();
+      if (!(currentChar() >= '1' && currentChar() <= '7'))
+        return '\0';
+
+      // octal value (\DDD)
+      char buf[4];
+      buf[0] = x0;
+      buf[1] = consume();
+      if (!(buf[1] >= '0' && buf[1] <= '7'))
+        throw UnexpectedToken{line_, column_, std::string(1, buf[1]), "[0-7]"};
+      buf[2] = consume();
+      if (!(buf[2] >= '0' && buf[2] <= '7'))
+        throw UnexpectedToken{line_, column_, std::string(1, buf[2]), "[0-7]"};
+      buf[3] = '\0';
+
+      return static_cast<Symbol>(strtoul(buf, nullptr, 8));
     }
     case '1':
     case '2':
