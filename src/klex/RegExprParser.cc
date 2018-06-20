@@ -375,6 +375,7 @@ Symbol RegExprParser::parseSingleCharacter() {
 
       return static_cast<Symbol>(strtoul(buf, nullptr, 8));
     }
+    case '"':
     case '$':
     case '(':
     case ')':
@@ -383,6 +384,7 @@ Symbol RegExprParser::parseSingleCharacter() {
     case ':':
     case '?':
     case '[':
+    case '\'':
     case '\\':
     case ']':
     case '^':

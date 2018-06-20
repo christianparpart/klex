@@ -39,6 +39,8 @@ std::string charLiteral(klex::Symbol ch) {
       return std::string{"'\\n'"};
     case '\'':
       return std::string{"'\\''"};
+    case '\\':
+      return std::string{"'\\\\'"};
     default:
       if (std::isprint(ch))
         return fmt::format("'{}'", (char)ch);

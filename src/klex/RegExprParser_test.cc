@@ -26,6 +26,14 @@ TEST(RegExprParser, namedCharacterClass_mixed) {
   EXPECT_EQ("0-9a-z", e->value().to_string());
 }
 
+TEST(RegExprParser, characterClass_complement) {
+  std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[^\\n]");
+  auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
+  ASSERT_TRUE(e != nullptr);
+  EXPECT_TRUE(e->value().isDot());
+  EXPECT_EQ(".", e->value().to_string());
+}
+
 TEST(RegExprParser, escapeSequences) {
   std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[\\v]");
   auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -59,4 +67,18 @@ TEST(RegExprParser, escapeSequences_octal) {
   e = dynamic_cast<const CharacterClassExpr*>(re.get());
   ASSERT_TRUE(e != nullptr);
   EXPECT_EQ("z", e->value().to_string());
+}
+
+TEST(RegExprParser, doubleQuote) {
+  // as concatenation character
+  std::unique_ptr<RegExpr> re = RegExprParser{}.parse(R"(\")");
+  auto e = dynamic_cast<const CharacterExpr*>(re.get());
+  ASSERT_TRUE(e != nullptr);
+  EXPECT_EQ('"', e->value());
+
+  // as character class
+  re = RegExprParser{}.parse(R"([\"])");
+  auto c = dynamic_cast<const CharacterClassExpr*>(re.get());
+  ASSERT_TRUE(c != nullptr);
+  EXPECT_EQ(R"(")", c->value().to_string());
 }

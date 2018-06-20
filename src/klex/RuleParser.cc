@@ -64,7 +64,6 @@ Rule RuleParser::parseRule() {
   unsigned int line = line_;
   unsigned int column = column_;
   std::string pattern = parseExpression();
-  consumeSpace();
   consumeChar('\n');
 
   Tag tag{};
@@ -82,20 +81,15 @@ std::string RuleParser::parseExpression() {
 
   std::stringstream sstr;
 
-  if (currentChar_ == '"') {
+  size_t i = 0;
+  size_t lastGraph = 0;
+  while (currentChar_  != '\n') {
+    if (std::isgraph(currentChar_))
+      lastGraph = i + 1;
+    i++;
     sstr << consumeChar();
-    // TODO: count "'s and avoid breaking on escaped "
-    while (!eof() && !strchr("\t\n\r\"", currentChar_)) {
-      sstr << consumeChar();
-    }
-    sstr << consumeChar('"');
-  } else {
-    while (!eof() && !strchr("\t\n\r# ", currentChar_)) {
-      sstr << consumeChar();
-    }
   }
-
-  return sstr.str();
+  return sstr.str().substr(0, lastGraph); // skips trailing spaces
 }
 
 // skips space until LF or EOF

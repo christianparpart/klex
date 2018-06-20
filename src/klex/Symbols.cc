@@ -39,10 +39,11 @@ std::string prettySymbol(Symbol input) {
     case '.':
       return "\\."; // so we can distinguish from dot-operator
     default:
-      if (std::isprint(input))
+      if (std::isprint(input)) {
         return fmt::format("{}", (char) input);
-      else
-        return fmt::format("\\x{:x02}", input);
+      } else {
+        return fmt::format("\\x{:02x}", input);
+      }
   }
 }
 
