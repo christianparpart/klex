@@ -79,9 +79,6 @@ NumberType        ::= int
 StringType        ::= string
 
 # misc
-Ident             ::= [a-zA-Z_][a-zA-Z_0-9]*
-RegExpGroup       ::= \$[0-9]+
-
 # literals
 TrueLiteral       ::= true
 FalseLiteral      ::= false
@@ -90,6 +87,9 @@ NumberLiteral     ::= 0|[1-9][0-9]*
 # IPv4Literal       ::= {IP4}
 # IP6             ::= TODO
 # IP4Cidr         ::= TODO
+
+Ident             ::= [a-zA-Z_][a-zA-Z_0-9]*
+RegExpGroup       ::= \$[0-9]+
 
 # # specials
 # TODO Comment(ignore)   ::= "#[^$]*"
