@@ -34,10 +34,20 @@ TEST(SymbolSet, initializer_list) {
 }
 
 TEST(SymbolSet, dot) {
-  SymbolSet dot{SymbolSet::Dot};
-  EXPECT_TRUE(dot.isDot());
+  SymbolSet dot(SymbolSet::Dot);
   EXPECT_FALSE(dot.contains('\n'));
+  EXPECT_TRUE(dot.contains('\0'));
+  EXPECT_TRUE(dot.contains(' '));
+  EXPECT_TRUE(dot.isDot());
   EXPECT_EQ(".", dot.to_string());
+}
+
+TEST(SymbolSet, complement) {
+  SymbolSet s;
+  s.insert('\n');
+  EXPECT_EQ("\\n", s.to_string());
+  s.complement();
+  EXPECT_EQ(".", s.to_string());
 }
 
 TEST(SymbolSet, range) {

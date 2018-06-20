@@ -18,12 +18,26 @@ std::string prettySymbol(Symbol input) {
       return "<<EOF>>";
     case Symbols::Epsilon:
       return "ε";
+    case '\a':
+      return "\\a";
+    case '\b':
+      return "\\b";
+    case '\f':
+      return "\\f";
+    case '\n':
+      return "\\n";
+    case '\r':
+      return "\\r";
     case ' ':
       return "\\s";
     case '\t':
       return "\\t";
-    case '\n':
-      return "\\n";
+    case '\v':
+      return "\\v";
+    case '\0':
+      return "\\0";
+    case '.':
+      return "\\."; // so we can distinguish from dot-operator
     default:
       if (std::isprint(input))
         return fmt::format("{}", (char) input);
@@ -87,12 +101,23 @@ static std::string _groupCharacterClassRanges(const std::vector<bool>& syms) {
   return sstr.str();
 }
 
-SymbolSet::SymbolSet(DotMode) : set_(256, true) {
-  clear('\n');
+SymbolSet::SymbolSet(DotMode) : set_(256, true), size_{255}, hash_{2166136261} {
+  set_[(size_t) '\n'] = false;
+  for (Symbol s : *this) {
+    hash_ = (hash_ * 16777619) ^ s;
+  }
+}
+
+void SymbolSet::clear(Symbol s) {
+  if (contains(s)) {
+    set_[(size_t) s] = false;
+    size_--;
+    recalculateHash();
+  }
 }
 
 bool SymbolSet::isDot() const noexcept {
-  static SymbolSet dot{SymbolSet::Dot};
+  static SymbolSet dot(SymbolSet::Dot);
   return *this == dot;
 }
 
@@ -109,14 +134,18 @@ void SymbolSet::complement() {
     set_[i] = !set_[i];
   }
 
+  // flip size
+  size_ = set_.size() - size_;
+
+  recalculateHash();
+}
+
+void SymbolSet::recalculateHash() {
   // recalculate hash
   hash_ = 2166136261;
   for (Symbol s : *this) {
     hash_ = (hash_ * 16777619) ^ s;
   }
-
-  // flip size
-  size_ = set_.size() - size_;
 }
 
 } // namespace klex

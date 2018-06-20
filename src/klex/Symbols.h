@@ -55,7 +55,7 @@ class SymbolSet {
   explicit SymbolSet(DotMode);
   SymbolSet() : set_(256, false), size_{0}, hash_{2166136261} {}
 
-  SymbolSet(std::initializer_list<Symbol> list) : SymbolSet() {
+  explicit SymbolSet(std::initializer_list<Symbol> list) : SymbolSet() {
     std::for_each(list.begin(), list.end(), [this](Symbol s) { insert(s); });
   }
 
@@ -74,6 +74,7 @@ class SymbolSet {
     }
   }
 
+  //! Inserts a range of Simples between [a, b].
   void insert(const std::pair<Symbol, Symbol>& range) {
     for (Symbol s = range.first; s <= range.second; ++s) {
       insert(s);
@@ -81,7 +82,7 @@ class SymbolSet {
   }
 
   //! Removes given Symbol @p s from this set.
-  void clear(Symbol s) { set_[(size_t) s] = false; }
+  void clear(Symbol s);
 
   //! @returns whether or not given Symbol @p s is in this set.
   bool contains(Symbol s) const {
@@ -95,8 +96,8 @@ class SymbolSet {
   //! @returns a human readable representation of this set
   std::string to_string() const;
 
-  bool operator==(const SymbolSet& rhs) const noexcept { return set_ == rhs.set_; }
-  bool operator!=(const SymbolSet& rhs) const noexcept { return set_ != rhs.set_; }
+  bool operator==(const SymbolSet& rhs) const noexcept { return hash_ == rhs.hash_ && set_ == rhs.set_; }
+  bool operator!=(const SymbolSet& rhs) const noexcept { return !(*this == rhs); }
 
   class const_iterator { // {{{
    public:
@@ -141,6 +142,9 @@ class SymbolSet {
   const_iterator end() const { return const_iterator(set_.end(), set_.end(), set_.size()); }
 
   size_t hash() const noexcept { return hash_; }
+
+ private:
+  void recalculateHash();
 
  private:
   // XXX we chose vector<bool> as it is an optimized bit vector

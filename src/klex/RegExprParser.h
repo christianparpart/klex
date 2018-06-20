@@ -6,10 +6,10 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
+#include <klex/Symbols.h>
+#include <fmt/format.h>
 #include <memory>
 #include <string_view>
-
-#include <fmt/format.h>
 
 namespace klex {
 
@@ -72,6 +72,7 @@ class RegExprParser {
   std::unique_ptr<RegExpr> parseCharacterClass();         // '[' characterClassFragment+ ']'
   void parseCharacterClassFragment(SymbolSet& ss);        // namedClass | character | character '-' character
   void parseNamedCharacterClass(SymbolSet& ss);           // '[' ':' NAME ':' ']'
+  Symbol parseSingleCharacter();
 
  private:
   std::string_view input_;

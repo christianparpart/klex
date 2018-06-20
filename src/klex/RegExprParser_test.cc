@@ -16,7 +16,6 @@ TEST(RegExprParser, namedCharacterClass) {
   std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:digit:]]");
   auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
   ASSERT_TRUE(e != nullptr);
-
   EXPECT_EQ("0-9", e->value().to_string());
 }
 
@@ -24,6 +23,26 @@ TEST(RegExprParser, namedCharacterClass_mixed) {
   std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:lower:]0-9]");
   auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
   ASSERT_TRUE(e != nullptr);
-
   EXPECT_EQ("0-9a-z", e->value().to_string());
+}
+
+TEST(RegExprParser, escapeSequences) {
+  std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[\\v]");
+  auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
+  ASSERT_TRUE(e != nullptr);
+  EXPECT_EQ("\\v", e->value().to_string());
+}
+
+TEST(RegExprParser, escapeSequences_nul) {
+  std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[\\0]");
+  auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
+  ASSERT_TRUE(e != nullptr);
+  EXPECT_EQ("\\0", e->value().to_string());
+}
+
+TEST(RegExprParser, escapeSequences_hex) {
+  std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[\\x20]");
+  auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
+  ASSERT_TRUE(e != nullptr);
+  EXPECT_EQ("\\s", e->value().to_string());
 }

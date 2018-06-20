@@ -197,26 +197,8 @@ std::unique_ptr<RegExpr> RegExprParser::parseAtom() {
     case '$':
       consume();
       return std::make_unique<EndOfLineExpr>();
-    case '\\':
-      consume();
-      switch (currentChar()) {
-        case 's':
-          consume();
-          return std::make_unique<CharacterExpr>(' ');
-        case 't':
-          consume();
-          return std::make_unique<CharacterExpr>('\t');
-        case 'n':
-          consume();
-          return std::make_unique<CharacterExpr>('\n');
-        case 'r':
-          consume();
-          return std::make_unique<CharacterExpr>('\r');
-        default:
-          return std::make_unique<CharacterExpr>(consume());
-      }
     default:
-      return std::make_unique<CharacterExpr>(consume());
+      return std::make_unique<CharacterExpr>(parseSingleCharacter());
   }
 }
 
@@ -309,6 +291,97 @@ void RegExprParser::parseNamedCharacterClass(SymbolSet& ss) {
     throw UnexpectedToken{line_, column_, token, "<valid character class>"};
 }
 
+Symbol RegExprParser::parseSingleCharacter() {
+  if (currentChar() != '\\')
+    return consume();
+
+  consume(); // consumes escape character
+  switch (currentChar()) {
+    case 'a':
+      consume();
+      return '\a';
+    case 'b':
+      consume();
+      return '\b';
+    case 'f':
+      consume();
+      return '\f';
+    case 'n':
+      consume();
+      return '\n';
+    case 'r':
+      consume();
+      return '\r';
+    case 's':
+      consume();
+      return ' ';
+    case 't':
+      consume();
+      return '\t';
+    case 'v':
+      consume();
+      return '\v';
+    case '0':
+      consume();
+      return '\0';
+    case 'x': {
+      consume();
+
+      char buf[3];
+      buf[0] = consume();
+      if (!std::isxdigit(buf[0]))
+        throw UnexpectedToken{line_, column_, std::string(1, buf[0]), "[0-9a-fA-F]"};
+      buf[1] = consume();
+      if (!std::isxdigit(buf[1]))
+        throw UnexpectedToken{line_, column_, std::string(1, buf[1]), "[0-9a-fA-F]"};
+      buf[2] = 0;
+
+      return static_cast<Symbol>(strtoul(buf, nullptr, 16));
+    }
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7': {
+      // octal value (\DDD)
+      char buf[4];
+      buf[0] = consume();
+      if (!(buf[0] >= '0' && buf[0] <= '7'))
+        throw UnexpectedToken{line_, column_, std::string(1, buf[0]), "[0-7]"};
+      buf[1] = consume();
+      if (!(buf[1] >= '0' && buf[1] <= '7'))
+        throw UnexpectedToken{line_, column_, std::string(1, buf[1]), "[0-7]"};
+      buf[2] = consume();
+      if (!(buf[2] >= '0' && buf[2] <= '7'))
+        throw UnexpectedToken{line_, column_, std::string(1, buf[2]), "[0-7]"};
+      buf[3] = '\0';
+
+      return static_cast<Symbol>(strtoul(buf, nullptr, 8));
+    }
+    case '$':
+    case '(':
+    case ')':
+    case '*':
+    case '+':
+    case ':':
+    case '?':
+    case '[':
+    case '\\':
+    case ']':
+    case '^':
+    case '{':
+    case '}':
+      return consume();
+    default: {
+      throw UnexpectedToken{line_, column_, 
+        fmt::format("'{}'", static_cast<char>(currentChar())),
+        "<escape sequence character>"};
+    }
+  }
+}
+
 void RegExprParser::parseCharacterClassFragment(SymbolSet& ss) {
   // parse [:named:]
   if (currentChar() == '[') {
@@ -316,43 +389,17 @@ void RegExprParser::parseCharacterClassFragment(SymbolSet& ss) {
     return;
   }
 
-  // parse escaped single-char (\n)
-  if (currentChar() == '\\') {
-    consume();
-    switch (currentChar()) {
-      case 's':
-        consume();
-        ss.insert(' ');
-        return;
-      case 't':
-        consume();
-        ss.insert('\t');
-        return;
-      case 'n':
-        consume();
-        ss.insert('\n');
-        return;
-      case 'r':
-        consume();
-        ss.insert('\r');
-        return;
-      default:
-        ss.insert(consume());
-        return;
-    }
-  }
-
   // parse single char (A) or range (A-Z)
-  char c1 = consume();
+  const Symbol c1 = parseSingleCharacter();
   if (currentChar() != '-') {
     ss.insert(c1);
     return;
   }
 
-  consume();
-  char c2 = consume();
+  consume(); // consume '-'
+  const Symbol c2 = parseSingleCharacter();
 
-  for (char c_i = c1; c_i <= c2; c_i++)
+  for (Symbol c_i = c1; c_i <= c2; c_i++)
     ss.insert(c_i);
 }
 
