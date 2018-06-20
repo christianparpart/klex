@@ -27,21 +27,23 @@
 namespace fs = std::experimental::filesystem;
 
 std::string charLiteral(klex::Symbol ch) {
-  if (std::isprint(ch))
-    return fmt::format("'{}'", (char)ch);
-
   switch (ch) {
     case klex::Symbols::EndOfFile:
     case klex::Symbols::Error:
       return fmt::format("{}", (int)ch);
     case ' ':
-      return std::string{' ', 1};
+      return std::string{"' '"};
     case '\t':
       return std::string{"'\\t'"};
     case '\n':
       return std::string{"'\\n'"};
+    case '\'':
+      return std::string{"'\\''"};
     default:
-      return fmt::format("{}", (int)ch);
+      if (std::isprint(ch))
+        return fmt::format("'{}'", (char)ch);
+      else
+        return fmt::format("{}", (int)ch);
   }
 }
 
