@@ -76,6 +76,7 @@ target_link_libraries(mklex klex)
 if(KLEX_TESTS)
   add_executable(klex_test
       src/klex/NFA_test.cc
+      src/klex/RegExprParser_test.cc
       src/klex/RuleParser_test.cc
       src/klex/Symbols_test.cc
       src/klex/klex_test.cc

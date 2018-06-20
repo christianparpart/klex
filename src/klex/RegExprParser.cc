@@ -9,6 +9,7 @@
 #include <klex/RegExpr.h>
 #include <klex/Symbols.h>
 
+#include <functional>
 #include <sstream>
 #include <limits>
 #include <iostream>
@@ -235,7 +236,87 @@ std::unique_ptr<RegExpr> RegExprParser::parseCharacterClass() {
   return std::make_unique<CharacterClassExpr>(std::move(ss));
 }
 
+void RegExprParser::parseNamedCharacterClass(SymbolSet& ss) {
+  consume('[');
+  consume(':');
+  std::string token;
+  while (std::isalpha(currentChar())) {
+    token += static_cast<char>(consume());
+  }
+  consume(':');
+  consume(']');
+
+  static const std::unordered_map<std::string_view, std::function<void()>> names = {
+    {"alnum", [&]() {
+      for (Symbol c = 'a'; c <= 'z'; c++) ss.insert(c);
+      for (Symbol c = 'A'; c <= 'Z'; c++) ss.insert(c);
+      for (Symbol c = '0'; c <= '9'; c++) ss.insert(c);
+    }},
+    {"alpha", [&]() {
+      for (Symbol c = 'a'; c <= 'z'; c++) ss.insert(c);
+      for (Symbol c = 'A'; c <= 'Z'; c++) ss.insert(c);
+    }},
+    {"blank", [&]() {
+      ss.insert(' ');
+      ss.insert('\t');
+    }},
+    {"cntrl", [&]() {
+      for (Symbol c = 0; c <= 255; c++)
+        if (std::iscntrl(c))
+          ss.insert(c);
+    }},
+    {"digit", [&]() {
+      for (Symbol c = '0'; c <= '9'; c++)
+        ss.insert(c);
+    }},
+    {"graph", [&]() {
+      for (Symbol c = 0; c <= 255; c++)
+        if (std::isgraph(c))
+          ss.insert(c);
+    }},
+    {"lower", [&]() {
+      for (Symbol c = 'a'; c <= 'z'; c++)
+        ss.insert(c);
+    }},
+    {"print", [&]() {
+      for (Symbol c = 0; c <= 255; c++)
+        if (std::isprint(c) || c == ' ')
+          ss.insert(c);
+    }},
+    {"punct", [&]() {
+      for (Symbol c = 0; c <= 255; c++)
+        if (std::ispunct(c))
+          ss.insert(c);
+    }},
+    {"space", [&]() {
+      for (Symbol c : "\f\n\r\t\v")
+        ss.insert(c);
+    }},
+    {"upper", [&]() {
+      for (Symbol c = 'A'; c <= 'Z'; c++)
+        ss.insert(c);
+    }},
+    {"xdigit", [&]() {
+      for (Symbol c = '0'; c <= '9'; c++) ss.insert(c);
+      for (Symbol c = 'a'; c <= 'f'; c++) ss.insert(c);
+      for (Symbol c = 'A'; c <= 'F'; c++) ss.insert(c);
+    }},
+  };
+
+  if (auto i = names.find(token); i != names.end())
+    i->second();
+  else
+    throw UnexpectedToken{line_, column_, token, "<valid character class>"};
+}
+
 void RegExprParser::parseCharacterClassFragment(SymbolSet& ss) {
+  // parse [:named:]
+  if (currentChar() == '[') {
+    parseNamedCharacterClass(ss);
+    return;
+  }
+
+  // parse escaped single-char (\n)
   if (currentChar() == '\\') {
     consume();
     switch (currentChar()) {
@@ -261,6 +342,7 @@ void RegExprParser::parseCharacterClassFragment(SymbolSet& ss) {
     }
   }
 
+  // parse single char (A) or range (A-Z)
   char c1 = consume();
   if (currentChar() != '-') {
     ss.insert(c1);
