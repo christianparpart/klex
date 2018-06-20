@@ -93,19 +93,18 @@ std::string RULES = R"(
 
 using Number = long long int;
 Number expr(Lexer<Token>& lexer) {
-	// [... use Token and your lexer here ...]
+  // [... consume lexer tokens here ...]
+  return 42;
 }
 
 int main(int argc, const char* argv[]) {
-  klex::RuleParser rp{std::make_unique<std::stringstream>(RULES)};
   klex::Compiler cc;
-  cc.declareAll(rp.parseRules());
+  cc.declareAll(std::make_unique<std::stringstream>(RULES));
 
   Lexer lexer { cc.compile(), std::make_unique<std::stringstream>("2 + 3 * (5 - 1)") };
 
-  lexer.recognize();
+  lexer.recognize();      // recognize first token
   Number y = expr(lexer);
-  consume(lexer, Token::Eof);
 
   std::cerr << fmt::format("{} = {}\n", input, y);
 

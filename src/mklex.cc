@@ -189,13 +189,10 @@ int main(int argc, const char* argv[]) {
 
   fs::path klexFileName = flags.getString("file");
 
-  klex::RuleParser ruleParser{std::make_unique<std::ifstream>(klexFileName.string())};
   PerfTimer perfTimer { flags.getBool("perf") };
-  klex::RuleList rules = ruleParser.parseRules();
-  perfTimer.lap("Rule parsing", rules.size(), "rules");
-
   klex::Compiler builder;
-  builder.declareAll(rules);
+  builder.parse(std::make_unique<std::ifstream>(klexFileName.string()));
+  const klex::RuleList& rules = builder.rules();
   perfTimer.lap("NFA construction", builder.nfa().size(), "states");
 
   if (flags.getBool("debug-nfa")) {

@@ -15,17 +15,24 @@
 #include <klex/RegExpr.h>
 #include <klex/RegExprParser.h>
 #include <klex/Rule.h>
+#include <klex/RuleParser.h>
 
 #include <iostream>
 
 namespace klex {
 
-void Compiler::declareAll(const RuleList& rules) {
-  for (const klex::Rule& rule : rules)
+void Compiler::parse(std::unique_ptr<std::istream> stream) {
+  declareAll(RuleParser{std::move(stream)}.parseRules());
+}
+
+void Compiler::declareAll(RuleList rules) {
+  rules_.reserve(rules_.size() + rules.size());
+
+  for (klex::Rule& rule : rules)
     declare(rule);
 }
 
-void Compiler::declare(const Rule& rule) {
+void Compiler::declare(Rule rule) {
   std::unique_ptr<RegExpr> re = klex::RegExprParser{}.parse(rule.pattern, rule.line, rule.column);
   NFA nfa = NFABuilder{}.construct(re.get());
   nfa.setAccept(rule.tag);
@@ -40,6 +47,8 @@ void Compiler::declare(const Rule& rule) {
     names_[rule.tag] = fmt::format("{}, {}", i->second, rule.name);
   else
     names_[rule.tag] = rule.name;
+
+  rules_.emplace_back(std::move(rule));
 }
 
 DFA Compiler::compileDFA() {
@@ -54,7 +63,7 @@ LexerDef Compiler::compile() {
   return generateTables(compileMinimalDFA(), std::move(names_));
 }
 
-LexerDef Compiler::generateTables(const DFA& dfa, const std::map<Tag, std::string> names) {
+LexerDef Compiler::generateTables(const DFA& dfa, const std::map<Tag, std::string>& names) {
   const Alphabet alphabet = dfa.alphabet();
   TransitionMap transitionMap;
 

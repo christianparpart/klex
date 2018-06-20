@@ -7,7 +7,6 @@
 
 #include <klex/Compiler.h>
 #include <klex/DFA.h>
-#include <klex/RuleParser.h>
 #include <klex/DotWriter.h>
 #include <klex/Lexer.h>
 #include <klex/util/Flags.h>
@@ -141,9 +140,8 @@ int main(int argc, const char* argv[]) {
   flags.enableParameters("EXPRESSION", "Mathematical expression to calculate");
   flags.parse(argc, argv);
 
-  klex::RuleParser rp{std::make_unique<std::stringstream>(RULES)};
   klex::Compiler cc;
-  cc.declareAll(rp.parseRules());
+  cc.parse(std::make_unique<std::stringstream>(RULES));
 
   if (flags.getBool("dfa")) {
     klex::DotWriter writer { std::cout };
