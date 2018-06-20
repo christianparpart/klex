@@ -78,7 +78,6 @@ BoolType          ::= bool
 NumberType        ::= int
 StringType        ::= string
 
-# misc
 # literals
 TrueLiteral       ::= true
 FalseLiteral      ::= false
@@ -88,6 +87,7 @@ NumberLiteral     ::= 0|[1-9][0-9]*
 # IP6             ::= TODO
 # IP4Cidr         ::= TODO
 
+# misc
 Ident             ::= [a-zA-Z_][a-zA-Z_0-9]*
 RegExpGroup       ::= \$[0-9]+
 
