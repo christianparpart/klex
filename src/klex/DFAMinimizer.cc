@@ -23,7 +23,9 @@ namespace klex {
 #define DEBUG(msg, ...) do { } while (0)
 #endif
 
-DFAMinimizer::DFAMinimizer(const DFA& dfa) : dfa_{dfa} {
+DFAMinimizer::DFAMinimizer(const DFA& dfa)
+    : dfa_{dfa},
+      alphabet_{dfa_.alphabet()} {
 }
 
 bool DFAMinimizer::containsInitialState(const StateIdVec& S) const {
@@ -34,7 +36,7 @@ bool DFAMinimizer::containsInitialState(const StateIdVec& S) const {
   return false;
 }
 
-std::list<StateIdVec>::iterator DFAMinimizer::findGroup(StateId s) {
+DFAMinimizer::PartitionVec::iterator DFAMinimizer::findGroup(StateId s) {
   for (auto i = T.begin(), e = T.end(); i != e; ++i) {
     StateIdVec& group = *i;
     if (dfa_.acceptTag(group.front()) == dfa_.acceptTag(s))
@@ -44,7 +46,7 @@ std::list<StateIdVec>::iterator DFAMinimizer::findGroup(StateId s) {
   return T.end();
 }
 
-int DFAMinimizer::partitionId(StateId s) const {
+std::optional<int> DFAMinimizer::partitionId(StateId s) const {
   int i = 0;
   for (const StateIdVec& p : P) {
     if (std::find(p.begin(), p.end(), s) != p.end())
@@ -52,11 +54,11 @@ int DFAMinimizer::partitionId(StateId s) const {
     else
       i++;
   }
-  return -1;
+  return std::nullopt;
 }
 
-std::list<StateIdVec> DFAMinimizer::split(const StateIdVec& S) const {
-  for (Symbol c : dfa_.alphabet()) {
+DFAMinimizer::PartitionVec DFAMinimizer::split(const StateIdVec& S) const {
+  for (Symbol c : alphabet_) {
     // if c splits S into s_1 and s_2
     //      that is, phi(s_1, c) and phi(s_2, c) reside in two different p_i's (partitions)
     // then return {s_1, s_2}
@@ -64,15 +66,18 @@ std::list<StateIdVec> DFAMinimizer::split(const StateIdVec& S) const {
     std::map<int /*target partition set*/ , StateIdVec /*source states*/> t_i;
     for (StateId s : S) {
       if (const std::optional<StateId> t = dfa_.delta(s, c); t.has_value()) {
-        const int p_i = partitionId(*t);
-        t_i[p_i].push_back(s);
+        if (std::optional<int> p_i = partitionId(*t); p_i.has_value()) {
+          t_i[*p_i].push_back(s);
+        } else {
+          t_i[-1].push_back(s);
+        }
       } else {
         t_i[-1].push_back(s);
       }
     }
     if (t_i.size() > 1) {
       DEBUG("split: {} on character '{}' into {} sets", to_string(S), (char)c, t_i.size());
-      std::list<StateIdVec> result;
+      PartitionVec result;
       for (const std::pair<int, StateIdVec>& t : t_i) {
         result.emplace_back(std::move(t.second));
         DEBUG(" partition {}: {}", t.first, t.second);
@@ -84,7 +89,7 @@ std::list<StateIdVec> DFAMinimizer::split(const StateIdVec& S) const {
   return {S};
 }
 
-[[maybe_unused]] static void dumpGroups(const std::list<StateIdVec>& T) {
+void DFAMinimizer::dumpGroups(const PartitionVec& T) {
   DEBUG("dumping groups ({})", T.size());
   int groupNr = 0;
   for (const auto& t : T) {
@@ -110,20 +115,23 @@ DFA DFAMinimizer::construct() {
   }
 
   // add another group for all non-accept states
-  T.emplace_front(dfa_.nonAcceptStates());
+  T.emplace_back(dfa_.nonAcceptStates());
 
   dumpGroups(T);
 
   while (P != T) {
-    P = std::move(T);
-    T = {};
+    std::swap(P, T);
+    T.clear();
 
-    for (StateIdVec& p : P) {
-      T.splice(T.end(), split(p));
-    }
+    for (StateIdVec& p : P)
+      for (StateIdVec& s : split(p))
+        T.emplace_back(std::move(s));
   }
 
-  // -------------------------------------------------------------------------
+  return constructFromPartitions(P);
+}
+
+DFA DFAMinimizer::constructFromPartitions(const PartitionVec& P) const {
   DEBUG("minimization terminated with {} unique partition sets", P.size());
   DFA dfamin;
 
@@ -149,9 +157,9 @@ DFA DFAMinimizer::construct() {
   for (const StateIdVec& p : P) {
     const StateId s = *p.begin();
     for (const std::pair<Symbol, StateId>& transition : dfa_.stateTransitions(s)) {
-      if (int t_i = partitionId(transition.second); t_i != -1) {
-        DEBUG("map p{} --({})--> p{}", p_i, prettySymbol(transition.first), t_i);
-        dfamin.setTransition(p_i, transition.first, t_i);
+      if (std::optional<int> t_i = partitionId(transition.second); t_i.has_value()) {
+        DEBUG("map p{} --({})--> p{}", p_i, prettySymbol(transition.first), *t_i);
+        dfamin.setTransition(p_i, transition.first, *t_i);
       }
     }
     p_i++;

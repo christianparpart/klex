@@ -7,9 +7,11 @@
 #pragma once
 
 #include <klex/State.h>
+#include <klex/Alphabet.h>
 
 #include <list>
 #include <vector>
+#include <optional>
 
 namespace klex {
 
@@ -22,16 +24,22 @@ class DFAMinimizer {
   DFA construct();
 
  private:
+  using PartitionVec = std::vector<StateIdVec>;
+
   StateIdVec nonAcceptStates() const;
   bool containsInitialState(const StateIdVec& S) const;
-  std::list<StateIdVec>::iterator findGroup(StateId s);
-  int partitionId(StateId s) const;
-  std::list<StateIdVec> split(const StateIdVec& S) const;
+  PartitionVec::iterator findGroup(StateId s);
+  std::optional<int> partitionId(StateId s) const;
+  PartitionVec split(const StateIdVec& S) const;
+  DFA constructFromPartitions(const PartitionVec& P) const;
+
+  static void dumpGroups(const PartitionVec& T);
 
  private:
   const DFA& dfa_;
-  std::list<StateIdVec> T;
-  std::list<StateIdVec> P;
+  Alphabet alphabet_;
+  PartitionVec T;
+  PartitionVec P;
 };
 
 } // namespace klex
