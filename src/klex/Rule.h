@@ -19,6 +19,13 @@ struct Rule {
   Tag tag;
   std::string name;
   std::string pattern;
+
+  bool operator<(const Rule& rhs) const noexcept { return tag < rhs.tag; }
+  bool operator<=(const Rule& rhs) const noexcept { return tag <= rhs.tag; }
+  bool operator==(const Rule& rhs) const noexcept { return tag == rhs.tag; }
+  bool operator!=(const Rule& rhs) const noexcept { return tag != rhs.tag; }
+  bool operator>=(const Rule& rhs) const noexcept { return tag >= rhs.tag; }
+  bool operator>(const Rule& rhs) const noexcept { return tag > rhs.tag; }
 };
 
 using RuleList = std::vector<Rule>;
