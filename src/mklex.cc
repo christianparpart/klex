@@ -205,8 +205,20 @@ int main(int argc, const char* argv[]) {
     return EXIT_SUCCESS;
   }
 
-  klex::DFA dfa = builder.compileDFA();
+  klex::Compiler::OvershadowMap overshadows;
+  klex::DFA dfa = builder.compileDFA(&overshadows);
   perfTimer.lap("DFA construction", dfa.size(), "states");
+
+  // check for unmatchable rules
+  for (const std::pair<klex::Tag, klex::Tag>& overshadow : overshadows) {
+    const klex::Rule& shadowee = **klex::findRuleByTag(rules, overshadow.first);
+    const klex::Rule& shadower = **klex::findRuleByTag(rules, overshadow.second);
+    std::cerr << fmt::format("[{}:{}] Rule {} cannot be matched as rule [{}:{}] {} takes precedence.\n",
+                             shadowee.line, shadowee.column, shadowee.name,
+                             shadower.line, shadower.column, shadower.name);
+  }
+  if (!overshadows.empty())
+    return EXIT_FAILURE;
 
   klex::DFA dfamin = klex::DFAMinimizer{dfa}.construct();
   perfTimer.lap("DFA minimization", dfamin.size(), "states");
