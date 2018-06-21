@@ -30,6 +30,14 @@ struct Rule {
 
 using RuleList = std::vector<Rule>;
 
+inline std::optional<const Rule*> findRuleByTag(const RuleList& rules, Tag t) {
+  for (const Rule& rule : rules)
+    if (rule.tag == t)
+      return &rule;
+
+  return std::nullopt;
+}
+
 } // namespace klex
 
 namespace fmt {

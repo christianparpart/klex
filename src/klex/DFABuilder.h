@@ -7,6 +7,8 @@
 #pragma once
 
 #include <klex/NFA.h>
+#include <map>
+#include <utility>
 #include <vector>
 
 namespace klex {
@@ -16,8 +18,18 @@ class State;
 
 class DFABuilder {
  public:
+  //! Map of rules that shows which rule is overshadowed by which other rule.
+  using OvershadowMap = std::vector<std::pair<Tag, Tag>>;
+
   DFABuilder(NFA nfa) : nfa_{nfa} {}
-  DFA construct();
+
+  /**
+   * Constructs a DFA out of the NFA.
+   *
+   * @param overshadows if not nullptr, it will be used to store semantic information about
+   *                    which rule tags have been overshadowed by which.
+   */
+  DFA construct(OvershadowMap* overshadows = nullptr);
 
  private:
   /**
@@ -61,6 +73,7 @@ class DFABuilder {
 
  private:
   NFA nfa_;
+  std::map<Tag, Tag> overshadows_;
 };
 
 } // namespace klex

@@ -120,6 +120,14 @@ class DFA {
     return std::move(result);
   }
 
+  bool isAcceptor(Tag t) const {
+    for (const std::pair<StateId, Tag>& p : acceptTags_)
+      if (p.second == t)
+        return true;
+
+    return false;
+  }
+
  private:
   StateVec states_;
   StateId initialState_;
