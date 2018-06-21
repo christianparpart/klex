@@ -81,7 +81,7 @@ StringType        ::= string
 # literals
 TrueLiteral       ::= true
 FalseLiteral      ::= false
-StringLiteral     ::= '([^'\n]|\\')*'|\"([^\"\n]|\")*\"
+StringLiteral     ::= '([^'\n]|\\\\')*'|\"([^\"\n]|\\\")*\"
 NumberLiteral     ::= 0|[1-9][0-9]*
 # IPv4Literal       ::= {IP4}
 # IP6             ::= TODO
