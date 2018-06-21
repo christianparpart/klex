@@ -66,7 +66,7 @@ inline void DFABuilder::TransitionTable::insert(int q, Symbol c, int t) {
     q3    | d3    | {n3,n4,n6,n7,n8,n9} | -none-              | q2                  | q3
 */
 
-DFA DFABuilder::construct() {
+DFA DFABuilder::construct(OvershadowMap* overshadows) {
   StateIdVec q_0 = nfa_.epsilonClosure({nfa_.initialStateId()});
   DEBUG("q_0 = epsilonClosure({}) = {}", to_string(std::vector<StateId>{nfa_.initialStateId()}), q_0);
   std::vector<StateIdVec> Q = {q_0};          // resulting states
@@ -154,6 +154,16 @@ DFA DFABuilder::construct() {
   // q_0 becomes d_0 (initial state)
   dfa.setInitialState(0);
 
+  if (overshadows) {
+    // check if tag is an acceptor in NFA but not in DFA, hence, it was overshadowed by another rule
+    for (const std::pair<StateId, Tag> a : nfa_.acceptMap()) {
+      const Tag tag = a.second;
+      if (!dfa.isAcceptor(tag)) {
+        overshadows->emplace_back(tag, overshadows_[tag]);
+      }
+    }
+  }
+
   return dfa;
 }
 
@@ -178,19 +188,22 @@ bool DFABuilder::containsAcceptingState(const std::vector<StateId>& Q) {
 }
 
 std::optional<Tag> DFABuilder::determineTag(const StateIdVec& qn) const {
-  std::optional<Tag> lowestTag{};
+  std::deque<Tag> tags;
 
-  for (StateId s : qn) {
-    std::optional<Tag> t = nfa_.acceptTag(s);
-    if (!t.has_value()) {
-      DEBUG("determineTag: n{} is non-accepting", s);
-    } else if (!lowestTag || *t < lowestTag) {
-      DEBUG("determineTag: possible tag from n{}: {}", s, *t);
-      lowestTag = *t;
-    } else {
-      DEBUG("determineTag: weird n{}: {}", s, *t);
-    }
-  }
+  for (StateId s : qn)
+    if (std::optional<Tag> t = nfa_.acceptTag(s); t.has_value())
+      tags.push_back(*t);
+
+  if (tags.empty())
+    return std::nullopt;
+
+  std::sort(tags.begin(), tags.end());
+
+  std::optional<Tag> lowestTag = tags.front();
+  tags.erase(tags.begin());
+
+  for (Tag tag : tags)
+    const_cast<DFABuilder*>(this)->overshadows_[tag] = *lowestTag; // {tag} is overshadowed by {lowestTag}
 
   return lowestTag;
 }

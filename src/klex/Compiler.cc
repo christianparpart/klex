@@ -51,8 +51,8 @@ void Compiler::declare(Rule rule) {
   rules_.emplace_back(std::move(rule));
 }
 
-DFA Compiler::compileDFA() {
-  return DFABuilder{std::move(fa_)}.construct();
+DFA Compiler::compileDFA(OvershadowMap* overshadows) {
+  return DFABuilder{std::move(fa_)}.construct(overshadows);
 }
 
 DFA Compiler::compileMinimalDFA() {

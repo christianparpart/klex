@@ -10,6 +10,7 @@
 #include <klex/Rule.h>
 #include <klex/LexerDef.h>
 #include <klex/NFA.h>
+#include <klex/DFABuilder.h>
 
 #include <istream>
 #include <map>
@@ -19,6 +20,8 @@
 
 namespace klex {
 
+class DFA;
+
 /**
  * Top-Level API for compiling lexical patterns into table definitions for Lexer.
  *
@@ -27,6 +30,7 @@ namespace klex {
 class Compiler {
  public:
   using TagNameMap = std::map<Tag, std::string>;
+  using OvershadowMap = DFABuilder::OvershadowMap;
 
   Compiler() : fa_{} {}
 
@@ -52,7 +56,7 @@ class Compiler {
   /**
    * Compiles all previousely parsed rules into a DFA.
    */
-  DFA compileDFA();
+  DFA compileDFA(OvershadowMap* overshadows = nullptr);
 
   /**
    * Compiles all previousely parsed rules into a minimal DFA.
