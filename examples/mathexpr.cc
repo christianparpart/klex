@@ -29,7 +29,7 @@ std::string RULES = R"(
     Div           ::= "/"
     RndOpen       ::= "("
     RndClose      ::= \)
-    Number        ::= -?([0-9]+|[0-9]{1,3}(_[0-9]{3})*)
+    Number        ::= ([0-9]+|[0-9]{1,3}(_[0-9]{3})*)
     INVALID       ::= .
 )";
 
@@ -75,6 +75,9 @@ void consume(Lexer& lexer, Token t) {
 
 Number primaryExpr(Lexer& lexer) {
   switch (lexer.token()) {
+    case Token::Minus:
+      lexer.recognize();
+      return -1 * primaryExpr(lexer);
     case Token::Number: {
       std::string s;
       std::for_each(lexer.word().begin(), lexer.word().end(), [&](char ch) { if (ch != '_') s += ch; });
