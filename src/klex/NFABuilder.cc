@@ -57,12 +57,16 @@ void NFABuilder::visit(ClosureExpr& closureExpr) {
     throw std::invalid_argument{"closureExpr"};
 }
 
-void NFABuilder::visit(EndOfFileExpr& eofExpr) {
-  fa_ = NFA{Symbols::EndOfFile};
+void NFABuilder::visit(BeginOfLineExpr& bolExpr) {
+  fa_ = NFA{Symbols::BeginOfLine}; // TODO
 }
 
-void NFABuilder::visit(EndOfLineExpr& dotExpr) {
-  fa_ = NFA{'\n'};
+void NFABuilder::visit(EndOfLineExpr& eolExpr) {
+  fa_ = NFA{Symbols::EndOfLine}; // TODO
+}
+
+void NFABuilder::visit(EndOfFileExpr& eofExpr) {
+  fa_ = NFA{Symbols::EndOfFile};
 }
 
 void NFABuilder::visit(DotExpr& dotExpr) {

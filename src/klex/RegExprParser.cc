@@ -194,6 +194,9 @@ std::unique_ptr<RegExpr> RegExprParser::parseAtom() {
     case '.':
       consume();
       return std::make_unique<DotExpr>();
+    case '^':
+      consume();
+      return std::make_unique<BeginOfLineExpr>();
     case '$':
       consume();
       return std::make_unique<EndOfLineExpr>();

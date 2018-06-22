@@ -140,6 +140,15 @@ class DotExpr : public RegExpr {
   void accept(RegExprVisitor& visitor) override;
 };
 
+class BeginOfLineExpr : public RegExpr {
+ public:
+  explicit BeginOfLineExpr()
+      : RegExpr{4} {}
+
+  std::string to_string() const override;
+  void accept(RegExprVisitor& visitor) override;
+};
+
 class EndOfLineExpr : public RegExpr {
  public:
   explicit EndOfLineExpr()
@@ -167,8 +176,9 @@ class RegExprVisitor {
   virtual void visit(CharacterExpr& characterExpr) = 0;
   virtual void visit(CharacterClassExpr& characterClassExpr) = 0;
   virtual void visit(ClosureExpr& closureExpr) = 0;
-  virtual void visit(EndOfFileExpr& eofExpr) = 0;
+  virtual void visit(BeginOfLineExpr& eolExpr) = 0;
   virtual void visit(EndOfLineExpr& eolExpr) = 0;
+  virtual void visit(EndOfFileExpr& eofExpr) = 0;
   virtual void visit(DotExpr& dotExpr) = 0;
 };
 

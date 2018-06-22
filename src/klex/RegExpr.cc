@@ -92,6 +92,14 @@ std::string EndOfFileExpr::to_string() const {
   return "<<EOF>>";
 }
 
+void BeginOfLineExpr::accept(RegExprVisitor& visitor) {
+  return visitor.visit(*this);
+}
+
+std::string BeginOfLineExpr::to_string() const {
+  return "^";
+}
+
 void EndOfLineExpr::accept(RegExprVisitor& visitor) {
   return visitor.visit(*this);
 }

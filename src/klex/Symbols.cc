@@ -14,6 +14,10 @@ std::string prettySymbol(Symbol input) {
   switch (input) {
     case Symbols::Error:
       return "<<ERROR>>";
+    case Symbols::BeginOfLine:
+      return "<<BOL>>";
+    case Symbols::EndOfLine:
+      return "<<EOL>>";
     case Symbols::EndOfFile:
       return "<<EOF>>";
     case Symbols::Epsilon:
