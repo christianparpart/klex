@@ -12,6 +12,7 @@ endif ()
 option(KLEX_EMBEDDED_FMTLIB "Build against embedded fmtlib [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
 option(KLEX_EXAMPLES "Build examples [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
 option(KLEX_TESTS "Build test suite [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
+option(MKLEX_LINK_STATIC "Build mklex as staticaly linked binary [default: OFF]" OFF)
 
 # fmtlib
 if(KLEX_EMBEDDED_FMTLIB)
@@ -71,6 +72,13 @@ target_include_directories(klex PUBLIC
 add_executable(mklex src/mklex.cc)
 set_target_properties(mklex PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 target_link_libraries(mklex klex)
+
+if(MKLEX_LINK_STATIC AND UNIX AND NOT APPLE)
+  set_target_properties(mklex PROPERTIES
+                        LINK_FLAGS -static
+                        LINK_SEARCH_START_STATIC ON
+                        LINK_SEARCH_END_STATIC ON)
+endif()
 
 # ----------------------------------------------------------------------------
 if(KLEX_TESTS)
