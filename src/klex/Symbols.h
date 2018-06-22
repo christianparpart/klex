@@ -29,13 +29,17 @@ std::string prettyCharRange(Symbol ymin, Symbol ymax);
 // new way of wrapping up Symbols
 struct Symbols {
   constexpr static Symbol Epsilon = -1;
-  constexpr static Symbol EndOfFile = -2;
-  constexpr static Symbol Error = -3;
+  constexpr static Symbol Error = -2;
+  constexpr static Symbol BeginOfLine = -3;
+  constexpr static Symbol EndOfLine = -4;
+  constexpr static Symbol EndOfFile = -5;
   constexpr static Symbol Character(char ch) { return Symbol(ch); }
 
   constexpr static bool isSpecial(Symbol s) {
     switch (s) {
       case Symbols::EndOfFile:
+      case Symbols::EndOfLine:
+      case Symbols::BeginOfLine:
       case Symbols::Epsilon:
       case Symbols::Error:
         return true;
