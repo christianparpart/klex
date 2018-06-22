@@ -76,6 +76,28 @@ std::string ConcatenationExpr::to_string() const {
   return sstr.str();
 }
 
+void FollowerExpr::accept(RegExprVisitor& visitor) {
+  return visitor.visit(*this);
+}
+
+std::string FollowerExpr::to_string() const {
+  std::stringstream sstr;
+
+  if (precedence() > left_->precedence()) {
+    sstr << '(' << left_->to_string() << ')';
+  } else
+    sstr << left_->to_string();
+
+  sstr << "/";
+
+  if (precedence() > right_->precedence()) {
+    sstr << '(' << right_->to_string() << ')';
+  } else
+    sstr << right_->to_string();
+
+  return sstr.str();
+}
+
 void CharacterExpr::accept(RegExprVisitor& visitor) {
   return visitor.visit(*this);
 }

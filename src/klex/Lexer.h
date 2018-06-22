@@ -96,6 +96,8 @@ class LexerBase {
     unsigned int column_;
   };
 
+  inline StateId delta(StateId currentState, Symbol inputSymbol) const;
+
  private:
   Symbol nextChar();
   void rollback();

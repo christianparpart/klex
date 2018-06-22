@@ -100,8 +100,7 @@ inline Tag LexerBase::recognizeOne() {
     stack.push_back(state);
     savedLine = line_;
     savedCol = column_;
-    // DEBUG("recognize: state {} char '{}' {}", stateName(state), prettySymbol(ch), isAcceptState(state) ? "accepting" : "");
-    state = transitions_.apply(state, ch);
+    state = delta(state, ch);
   }
 
   // trackback
@@ -134,6 +133,12 @@ inline Tag LexerBase::recognizeOne() {
   // should never happen
   fprintf(stderr, "Internal bug. Accept state hit, but no tag assigned.\n");
   abort();
+}
+
+inline StateId LexerBase::delta(StateId currentState, Symbol inputSymbol) const {
+  // DEBUG("recognize: state {} char '{}' {}", stateName(state), prettySymbol(ch), isAcceptState(state) ? "accepting" : "");
+  const StateId nextState = transitions_.apply(currentState, inputSymbol);
+  return nextState;
 }
 
 inline bool LexerBase::isAcceptState(StateId id) const {

@@ -34,6 +34,24 @@ class RegExpr {
   const int precedence_;
 };
 
+class FollowerExpr : public RegExpr {
+ public:
+  FollowerExpr(std::unique_ptr<RegExpr> lhs, std::unique_ptr<RegExpr> rhs)
+      : RegExpr{0},
+        left_{std::move(lhs)},
+        right_{std::move(rhs)} {}
+
+  RegExpr* leftExpr() const { return left_.get(); }
+  RegExpr* rightExpr() const { return right_.get(); }
+
+  std::string to_string() const override;
+  void accept(RegExprVisitor& visitor) override;
+
+ private:
+  std::unique_ptr<RegExpr> left_;
+  std::unique_ptr<RegExpr> right_;
+};
+
 class AlternationExpr : public RegExpr {
  public:
   AlternationExpr(std::unique_ptr<RegExpr> lhs, std::unique_ptr<RegExpr> rhs)
@@ -171,6 +189,7 @@ class RegExprVisitor {
  public:
   virtual ~RegExprVisitor() {}
 
+  virtual void visit(FollowerExpr& concatenationExpr) = 0;
   virtual void visit(ConcatenationExpr& concatenationExpr) = 0;
   virtual void visit(AlternationExpr& alternationExpr) = 0;
   virtual void visit(CharacterExpr& characterExpr) = 0;

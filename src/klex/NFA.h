@@ -109,6 +109,14 @@ class NFA {
   //! Clones this NFA.
   NFA clone() const;
 
+  /**
+   * Constructs an NFA where @p rhs is following but backtracking to @c acceptState(this) when
+   * when @p rhs is fully matched.
+   *
+   * This resembles the syntax r/s where r is matched when also s is following.
+   */
+  NFA& follower(NFA rhs);
+
   //! Concatenates the right FA's initial state with this FA's accepting state.
   NFA& concatenate(NFA rhs);
 
