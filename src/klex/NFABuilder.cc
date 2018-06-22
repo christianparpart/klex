@@ -16,6 +16,15 @@ NFA NFABuilder::construct(const RegExpr* re) {
   return std::move(fa_);
 }
 
+void NFABuilder::visit(FollowerExpr& followerExpr) {
+  // parse (lhs + rhs) but rollback to accept of lhs when both accept
+
+  NFA lhs = construct(followerExpr.leftExpr());
+  NFA rhs = construct(followerExpr.rightExpr());
+  lhs.follower(std::move(rhs));
+  fa_ = std::move(lhs);
+}
+
 void NFABuilder::visit(AlternationExpr& alternationExpr) {
   NFA lhs = construct(alternationExpr.leftExpr());
   NFA rhs = construct(alternationExpr.rightExpr());

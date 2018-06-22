@@ -34,6 +34,7 @@ class NFABuilder : public RegExprVisitor {
   NFA construct(const RegExpr* re);
 
  private:
+  void visit(FollowerExpr& followerExpr) override;
   void visit(ConcatenationExpr& concatenationExpr) override;
   void visit(AlternationExpr& alternationExpr) override;
   void visit(CharacterExpr& characterExpr) override;

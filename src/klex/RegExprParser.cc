@@ -89,7 +89,19 @@ std::unique_ptr<RegExpr> RegExprParser::parse(std::string_view expr, int line, i
   line_ = line;
   column_ = column;
 
-  return parseExpr();
+  return parseFollowerExpr();
+}
+
+std::unique_ptr<RegExpr> RegExprParser::parseFollowerExpr() {
+  std::unique_ptr<RegExpr> lhs = parseExpr();
+
+  if (currentChar() == '/') {
+    consume();
+    std::unique_ptr<RegExpr> rhs = parseExpr();
+    lhs = std::make_unique<FollowerExpr>(std::move(lhs), std::move(rhs));
+  }
+
+  return lhs;
 }
 
 std::unique_ptr<RegExpr> RegExprParser::parseExpr() {

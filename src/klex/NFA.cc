@@ -141,6 +141,11 @@ void NFA::prepareStateIds(StateId baseId) {
   acceptState_ += baseId;
 }
 
+NFA& NFA::follower(NFA rhs) {
+  // TODO
+  return *this;
+}
+
 NFA& NFA::concatenate(NFA rhs) {
   rhs.prepareStateIds(states_.size());
   states_.reserve(size() + rhs.size());
