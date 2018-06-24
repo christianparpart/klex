@@ -30,6 +30,9 @@ class DFA {
   };
   using StateVec = std::vector<State>;
 
+  //! defines a mapping between accept state ID and another (prior) ID to track roll back the input stream to.
+  using BacktrackingMap = std::map<StateId, StateId>;
+
   DFA(const DFA& other) : DFA{} { *this = other; }
   DFA& operator=(const DFA& other);
   DFA(DFA&&) = default;
@@ -83,13 +86,28 @@ class DFA {
     return states_[static_cast<size_t>(id)].transitions;
   }
 
-  bool isAccepting(StateId s) const {
-    return acceptTags_.find(s) != acceptTags_.end();
+  // {{{ backtracking (for lookahead)
+  void setBacktrack(StateId from, StateId to) {
+    backtrackStates_[from] = to;
   }
+
+  std::optional<StateId> backtrack(StateId acceptState) const {
+    if (auto i = backtrackStates_.find(acceptState); i != backtrackStates_.end())
+      return i->second;
+
+    return std::nullopt;
+  }
+
+  const BacktrackingMap& backtracking() const noexcept { return backtrackStates_; }
+  // }}}
 
   //! Flags given state as accepting-state with given Tag @p acceptTag.
   void setAccept(StateId state, Tag acceptTag) {
     acceptTags_[state] = acceptTag;
+  }
+
+  bool isAccepting(StateId s) const {
+    return acceptTags_.find(s) != acceptTags_.end();
   }
 
   std::optional<Tag> acceptTag(StateId s) const {
@@ -131,6 +149,7 @@ class DFA {
  private:
   StateVec states_;
   StateId initialState_;
+  BacktrackingMap backtrackStates_;
   AcceptMap acceptTags_;
 };
 

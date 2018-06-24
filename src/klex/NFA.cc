@@ -10,6 +10,7 @@
 #include <klex/DotVisitor.h>
 
 #include <algorithm>
+#include <fmt/format.h>
 #include <iostream>
 #include <stack>
 #include <vector>
@@ -148,7 +149,7 @@ NFA& NFA::lookahead(NFA rhs) {
   acceptTags_.insert(rhs.acceptTags_.begin(), rhs.acceptTags_.end());
 
   addTransition(acceptState_, Symbols::Epsilon, rhs.initialState_);
-  // trackbackStates_[tag] = acceptState_;
+  backtrackStates_[rhs.acceptState_] = acceptState_;
   acceptState_ = rhs.acceptState_;
 
   return *this;

@@ -46,6 +46,9 @@ class NFA {
   //! defines a set of states within one NFA. the index represents the state Id.
   using StateVec = std::vector<TransitionMap>;
 
+  //! defines a mapping between accept state ID and another (prior) ID to track roll back the input stream to.
+  using BacktrackingMap = std::map<StateId, StateId>;
+
   NFA(NFA&&) = default;
   NFA& operator=(NFA&&) = default;
 
@@ -54,6 +57,7 @@ class NFA {
       : states_{},
         initialState_{0},
         acceptState_{0},
+        backtrackStates_{},
         acceptTags_{} {
   }
 
@@ -178,6 +182,13 @@ class NFA {
   const AcceptMap& acceptMap() const noexcept { return acceptTags_; }
   AcceptMap& acceptMap() noexcept { return acceptTags_; }
 
+  std::optional<StateId> backtrack(StateId s) const {
+    if (auto i = backtrackStates_.find(s); i != backtrackStates_.end())
+      return i->second;
+
+    return std::nullopt;
+  }
+
  private:
   StateId createState();
   StateId createState(Tag acceptTag);
@@ -190,8 +201,8 @@ class NFA {
  private:
   StateVec states_;
   StateId initialState_;
-  std::map<Tag, StateId> trackbackStates_;
   StateId acceptState_;
+  BacktrackingMap backtrackStates_;
   AcceptMap acceptTags_;
 };
 

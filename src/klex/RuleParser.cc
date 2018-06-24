@@ -147,11 +147,11 @@ bool RuleParser::eof() const noexcept {
 std::string RuleParser::consumeToken() {
   std::stringstream sstr;
 
-  if (!std::isalpha(currentChar_))
+  if (!std::isalpha(currentChar_) || currentChar_ == '_')
     throw UnexpectedToken{offset_, currentChar_, "Token"};
 
   do sstr << consumeChar();
-  while (std::isalnum(currentChar_));
+  while (std::isalnum(currentChar_) || currentChar_ == '_');
 
   return sstr.str();
 }

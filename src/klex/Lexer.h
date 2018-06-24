@@ -50,8 +50,6 @@ class LexerBase {
 
   /**
    * Recognizes one token, regardless of it is to be ignored or not.
-   *
-   * @return -1 on parse error, or Rule tag for recognized pattern.
    */
   Tag recognizeOne();
 
@@ -110,6 +108,7 @@ class LexerBase {
   TransitionMap transitions_;
   StateId initialStateId_;
   std::map<StateId, Tag> acceptStates_;
+  BacktrackingMap backtracking_;
   std::map<Tag, std::string> tagNames_;
   std::string word_;
   std::unique_ptr<std::istream> ownedStream_;
@@ -151,8 +150,16 @@ class Lexer : public LexerBase {
    */
   inline Token recognize() { return static_cast<Token>(LexerBase::recognize()); }
 
+  /**
+   * Recognizes one token, regardless of it is to be ignored or not.
+   */
+  inline Token recognizeOne() { return static_cast<Token>(LexerBase::recognizeOne()); }
+
   //! @returns the last recognized token.
   inline Token token() const noexcept { return static_cast<Token>(LexerBase::token()); }
+  //
+  //! @returns the name of the token represented by Token @p t.
+  const std::string& name(Token t) const { return LexerBase::name(static_cast<Tag>(t)); }
 };
 
 } // namespace klex

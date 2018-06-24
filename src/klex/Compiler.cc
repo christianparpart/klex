@@ -78,7 +78,8 @@ LexerDef Compiler::generateTables(const DFA& dfa, const std::map<Tag, std::strin
   for (StateId s : dfa.acceptStates())
     acceptStates.emplace(s, *dfa.acceptTag(s));
 
-  return LexerDef{dfa.initialState(), std::move(transitionMap), std::move(acceptStates), std::move(names)};
+  return LexerDef{dfa.initialState(), std::move(transitionMap), std::move(acceptStates), 
+                  dfa.backtracking(), std::move(names)};
 }
 
 } // namespace klex

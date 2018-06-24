@@ -32,8 +32,6 @@ void NFABuilder::visit(LookAheadExpr& lookaheadExpr) {
   // fa_ = std::move(construct(lookaheadExpr.leftExpr()).lookahead(construct(lookaheadExpr.rightExpr())));
   NFA lhs = construct(lookaheadExpr.leftExpr());
   NFA rhs = construct(lookaheadExpr.rightExpr());
-  acceptState_ = lhs.acceptStateId();
-  // lhs.trackbackStates_ ...
   lhs.lookahead(std::move(rhs));
   fa_ = std::move(lhs);
 }

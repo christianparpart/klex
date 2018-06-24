@@ -122,6 +122,19 @@ inline Tag LexerBase::recognizeOne() {
       word_.resize(word_.size() - 1);
     }
   }
+
+  if (auto i = backtracking_.find(state); i != backtracking_.end()) {
+    const StateId backtrackState = i->second;
+    while (!stack.empty() && state != backtrackState) {
+      state = stack.back();
+      stack.pop_back();
+      if (!word_.empty()) {
+        rollback();
+        word_.resize(word_.size() - 1);
+      }
+    }
+  }
+
   // DEBUG("recognize: final state {} {}", stateName(state), isAcceptState(state) ? "accepting" : "non-accepting");
 
   if (!isAcceptState(state))
