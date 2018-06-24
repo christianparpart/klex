@@ -64,9 +64,9 @@ class RegExprParser {
   int consume();
   unsigned parseInt();
 
-  std::unique_ptr<RegExpr> parse();                       // follower
-  std::unique_ptr<RegExpr> parseFollowerExpr();           // expr ('/' expr)?
-  std::unique_ptr<RegExpr> parseExpr();                   // alternation
+  std::unique_ptr<RegExpr> parse();                       // expr
+  std::unique_ptr<RegExpr> parseExpr();                   // lookahead
+  std::unique_ptr<RegExpr> parseLookAheadExpr();          // alternation ('/' alternation)?
   std::unique_ptr<RegExpr> parseAlternation();            // concatenation ('|' concatenation)*
   std::unique_ptr<RegExpr> parseConcatenation();          // closure (closure)*
   std::unique_ptr<RegExpr> parseClosure();                // atom ['*' | '?' | '{' NUM [',' NUM] '}']

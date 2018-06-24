@@ -21,7 +21,7 @@ class DFABuilder {
   //! Map of rules that shows which rule is overshadowed by which other rule.
   using OvershadowMap = std::vector<std::pair<Tag, Tag>>;
 
-  DFABuilder(NFA nfa) : nfa_{nfa} {}
+  DFABuilder(NFA nfa) : nfa_{std::move(nfa)} {}
 
   /**
    * Constructs a DFA out of the NFA.

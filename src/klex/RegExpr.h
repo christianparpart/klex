@@ -34,9 +34,9 @@ class RegExpr {
   const int precedence_;
 };
 
-class FollowerExpr : public RegExpr {
+class LookAheadExpr : public RegExpr {
  public:
-  FollowerExpr(std::unique_ptr<RegExpr> lhs, std::unique_ptr<RegExpr> rhs)
+  LookAheadExpr(std::unique_ptr<RegExpr> lhs, std::unique_ptr<RegExpr> rhs)
       : RegExpr{0},
         left_{std::move(lhs)},
         right_{std::move(rhs)} {}
@@ -189,7 +189,7 @@ class RegExprVisitor {
  public:
   virtual ~RegExprVisitor() {}
 
-  virtual void visit(FollowerExpr& concatenationExpr) = 0;
+  virtual void visit(LookAheadExpr& lookaheadExpr) = 0;
   virtual void visit(ConcatenationExpr& concatenationExpr) = 0;
   virtual void visit(AlternationExpr& alternationExpr) = 0;
   virtual void visit(CharacterExpr& characterExpr) = 0;

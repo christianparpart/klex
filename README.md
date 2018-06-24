@@ -111,3 +111,7 @@ int main(int argc, const char* argv[]) {
   return EXIT_SUCCESS;
 }
 ```
+
+### References
+
+- https://swtch.com/~rsc/regexp/

@@ -27,7 +27,7 @@ TEST(NFA, characterCtor) {
 }
 
 TEST(NFA, concatenate) {
-  const NFA ab = NFA{ 'a' }.concatenate(NFA{'b'});
+  const NFA ab = std::move(NFA{ 'a' }.concatenate(NFA{'b'}));
   ASSERT_EQ(4, ab.size());
   ASSERT_EQ(0, ab.initialStateId());
   ASSERT_EQ(3, ab.acceptStateId());
@@ -38,7 +38,7 @@ TEST(NFA, concatenate) {
 }
 
 TEST(NFA, alternate) {
-  const NFA ab = NFA{ 'a' }.alternate(NFA{'b'});
+  const NFA ab = std::move(NFA{ 'a' }.alternate(NFA{'b'}));
   ASSERT_EQ(6, ab.size());
   ASSERT_EQ(2, ab.initialStateId());
   ASSERT_EQ(3, ab.acceptStateId());
@@ -53,7 +53,7 @@ TEST(NFA, epsilonClosure) {
   ASSERT_EQ(1, nfa.acceptStateId());
   ASSERT_EQ(StateIdVec{0}, nfa.epsilonClosure(StateIdVec{0}));
 
-  const NFA abc = NFA{'a'}.concatenate(NFA{'b'}.alternate(NFA{'c'}).recurring());
+  const NFA abc = std::move(NFA{'a'}.concatenate(std::move(NFA{'b'}.alternate(NFA{'c'}).recurring())));
   ASSERT_EQ(StateIdVec{0}, abc.epsilonClosure(StateIdVec{0}));
 
   const StateIdVec e1 {1, 2, 4, 6, 8, 9};

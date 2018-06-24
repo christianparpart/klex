@@ -10,18 +10,31 @@
 
 namespace klex { 
 
-NFA NFABuilder::construct(const RegExpr* re) {
+NFA NFABuilder::construct(const RegExpr* re, Tag tag) {
   const_cast<RegExpr*>(re)->accept(*this);
+
+  // fa_.setAccept(acceptState_.value_or(fa_.acceptStateId()), tag);
+  if (acceptState_) {
+    fa_.setAccept(acceptState_.value(), tag);
+  } else {
+    fa_.setAccept(tag);
+  }
 
   return std::move(fa_);
 }
 
-void NFABuilder::visit(FollowerExpr& followerExpr) {
-  // parse (lhs + rhs) but rollback to accept of lhs when both accept
+NFA NFABuilder::construct(const RegExpr* re) {
+  const_cast<RegExpr*>(re)->accept(*this);
+  return std::move(fa_);
+}
 
-  NFA lhs = construct(followerExpr.leftExpr());
-  NFA rhs = construct(followerExpr.rightExpr());
-  lhs.follower(std::move(rhs));
+void NFABuilder::visit(LookAheadExpr& lookaheadExpr) {
+  // fa_ = std::move(construct(lookaheadExpr.leftExpr()).lookahead(construct(lookaheadExpr.rightExpr())));
+  NFA lhs = construct(lookaheadExpr.leftExpr());
+  NFA rhs = construct(lookaheadExpr.rightExpr());
+  acceptState_ = lhs.acceptStateId();
+  // lhs.trackbackStates_ ...
+  lhs.lookahead(std::move(rhs));
   fa_ = std::move(lhs);
 }
 

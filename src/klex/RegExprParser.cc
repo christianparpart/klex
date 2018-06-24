@@ -89,23 +89,23 @@ std::unique_ptr<RegExpr> RegExprParser::parse(std::string_view expr, int line, i
   line_ = line;
   column_ = column;
 
-  return parseFollowerExpr();
-}
-
-std::unique_ptr<RegExpr> RegExprParser::parseFollowerExpr() {
-  std::unique_ptr<RegExpr> lhs = parseExpr();
-
-  if (currentChar() == '/') {
-    consume();
-    std::unique_ptr<RegExpr> rhs = parseExpr();
-    lhs = std::make_unique<FollowerExpr>(std::move(lhs), std::move(rhs));
-  }
-
-  return lhs;
+  return parseExpr();
 }
 
 std::unique_ptr<RegExpr> RegExprParser::parseExpr() {
-  return parseAlternation();
+  return parseLookAheadExpr();
+}
+
+std::unique_ptr<RegExpr> RegExprParser::parseLookAheadExpr() {
+  std::unique_ptr<RegExpr> lhs = parseAlternation();
+
+  if (currentChar() == '/') {
+    consume();
+    std::unique_ptr<RegExpr> rhs = parseAlternation();
+    lhs = std::make_unique<LookAheadExpr>(std::move(lhs), std::move(rhs));
+  }
+
+  return lhs;
 }
 
 std::unique_ptr<RegExpr> RegExprParser::parseAlternation() {
@@ -122,7 +122,7 @@ std::unique_ptr<RegExpr> RegExprParser::parseAlternation() {
 
 std::unique_ptr<RegExpr> RegExprParser::parseConcatenation() {
   // FOLLOW-set, the set of terminal tokens that can occur right after a concatenation
-  static const std::string_view follow = "|)";
+  static const std::string_view follow = "/|)";
   std::unique_ptr<RegExpr> lhs = parseClosure();
 
   while (!eof() && follow.find(currentChar()) == follow.npos) {

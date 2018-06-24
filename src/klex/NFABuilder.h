@@ -31,10 +31,11 @@ class NFABuilder : public RegExprVisitor {
   explicit NFABuilder()
       : fa_{} {}
 
-  NFA construct(const RegExpr* re);
+  NFA construct(const RegExpr* re, Tag tag);
 
  private:
-  void visit(FollowerExpr& followerExpr) override;
+  NFA construct(const RegExpr* re);
+  void visit(LookAheadExpr& lookaheadExpr) override;
   void visit(ConcatenationExpr& concatenationExpr) override;
   void visit(AlternationExpr& alternationExpr) override;
   void visit(CharacterExpr& characterExpr) override;
@@ -47,6 +48,7 @@ class NFABuilder : public RegExprVisitor {
 
  private:
   NFA fa_;
+  std::optional<StateId> acceptState_;
 };
 
 } // namespace klex
