@@ -33,13 +33,13 @@ class DFA {
   //! defines a mapping between accept state ID and another (prior) ID to track roll back the input stream to.
   using BacktrackingMap = std::map<StateId, StateId>;
 
-  DFA(const DFA& other) : DFA{} { *this = other; }
-  DFA& operator=(const DFA& other);
+  DFA(const DFA& other) = delete;
+  DFA& operator=(const DFA& other) = delete;
   DFA(DFA&&) = default;
   DFA& operator=(DFA&&) = default;
   ~DFA() = default;
 
-  DFA() : states_{}, initialState_{0}, acceptTags_{} {}
+  DFA() : states_{}, initialState_{0}, backtrackStates_{}, acceptTags_{} {}
 
   bool empty() const noexcept { return states_.empty(); }
   size_t size() const noexcept { return states_.size(); }
