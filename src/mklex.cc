@@ -119,6 +119,12 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
     os << "\n";
   }
   os << "  },\n";
+  os << "  // backtracking map\n";
+  os << "  klex::BacktrackingMap {\n";
+  for (const std::pair<klex::StateId, klex::StateId>& backtrack : lexerDef.backtrackingStates) {
+    os << fmt::format("    {{ {:>3}, {:>3} }},\n", backtrack.first, backtrack.second);
+  }
+  os << "  },\n";
   os << "  // tag-to-name mappings\n";
   os << "  std::map<klex::Tag, std::string> {\n";
   for (const std::pair<klex::Tag, std::string>& tagName : lexerDef.tagNames) {
@@ -171,6 +177,7 @@ std::optional<int> prepareAndParseCLI(klex::util::Flags& flags, int argc, const 
   flags.defineString("token-name", 'N', "IDENTIFIER", "Symbol name for generated token enum type (may include namespace).", "Token");
   flags.defineString("debug-dfa", 'x', "DOT_FILE", "Writes dot graph of final finite automaton. Use - to represent stdout.", "");
   flags.defineBool("debug-nfa", 'd', "Writes dot graph of non-deterministic finite automaton to stdout and exits.");
+  flags.defineBool("no-dfa-minimize", 0, "Do not minimize the DFA");
   flags.defineBool("perf", 'p', "Print performance counters to stderr.");
   flags.parse(argc, argv);
 
@@ -220,20 +227,22 @@ int main(int argc, const char* argv[]) {
   if (!overshadows.empty())
     return EXIT_FAILURE;
 
-  klex::DFA dfamin = klex::DFAMinimizer{dfa}.construct();
-  perfTimer.lap("DFA minimization", dfamin.size(), "states");
+  if (!flags.getBool("no-dfa-minimize")) {
+    dfa = std::move(klex::DFAMinimizer{dfa}.construct());
+    perfTimer.lap("DFA minimization", dfa.size(), "states");
+  }
 
   if (std::string dotfile = flags.getString("debug-dfa"); !dotfile.empty()) {
     if (dotfile == "-") {
       klex::DotWriter writer{ std::cout };
-      dfamin.visit(writer);
+      dfa.visit(writer);
     } else {
       klex::DotWriter writer{ dotfile };
-      dfamin.visit(writer);
+      dfa.visit(writer);
     }
   }
 
-  klex::LexerDef lexerDef = klex::Compiler::generateTables(dfamin, builder.names());
+  klex::LexerDef lexerDef = klex::Compiler::generateTables(dfa, builder.names());
   if (std::string tableFile = flags.getString("output-table"); tableFile != "-") {
     if (auto p = fs::path{tableFile}.remove_filename(); p != "")
       fs::create_directories(p);

@@ -31,12 +31,13 @@ class DFAMinimizer {
   std::optional<int> partitionId(StateId s) const;
   PartitionVec split(const StateIdVec& S) const;
   DFA constructFromPartitions(const PartitionVec& P) const;
+  std::optional<StateId> containsBacktrackState(const std::vector<StateId>& Q) const;
 
   static void dumpGroups(const PartitionVec& T);
 
  private:
   const DFA& dfa_;
-  Alphabet alphabet_;
+  const Alphabet alphabet_;
   PartitionVec T;
   PartitionVec P;
 };

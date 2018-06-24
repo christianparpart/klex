@@ -74,8 +74,8 @@ DFA DFABuilder::construct(OvershadowMap* overshadows) {
   TransitionTable T;
 
   DEBUG("Dumping accept map ({}):", nfa_.acceptMap().size());
-  for ([[maybe_unused]] auto&& [state, tag] : nfa_.acceptMap())
-    DEBUG(" n{} -> {}", state, tag);
+  for ([[maybe_unused]] std::pair<StateId, Tag>&& p : nfa_.acceptMap())
+    DEBUG(" n{} -> {}", p.first, p.second);
 
   const Alphabet alphabet = nfa_.alphabet();
   DEBUG("alphabet size: {}", alphabet.size());
@@ -110,13 +110,29 @@ DFA DFABuilder::construct(OvershadowMap* overshadows) {
     }
     DEBUG(" q{:<7} | d{:<13} | {:24} | {}", q_i, q_i, to_string(q), dbg.str());
   }
-  // Q now contains all the valid configurations and T all transitions between them
 
+  // Q now contains all the valid configurations and T all transitions between them
+  return constructDFA(Q, T, overshadows);
+}
+
+DFA DFABuilder::constructDFA(const std::vector<StateIdVec>& Q,
+                             const TransitionTable& T,
+                             OvershadowMap* overshadows) const {
   DFA dfa;
   dfa.createStates(Q.size());
 
-  // map q_i to d_i and flag accepting states
+  // build remaps table (used as cache for quickly finding DFA StateIds from NFA StateIds)
+  std::unordered_map<StateId, StateId> remaps;
   StateId q_i = 0;
+  for (const StateIdVec& q : Q) {
+    for (StateId s : q) {
+      remaps[s] = q_i;
+    }
+    q_i++;
+  }
+
+  // map q_i to d_i and flag accepting states
+  q_i = 0;
   for (const StateIdVec& q : Q) {
     // d_i represents the corresponding state in the DFA for all states of q from the NFA
     const StateId d_i = q_i;
@@ -133,6 +149,12 @@ DFA DFABuilder::construct(OvershadowMap* overshadows) {
             q_i, to_string(q));
         abort();
       }
+    }
+
+    if (std::optional<StateId> bt = containsBacktrackState(q); bt.has_value()) {
+      // TODO: verify: must not contain more than one backtracking mapping
+      assert(dfa.isAccepting(d_i));
+      dfa.setBacktrack(d_i, remaps[*bt]);
     }
 
     q_i++;
@@ -159,7 +181,9 @@ DFA DFABuilder::construct(OvershadowMap* overshadows) {
     for (const std::pair<StateId, Tag> a : nfa_.acceptMap()) {
       const Tag tag = a.second;
       if (!dfa.isAcceptor(tag)) {
-        overshadows->emplace_back(tag, overshadows_[tag]);
+        if (auto i = overshadows_.find(tag); i != overshadows_.end()) {
+          overshadows->emplace_back(tag, i->second);
+        }
       }
     }
   }
@@ -179,7 +203,15 @@ int DFABuilder::configurationNumber(const std::vector<std::vector<StateId>>& Q, 
   return -1;
 }
 
-bool DFABuilder::containsAcceptingState(const std::vector<StateId>& Q) {
+std::optional<StateId> DFABuilder::containsBacktrackState(const std::vector<StateId>& Q) const {
+  for (StateId q : Q)
+    if (std::optional<StateId> t = nfa_.backtrack(q); t.has_value())
+      return *t;
+
+  return std::nullopt;
+}
+
+bool DFABuilder::containsAcceptingState(const std::vector<StateId>& Q) const {
   for (StateId q : Q)
     if (nfa_.isAccepting(q))
       return true;
@@ -203,7 +235,7 @@ std::optional<Tag> DFABuilder::determineTag(const StateIdVec& qn) const {
   tags.erase(tags.begin());
 
   for (Tag tag : tags)
-    const_cast<DFABuilder*>(this)->overshadows_[tag] = *lowestTag; // {tag} is overshadowed by {lowestTag}
+    overshadows_[tag] = *lowestTag; // {tag} is overshadowed by {lowestTag}
 
   return lowestTag;
 }

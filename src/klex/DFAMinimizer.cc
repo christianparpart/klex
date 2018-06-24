@@ -133,12 +133,23 @@ DFA DFAMinimizer::construct() {
 DFA DFAMinimizer::constructFromPartitions(const PartitionVec& P) const {
   DEBUG("minimization terminated with {} unique partition sets", P.size());
   DFA dfamin;
+  dfamin.createStates(P.size());
+
+  // build remaps table (used as cache for quickly finding DFAmin StateIds from DFA StateIds)
+  std::unordered_map<StateId, StateId> remaps;
+  StateId p_i = 0;
+  for (const StateIdVec& p : P) {
+    for (StateId s : p) {
+      remaps[s] = p_i;
+    }
+    p_i++;
+  }
 
   // instanciate states
-  size_t p_i = 0;
+  p_i = 0;
   for (const StateIdVec& p : P) {
     const StateId s = *p.begin();
-    const StateId q = dfamin.createState();
+    const StateId q = p_i;
     DEBUG("Creating p{}: {} {}", p_i,
                                  dfa_.isAccepting(s) ? "accepting" : "rejecting",
                                  containsInitialState(p) ? "initial" : "");
@@ -147,6 +158,9 @@ DFA DFAMinimizer::constructFromPartitions(const PartitionVec& P) const {
 
     if (containsInitialState(p))
       dfamin.setInitialState(q);
+
+    if (std::optional<StateId> bt = containsBacktrackState(p); bt.has_value())
+      dfamin.setBacktrack(p_i, remaps[*bt]);
 
     p_i++;
   }
@@ -165,6 +179,14 @@ DFA DFAMinimizer::constructFromPartitions(const PartitionVec& P) const {
   }
 
   return dfamin;
+}
+
+std::optional<StateId> DFAMinimizer::containsBacktrackState(const std::vector<StateId>& Q) const {
+  for (StateId q : Q)
+    if (std::optional<StateId> t = dfa_.backtrack(q); t.has_value())
+      return *t;
+
+  return std::nullopt;
 }
 
 } // namespace klex

@@ -32,6 +32,12 @@ class DFABuilder {
   DFA construct(OvershadowMap* overshadows = nullptr);
 
  private:
+  struct TransitionTable;
+
+  DFA constructDFA(const std::vector<StateIdVec>& Q,
+                   const TransitionTable& T,
+                   OvershadowMap* overshadows) const;
+
   /**
    * Builds a list of states that can be exclusively reached from S via epsilon-transitions.
    */
@@ -53,12 +59,19 @@ class DFABuilder {
   /**
    * Finds @p t in @p Q and returns its offset (aka configuration number) or -1 if not found.
    */
-  static int configurationNumber(const std::vector<std::vector<StateId>>& Q, const std::vector<StateId>& t);
+  static int configurationNumber(const std::vector<std::vector<StateId>>& Q,
+                                 const std::vector<StateId>& t);
 
   /**
    * Returns whether or not the StateSet @p Q contains at least one State that is also "accepting".
    */
-  bool containsAcceptingState(const std::vector<StateId>& Q);
+  bool containsAcceptingState(const std::vector<StateId>& Q) const;
+
+  /**
+   * Checks if @p Q contains a state that is flagged as backtracking state in the NFA and returns
+   * the target state within the NFA or @c std::nullopt if not a backtracking state.
+   */
+  std::optional<StateId> containsBacktrackState(const std::vector<StateId>& Q) const;
 
   /**
    * Determines the tag to use for the deterministic state representing @p q from non-deterministic FA @p fa.
@@ -69,11 +82,9 @@ class DFABuilder {
    */
   std::optional<Tag> determineTag(const StateIdVec& q) const;
 
-  struct TransitionTable;
-
  private:
-  NFA nfa_;
-  std::map<Tag, Tag> overshadows_;
+  const NFA nfa_;
+  mutable std::map<Tag, Tag> overshadows_;
 };
 
 } // namespace klex

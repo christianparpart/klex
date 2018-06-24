@@ -19,10 +19,14 @@ constexpr Tag FirstUserTag = 1;
 
 using AcceptStateMap = std::map<StateId, Tag>;
 
+//! defines a mapping between accept state ID and another (prior) ID to track roll back the input stream to.
+using BacktrackingMap = std::map<StateId, StateId>;
+
 struct LexerDef {
   StateId initialStateId;
   TransitionMap transitions;
   AcceptStateMap acceptStates;
+  BacktrackingMap backtrackingStates;
   std::map<Tag, std::string> tagNames;
 };
 
