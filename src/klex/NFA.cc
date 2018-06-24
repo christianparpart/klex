@@ -132,14 +132,18 @@ void NFA::prepareStateIds(StateId baseId) {
     }
   }
 
+  initialState_ += baseId;
+  acceptState_ += baseId;
+
   AcceptMap remapped;
   for (auto& a : acceptTags_)
     remapped[baseId + a.first] = a.second;
-
   acceptTags_ = std::move(remapped);
 
-  initialState_ += baseId;
-  acceptState_ += baseId;
+  BacktrackingMap backtracking;
+  for (const auto& bt : backtrackStates_)
+    backtracking[baseId + bt.first] = baseId + bt.second;
+  backtrackStates_ = std::move(backtracking);
 }
 
 NFA& NFA::lookahead(NFA rhs) {
@@ -167,6 +171,7 @@ NFA& NFA::alternate(NFA rhs) {
   rhs.prepareStateIds(states_.size());
   states_.insert(states_.end(), rhs.states_.begin(), rhs.states_.end());
   acceptTags_.insert(rhs.acceptTags_.begin(), rhs.acceptTags_.end());
+  backtrackStates_.insert(rhs.backtrackStates_.begin(), rhs.backtrackStates_.end());
 
   addTransition(newStart, Symbols::Epsilon, initialState_);
   addTransition(newStart, Symbols::Epsilon, rhs.initialState_);
@@ -185,6 +190,7 @@ NFA& NFA::concatenate(NFA rhs) {
   states_.reserve(size() + rhs.size());
   states_.insert(states_.end(), rhs.states_.begin(), rhs.states_.end());
   acceptTags_.insert(rhs.acceptTags_.begin(), rhs.acceptTags_.end());
+  backtrackStates_.insert(rhs.backtrackStates_.begin(), rhs.backtrackStates_.end());
 
   addTransition(acceptState_, Symbols::Epsilon, rhs.initialState_);
   acceptState_ = rhs.acceptState_;
