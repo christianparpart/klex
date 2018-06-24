@@ -76,11 +76,11 @@ std::string ConcatenationExpr::to_string() const {
   return sstr.str();
 }
 
-void FollowerExpr::accept(RegExprVisitor& visitor) {
+void LookAheadExpr::accept(RegExprVisitor& visitor) {
   return visitor.visit(*this);
 }
 
-std::string FollowerExpr::to_string() const {
+std::string LookAheadExpr::to_string() const {
   std::stringstream sstr;
 
   if (precedence() > left_->precedence()) {

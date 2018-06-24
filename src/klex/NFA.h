@@ -33,6 +33,9 @@ class DFA;
  * </ul>
  */
 class NFA {
+ private:
+  NFA(const NFA& other) = default;
+  NFA& operator=(const NFA& other) = default;
  public:
   //! holds a vector of State Ids.
   using StateIdVec = std::vector<StateId>;
@@ -43,9 +46,7 @@ class NFA {
   //! defines a set of states within one NFA. the index represents the state Id.
   using StateVec = std::vector<TransitionMap>;
 
-  NFA(const NFA& other) = default;
   NFA(NFA&&) = default;
-  NFA& operator=(const NFA& other) = default;
   NFA& operator=(NFA&&) = default;
 
   //! Constructs an empty NFA.
@@ -113,15 +114,15 @@ class NFA {
    * Constructs an NFA where @p rhs is following but backtracking to @c acceptState(this) when
    * when @p rhs is fully matched.
    *
-   * This resembles the syntax r/s where r is matched when also s is following.
+   * This resembles the syntax r/s (or r(?=s) in Perl) where r is matched when also s is following.
    */
-  NFA& follower(NFA rhs);
-
-  //! Concatenates the right FA's initial state with this FA's accepting state.
-  NFA& concatenate(NFA rhs);
+  NFA& lookahead(NFA rhs);
 
   //! Reconstructs this FA to alternate between this FA and the @p other FA.
   NFA& alternate(NFA other);
+
+  //! Concatenates the right FA's initial state with this FA's accepting state.
+  NFA& concatenate(NFA rhs);
 
   //! Reconstructs this FA to allow optional input. X -> X?
   NFA& optional();
@@ -159,6 +160,10 @@ class NFA {
     acceptTags_[acceptState_] = acceptTag;
   }
 
+  void setAccept(StateId state, Tag tag) {
+    acceptTags_[state] = tag;
+  }
+
   std::optional<Tag> acceptTag(StateId s) const {
     if (auto i = acceptTags_.find(s); i != acceptTags_.end())
       return i->second;
@@ -171,6 +176,7 @@ class NFA {
   }
 
   const AcceptMap& acceptMap() const noexcept { return acceptTags_; }
+  AcceptMap& acceptMap() noexcept { return acceptTags_; }
 
  private:
   StateId createState();
@@ -184,6 +190,7 @@ class NFA {
  private:
   StateVec states_;
   StateId initialState_;
+  std::map<Tag, StateId> trackbackStates_;
   StateId acceptState_;
   AcceptMap acceptTags_;
 };

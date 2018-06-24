@@ -74,8 +74,8 @@ DFA DFABuilder::construct(OvershadowMap* overshadows) {
   TransitionTable T;
 
   DEBUG("Dumping accept map ({}):", nfa_.acceptMap().size());
-  for ([[maybe_unused]] const auto& m : nfa_.acceptMap())
-    DEBUG(" n{} -> {}", m.first, m.second);
+  for ([[maybe_unused]] auto&& [state, tag] : nfa_.acceptMap())
+    DEBUG(" n{} -> {}", state, tag);
 
   const Alphabet alphabet = nfa_.alphabet();
   DEBUG("alphabet size: {}", alphabet.size());

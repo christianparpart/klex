@@ -1,6 +1,17 @@
-### Current Work
+### Current Work (lookahead)
 
-- 2.) dot (`.`) character class
+Given the REs `ab/cd` and `abba`, the input:
+- `ab` does not match
+- `abc` must not match
+- `abba` matches abba
+- `abcd` matches and rolls back right behind `ab`
+
+Given the REs `ab/cd` and `cde`, the input:
+- `abcd` matches rule 1
+- `cde` matches rule 2
+- `abcde` matche rule 1, then rule 2
+
+- XXX write unit tests for these things
 
 ### The very incomplete TODO checklist
 

@@ -141,23 +141,18 @@ void NFA::prepareStateIds(StateId baseId) {
   acceptState_ += baseId;
 }
 
-NFA& NFA::follower(NFA rhs) {
-  // TODO
-  return *this;
-}
-
-NFA& NFA::concatenate(NFA rhs) {
+NFA& NFA::lookahead(NFA rhs) {
   rhs.prepareStateIds(states_.size());
   states_.reserve(size() + rhs.size());
   states_.insert(states_.end(), rhs.states_.begin(), rhs.states_.end());
   acceptTags_.insert(rhs.acceptTags_.begin(), rhs.acceptTags_.end());
 
   addTransition(acceptState_, Symbols::Epsilon, rhs.initialState_);
+  // trackbackStates_[tag] = acceptState_;
   acceptState_ = rhs.acceptState_;
 
   return *this;
 }
-
 
 NFA& NFA::alternate(NFA rhs) {
   StateId newStart = createState();
@@ -175,6 +170,18 @@ NFA& NFA::alternate(NFA rhs) {
 
   initialState_ = newStart;
   acceptState_ = newEnd;
+
+  return *this;
+}
+
+NFA& NFA::concatenate(NFA rhs) {
+  rhs.prepareStateIds(states_.size());
+  states_.reserve(size() + rhs.size());
+  states_.insert(states_.end(), rhs.states_.begin(), rhs.states_.end());
+  acceptTags_.insert(rhs.acceptTags_.begin(), rhs.acceptTags_.end());
+
+  addTransition(acceptState_, Symbols::Epsilon, rhs.initialState_);
+  acceptState_ = rhs.acceptState_;
 
   return *this;
 }

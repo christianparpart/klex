@@ -33,9 +33,8 @@ void Compiler::declareAll(RuleList rules) {
 }
 
 void Compiler::declare(Rule rule) {
-  std::unique_ptr<RegExpr> re = klex::RegExprParser{}.parse(rule.pattern, rule.line, rule.column);
-  NFA nfa = NFABuilder{}.construct(re.get());
-  nfa.setAccept(rule.tag);
+  std::unique_ptr<RegExpr> re = RegExprParser{}.parse(rule.pattern, rule.line, rule.column);
+  NFA nfa = NFABuilder{}.construct(re.get(), rule.tag);
 
   if (fa_.empty()) {
     fa_ = std::move(nfa);
