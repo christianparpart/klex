@@ -82,7 +82,11 @@ void NFABuilder::visit(BeginOfLineExpr& bolExpr) {
 }
 
 void NFABuilder::visit(EndOfLineExpr& eolExpr) {
-  fa_ = NFA{Symbols::EndOfLine}; // TODO
+  // NFA lhs;
+  // NFA rhs{'\n'};
+  // lhs.lookahead(std::move(rhs));
+  // fa_ = std::move(lhs);
+  fa_ = std::move(NFA{}.lookahead(NFA{'\n'}));
 }
 
 void NFABuilder::visit(EndOfFileExpr& eofExpr) {

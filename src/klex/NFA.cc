@@ -143,14 +143,19 @@ void NFA::prepareStateIds(StateId baseId) {
 }
 
 NFA& NFA::lookahead(NFA rhs) {
-  rhs.prepareStateIds(states_.size());
-  states_.reserve(size() + rhs.size());
-  states_.insert(states_.end(), rhs.states_.begin(), rhs.states_.end());
-  acceptTags_.insert(rhs.acceptTags_.begin(), rhs.acceptTags_.end());
+  if (empty()) {
+    *this = std::move(rhs);
+    backtrackStates_[acceptState_] = initialState_;
+  } else {
+    rhs.prepareStateIds(states_.size());
+    states_.reserve(size() + rhs.size());
+    states_.insert(states_.end(), rhs.states_.begin(), rhs.states_.end());
+    acceptTags_.insert(rhs.acceptTags_.begin(), rhs.acceptTags_.end());
 
-  addTransition(acceptState_, Symbols::Epsilon, rhs.initialState_);
-  backtrackStates_[rhs.acceptState_] = acceptState_;
-  acceptState_ = rhs.acceptState_;
+    addTransition(acceptState_, Symbols::Epsilon, rhs.initialState_);
+    backtrackStates_[rhs.acceptState_] = acceptState_;
+    acceptState_ = rhs.acceptState_;
+  }
 
   return *this;
 }
