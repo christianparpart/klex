@@ -92,6 +92,7 @@ static std::string colorsReset = AnsiColor::make(AnsiColor::Reset);
 static std::string colorsTestCaseHeader = AnsiColor::make(AnsiColor::Cyan);
 static std::string colorsError = AnsiColor::make(AnsiColor::Red | AnsiColor::Bold);
 static std::string colorsOk = AnsiColor::make(AnsiColor::Green);
+static std::string colorsLog = AnsiColor::make(AnsiColor::Blue | AnsiColor::Bold);
 
 UnitTest::UnitTest()
   : environments_(),
@@ -503,10 +504,19 @@ TestInfo* UnitTest::addTest(const char* testCaseName,
 
 void UnitTest::log(const std::string& message) {
   if (verbose_) {
-    std::cerr << fmt::format("{}.{}: {}\n",
-                             currentTestCase_->testCaseName(),
-                             currentTestCase_->testName(),
-                             message);
+    size_t bol = 0;
+    size_t eol = 0;
+    do {
+      eol = message.find('\n', bol);
+      std::string line = message.substr(bol, eol - bol);
+      std::cerr << fmt::format("{}{}.{}:{} {}\n",
+                               colorsLog,
+                               currentTestCase_->testCaseName(),
+                               currentTestCase_->testName(),
+                               colorsReset,
+                               line);
+      bol = eol + 1;
+    } while (eol != std::string::npos);
   }
 }
 
