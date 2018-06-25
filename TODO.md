@@ -1,29 +1,10 @@
-### Current Work (lookahead)
-
-Given the REs `ab/cd` and `abba`, the input:
-- `ab` does not match
-- `abc` must not match
-- `abba` matches abba
-- `abcd` matches and rolls back right behind `ab`
-
-Given the REs `ab/cd` and `cde`, the input:
-- `abcd` matches rule 1
-- `cde` matches rule 2
-- `abcde` matche rule 1, then rule 2
-
-- XXX write unit tests for these things
-
 ### The very incomplete TODO checklist
-
-```
-text -> RE AST -> NFA -> DFA -> MinDFA -> Tables
-```
 
 - [ ] <<more unit tests>>
 - [ ] RE: be able to parse "(a|)", which is either "a" or ""
-- [ ] RE: invertible character classes ([^abc])
-- [ ] RE: support named character classes (see https://en.wikipedia.org/wiki/Regular_expression#Character_classes)
 - [ ] FA: create RE pattern out of FA
+- [x] RE: invertible character classes ([^abc])
+- [x] RE: support named character classes (see https://en.wikipedia.org/wiki/Regular_expression#Character_classes)
 - [x] RE: double-quoted raw string patterns (just like in flex)
 - [x] RE/FA: detect EOL ('$')
 - [x] FA: how to handle EOF?
