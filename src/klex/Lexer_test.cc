@@ -28,7 +28,7 @@ using namespace klex;
  */
 
 const std::string RULES = R"(
-  Space(ignore) ::= [\s\t]+
+  Space(ignore) ::= [\s\t\n]+
   Eof           ::= <<EOF>>
   ABBA          ::= abba
   AB_CD         ::= ab/cd
@@ -50,7 +50,7 @@ namespace fmt { // it sucks that I've to specify that here
         case LookaheadToken::ABBA: return format_to(ctx.begin(), "abba");
         case LookaheadToken::AB_CD: return format_to(ctx.begin(), "ab/cd");
         case LookaheadToken::CDEF: return format_to(ctx.begin(), "cdef");
-        case LookaheadToken::EOL_LF: return format_to(ctx.begin(), "eol$");
+        case LookaheadToken::EOL_LF: return format_to(ctx.begin(), "eol/\\n");
         default: abort();
       }
     }
@@ -69,17 +69,21 @@ TEST(Lexer, lookahead) {
 }
 
 // TODO
-// TEST(Lexer, match_eol) {
-//   klex::Compiler cc;
-//   cc.parse(std::make_unique<std::stringstream>(RULES));
-//   Lexer<LookaheadToken> lexer { cc.compile(), std::make_unique<std::stringstream>("abba eol\nabba") };
-// 
-//   for (LookaheadToken t = lexer.recognizeOne(); t != LookaheadToken::Eof; t = lexer.recognizeOne()) {
-//     logf("token: {}", t);
-//   }
-// 
-//   // ASSERT_EQ(LookaheadToken::ABBA, lexer.recognizeOne());
-//   // ASSERT_EQ(LookaheadToken::EOL_LF, lexer.recognizeOne());
-//   // ASSERT_EQ(LookaheadToken::ABBA, lexer.recognizeOne());
-//   // ASSERT_EQ(LookaheadToken::Eof, lexer.recognizeOne());
-// }
+TEST(Lexer, match_eol) {
+  klex::Compiler cc;
+  cc.parse(std::make_unique<std::stringstream>(RULES));
+  LexerDef lexerDef = cc.compile();
+  logf("LexerDef:\n{}", lexerDef.to_string());
+  Lexer<LookaheadToken, true> lexer { cc.compile(),
+                                      std::make_unique<std::stringstream>("abba eol\nabba"),
+                                      [this](const std::string& msg) { log(msg); } };
+
+  for (LookaheadToken t = lexer.recognizeOne(); t != LookaheadToken::Eof; t = lexer.recognizeOne()) {
+    logf("token: {}", t);
+  }
+
+  // ASSERT_EQ(LookaheadToken::ABBA, lexer.recognizeOne());
+  // ASSERT_EQ(LookaheadToken::EOL_LF, lexer.recognizeOne());
+  // ASSERT_EQ(LookaheadToken::ABBA, lexer.recognizeOne());
+  // ASSERT_EQ(LookaheadToken::Eof, lexer.recognizeOne());
+}

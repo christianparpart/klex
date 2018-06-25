@@ -51,7 +51,7 @@ void Compiler::declare(Rule rule) {
 }
 
 DFA Compiler::compileDFA(OvershadowMap* overshadows) {
-  return DFABuilder{std::move(fa_)}.construct(overshadows);
+  return DFABuilder{fa_.clone()}.construct(overshadows);
 }
 
 DFA Compiler::compileMinimalDFA() {

@@ -7,8 +7,10 @@
 #pragma once
 
 #include <klex/LexerDef.h>
+#include <fmt/format.h>
 
 #include <deque>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -21,22 +23,35 @@ namespace klex {
 /**
  * Lexer API for recognizing words.
  */
-class LexerBase {
+template<typename Token = Tag, const bool Debug = false>
+class Lexer {
+ private:
+  using DebugLogger = std::function<void(const std::string&)>;
+
+  template<typename... Args>
+  inline void debugf(const char* fmt, Args... args) const {
+    if constexpr (Debug) {
+      if (debug_) {
+        debug_(fmt::format(fmt, args...));
+      }
+    }
+  }
+
  public:
   /**
    * Constructs the Lexer with the given information table.
    */
-  explicit LexerBase(LexerDef info);
+  explicit Lexer(LexerDef info, DebugLogger logger = DebugLogger{});
 
   /**
    * Constructs the Lexer with the given information table and input stream.
    */
-  LexerBase(LexerDef info, std::unique_ptr<std::istream> input);
+  Lexer(LexerDef info, std::unique_ptr<std::istream> input, DebugLogger logger = DebugLogger{});
 
   /**
    * Constructs the Lexer with the given information table and input stream.
    */
-  LexerBase(LexerDef info, std::istream& input);
+  Lexer(LexerDef info, std::istream& input, DebugLogger logger = DebugLogger{});
 
   /**
    * Open given input stream.
@@ -46,12 +61,12 @@ class LexerBase {
   /**
    * Recognizes one token (ignored patterns are skipped).
    */
-  Tag recognize();
+  Token recognize();
 
   /**
    * Recognizes one token, regardless of it is to be ignored or not.
    */
-  Tag recognizeOne();
+  Token recognizeOne();
 
   //! the underlying word of the currently recognized token
   std::string word() const { return word_; }
@@ -66,13 +81,13 @@ class LexerBase {
   unsigned column() const noexcept { return column_; }
 
   //! @returns the last recognized token.
-  Tag token() const noexcept { return token_; }
+  Token token() const noexcept { return token_; }
 
   //! @returns the name of the current token.
   const std::string& name() const { return name(token_); }
 
-  //! @returns the name of the token represented by Tag @p tag.
-  const std::string& name(Tag tag) const {
+  //! @returns the name of the token represented by Token @p tag.
+  const std::string& name(Token tag) const {
     if (auto i = tagNames_.find(tag); i != tagNames_.end())
       return i->second;
 
@@ -105,11 +120,12 @@ class LexerBase {
   std::string toString(const std::deque<StateId>& stack);
 
  private:
-  TransitionMap transitions_;
-  StateId initialStateId_;
-  std::map<StateId, Tag> acceptStates_;
-  BacktrackingMap backtracking_;
-  std::map<Tag, std::string> tagNames_;
+  const TransitionMap transitions_;
+  const StateId initialStateId_;
+  const std::map<StateId, Tag> acceptStates_;
+  const BacktrackingMap backtracking_;
+  const std::map<Tag, std::string> tagNames_;
+  const DebugLogger debug_;
   std::string word_;
   std::unique_ptr<std::istream> ownedStream_;
   std::istream* stream_;
@@ -118,48 +134,7 @@ class LexerBase {
   unsigned offset_;
   unsigned line_;
   unsigned column_;
-  Tag token_;
-};
-
-/**
- * Specialization of LexerBase that strongly types your costom Token type.
- */
-template<typename Token = Tag>
-class Lexer : public LexerBase {
- public:
-  /**
-   * Constructs the Lexer with the given information table.
-   */
-  explicit Lexer(LexerDef info)
-      : LexerBase{std::move(info)} {}
-
-  /**
-   * Constructs the Lexer with the given information table and input stream.
-   */
-  Lexer(LexerDef info, std::unique_ptr<std::istream> input)
-      : LexerBase{std::move(info), std::move(input)} {}
-
-  /**
-   * Constructs the Lexer with the given information table and input stream.
-   */
-  Lexer(LexerDef info, std::istream& input)
-      : LexerBase{std::move(info), input} {}
-
-  /**
-   * Recognizes one token (ignored patterns are skipped).
-   */
-  inline Token recognize() { return static_cast<Token>(LexerBase::recognize()); }
-
-  /**
-   * Recognizes one token, regardless of it is to be ignored or not.
-   */
-  inline Token recognizeOne() { return static_cast<Token>(LexerBase::recognizeOne()); }
-
-  //! @returns the last recognized token.
-  inline Token token() const noexcept { return static_cast<Token>(LexerBase::token()); }
-  //
-  //! @returns the name of the token represented by Token @p t.
-  const std::string& name(Token t) const { return LexerBase::name(static_cast<Tag>(t)); }
+  Token token_;
 };
 
 } // namespace klex

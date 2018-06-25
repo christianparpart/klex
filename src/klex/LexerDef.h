@@ -10,6 +10,7 @@
 #include <klex/State.h>
 #include <map>
 #include <string>
+#include <sstream>
 
 namespace klex {
 
@@ -28,6 +29,37 @@ struct LexerDef {
   AcceptStateMap acceptStates;
   BacktrackingMap backtrackingStates;
   std::map<Tag, std::string> tagNames;
+
+  std::string to_string() const;
+
+  std::string tagName(Tag t) const {
+    if (auto i = tagNames.find(t); i != tagNames.end())
+      return i->second;
+
+    return std::string();
+  }
 };
+
+inline std::string LexerDef::to_string() const {
+  std::stringstream sstr;
+
+  sstr << fmt::format("initializerState: n{}\n", initialStateId);
+  sstr << fmt::format("totalStates: {}\n", transitions.states().size());
+
+  sstr << "transitions:\n";
+  for (StateId inputState : transitions.states())
+    for (const std::pair<Symbol, StateId>& p : transitions.map(inputState))
+      sstr << fmt::format("- n{} --({})--> n{}\n", inputState, prettySymbol(p.first), p.second);
+
+  sstr << "accepts:\n";
+  for (const std::pair<StateId, Tag> a : acceptStates)
+    sstr << fmt::format("- n{} to {} ({})\n", a.first, a.second, tagName(a.second));
+
+  sstr << "backtracking:\n";
+  for (const std::pair<StateId, StateId> bt : backtrackingStates)
+    sstr << fmt::format("- n{} to n{}\n", bt.first, bt.second);
+
+  return sstr.str();
+}
 
 } // namespace klex

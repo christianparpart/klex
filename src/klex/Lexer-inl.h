@@ -13,11 +13,13 @@
 
 namespace klex {
 
-inline LexerBase::LexerBase(LexerDef info)
+template<typename Token, const bool Debug>
+inline Lexer<Token, Debug>::Lexer(LexerDef info, DebugLogger logger)
     : transitions_{std::move(info.transitions)},
       initialStateId_{info.initialStateId},
       acceptStates_{std::move(info.acceptStates)},
       tagNames_{std::move(info.tagNames)},
+      debug_{logger},
       word_{},
       ownedStream_{},
       stream_{nullptr},
@@ -28,16 +30,19 @@ inline LexerBase::LexerBase(LexerDef info)
       token_{0} {
 }
 
-inline LexerBase::LexerBase(LexerDef info, std::unique_ptr<std::istream> stream)
-    : LexerBase{std::move(info)} {
+template<typename Token, const bool Debug>
+inline Lexer<Token, Debug>::Lexer(LexerDef info, std::unique_ptr<std::istream> stream, DebugLogger logger)
+    : Lexer{std::move(info), std::move(logger)} {
   open(std::move(stream));
 }
 
-inline LexerBase::LexerBase(LexerDef info, std::istream& stream)
-    : LexerBase{std::move(info)} {
+template<typename Token, const bool Debug>
+inline Lexer<Token, Debug>::Lexer(LexerDef info, std::istream& stream, DebugLogger logger)
+    : Lexer{std::move(info), std::move(logger)} {
 }
 
-inline void LexerBase::open(std::unique_ptr<std::istream> stream) {
+template<typename Token, const bool Debug>
+inline void Lexer<Token, Debug>::open(std::unique_ptr<std::istream> stream) {
   ownedStream_ = std::move(stream);
   stream_ = ownedStream_.get();
   oldOffset_ = 0;
@@ -46,7 +51,8 @@ inline void LexerBase::open(std::unique_ptr<std::istream> stream) {
   column_ = 0;
 }
 
-inline std::string LexerBase::stateName(StateId s) {
+template<typename Token, const bool Debug>
+inline std::string Lexer<Token, Debug>::stateName(StateId s) {
   switch (s) {
     case BadState:
       return "Bad";
@@ -57,7 +63,8 @@ inline std::string LexerBase::stateName(StateId s) {
   }
 }
 
-inline std::string LexerBase::toString(const std::deque<StateId>& stack) {
+template<typename Token, const bool Debug>
+inline std::string Lexer<Token, Debug>::toString(const std::deque<StateId>& stack) {
   std::stringstream sstr;
   sstr << "{";
   int i = 0;
@@ -71,15 +78,17 @@ inline std::string LexerBase::toString(const std::deque<StateId>& stack) {
   return sstr.str();
 }
 
-inline Tag LexerBase::recognize() {
+template<typename Token, const bool Debug>
+inline Token Lexer<Token, Debug>::recognize() {
   for (;;) {
-    if (Tag tag = recognizeOne(); tag != IgnoreTag) {
+    if (Token tag = recognizeOne(); static_cast<Tag>(tag) != IgnoreTag) {
       return tag;
     }
   }
 }
 
-inline Tag LexerBase::recognizeOne() {
+template<typename Token, const bool Debug>
+inline Token Lexer<Token, Debug>::recognizeOne() {
   // init
   oldOffset_ = offset_;
   word_.clear();
@@ -109,11 +118,12 @@ inline Tag LexerBase::recognizeOne() {
     column_ = savedCol;
   }
 
+  // backtrack to last (right-most) accept state
   while (state != BadState && !isAcceptState(state)) {
-    // DEBUG("recognize: trackback: current state {} {}; stack: {}",
-    //       stateName(state),
-    //       isAcceptState(state) ? "accepting" : "non-accepting",
-    //       toString(stack));
+    if constexpr(Debug) debugf("recognize: backtrack: current state {} {}; stack: {}",
+                               stateName(state),
+                               isAcceptState(state) ? "accepting" : "non-accepting",
+                               toString(stack));
 
     state = stack.back();
     stack.pop_back();
@@ -123,8 +133,11 @@ inline Tag LexerBase::recognizeOne() {
     }
   }
 
+  // backtrack to right-most non-lookahead position in input stream
   if (auto i = backtracking_.find(state); i != backtracking_.end()) {
+    const StateId tmp = state;
     const StateId backtrackState = i->second;
+    if constexpr(Debug) debugf("recognize: backtracking from n{} to n{}", state, backtrackState);
     while (!stack.empty() && state != backtrackState) {
       state = stack.back();
       stack.pop_back();
@@ -133,53 +146,64 @@ inline Tag LexerBase::recognizeOne() {
         word_.resize(word_.size() - 1);
       }
     }
+    state = tmp;
   }
 
-  // DEBUG("recognize: final state {} {}", stateName(state), isAcceptState(state) ? "accepting" : "non-accepting");
+  if constexpr(Debug) debugf("recognize: final state {} {}",
+                             stateName(state),
+                             isAcceptState(state) ? "accepting" : "non-accepting");
 
   if (!isAcceptState(state))
     throw LexerError{offset_, line_, column_};
 
   if (auto i = acceptStates_.find(state); i != acceptStates_.end())
-    return token_ = i->second;
+    return token_ = static_cast<Token>(i->second);
 
   // should never happen
   fprintf(stderr, "Internal bug. Accept state hit, but no tag assigned.\n");
   abort();
 }
 
-inline StateId LexerBase::delta(StateId currentState, Symbol inputSymbol) const {
-  // DEBUG("recognize: state {} char '{}' {}", stateName(state), prettySymbol(ch), isAcceptState(state) ? "accepting" : "");
+template<typename Token, const bool Debug>
+inline StateId Lexer<Token, Debug>::delta(StateId currentState, Symbol inputSymbol) const {
+  if constexpr(Debug) debugf("recognize: state {} char '{}' {}",
+                             stateName(currentState),
+                             prettySymbol(inputSymbol),
+                             isAcceptState(currentState) ? "accepting" : "");
+
   const StateId nextState = transitions_.apply(currentState, inputSymbol);
   return nextState;
 }
 
-inline bool LexerBase::isAcceptState(StateId id) const {
+template<typename Token, const bool Debug>
+inline bool Lexer<Token, Debug>::isAcceptState(StateId id) const {
   return acceptStates_.find(id) != acceptStates_.end();
 }
 
-inline Symbol LexerBase::nextChar() {
+template<typename Token, const bool Debug>
+inline Symbol Lexer<Token, Debug>::nextChar() {
   if (!buffered_.empty()) {
     offset_++;
     int ch = buffered_.back();
     buffered_.resize(buffered_.size() - 1);
-    // DEBUG("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
+    if constexpr(Debug) debugf("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
     return ch;
   }
 
   if (!stream_->good()) { // EOF or I/O error
-    // DEBUG("Lexer:{}: advance '{}'", offset_, "EOF");
+    if constexpr(Debug) debugf("Lexer:{}: advance '{}'", offset_, "EOF");
     return Symbols::EndOfFile;
   }
 
   int ch = stream_->get();
   if (ch >= 0)
     offset_++;
-  // DEBUG("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
+  if constexpr(Debug) debugf("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
   return ch;
 }
 
-inline void LexerBase::rollback() {
+template<typename Token, const bool Debug>
+inline void Lexer<Token, Debug>::rollback() {
   if (word_.back() != -1) {
     offset_--;
     // TODO: rollback (line, column)
