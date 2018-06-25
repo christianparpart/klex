@@ -52,14 +52,14 @@ inline void Lexer<Token, Debug>::open(std::unique_ptr<std::istream> stream) {
 }
 
 template<typename Token, const bool Debug>
-inline std::string Lexer<Token, Debug>::stateName(StateId s) {
+inline std::string Lexer<Token, Debug>::stateName(StateId s, const std::string_view& n) {
   switch (s) {
     case BadState:
       return "Bad";
     case ErrorState:
       return "Error";
     default:
-      return std::to_string(s);
+      return fmt::format("{}{}", n, std::to_string(s));
   }
 }
 
@@ -95,6 +95,9 @@ inline Token Lexer<Token, Debug>::recognizeOne() {
   StateId state = initialStateId_;
   std::deque<StateId> stack;
   stack.push_back(BadState);
+
+  if constexpr (Debug) debugf("recognize: startState {}, offset {} [{}:{}]",
+                              stateName(state), offset_, line_, column_);
 
   // advance
   unsigned int savedLine = line_;
@@ -137,7 +140,7 @@ inline Token Lexer<Token, Debug>::recognizeOne() {
   if (auto i = backtracking_.find(state); i != backtracking_.end()) {
     const StateId tmp = state;
     const StateId backtrackState = i->second;
-    if constexpr(Debug) debugf("recognize: backtracking from n{} to n{}", state, backtrackState);
+    if constexpr(Debug) debugf("recognize: backtracking from {} to {}", stateName(state), stateName(backtrackState));
     while (!stack.empty() && state != backtrackState) {
       state = stack.back();
       stack.pop_back();
@@ -166,12 +169,13 @@ inline Token Lexer<Token, Debug>::recognizeOne() {
 
 template<typename Token, const bool Debug>
 inline StateId Lexer<Token, Debug>::delta(StateId currentState, Symbol inputSymbol) const {
-  if constexpr(Debug) debugf("recognize: state {} char '{}' {}",
+  const StateId nextState = transitions_.apply(currentState, inputSymbol);
+  if constexpr(Debug) debugf("recognize: state {:>4} --{:-^7}--> {:<6} {}",
                              stateName(currentState),
                              prettySymbol(inputSymbol),
-                             isAcceptState(currentState) ? "accepting" : "");
+                             stateName(nextState),
+                             isAcceptState(nextState) ? "(accepting)" : "");
 
-  const StateId nextState = transitions_.apply(currentState, inputSymbol);
   return nextState;
 }
 
@@ -186,19 +190,21 @@ inline Symbol Lexer<Token, Debug>::nextChar() {
     offset_++;
     int ch = buffered_.back();
     buffered_.resize(buffered_.size() - 1);
-    if constexpr(Debug) debugf("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
+    // if constexpr(Debug) debugf("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
     return ch;
   }
 
   if (!stream_->good()) { // EOF or I/O error
-    if constexpr(Debug) debugf("Lexer:{}: advance '{}'", offset_, "EOF");
+    // if constexpr(Debug) debugf("Lexer:{}: advance '{}'", offset_, "EOF");
     return Symbols::EndOfFile;
   }
 
   int ch = stream_->get();
-  if (ch >= 0)
-    offset_++;
-  if constexpr(Debug) debugf("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
+  if (ch < 0)
+    return Symbols::EndOfFile;
+
+  offset_++;
+  // if constexpr(Debug) debugf("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
   return ch;
 }
 

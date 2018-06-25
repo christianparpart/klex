@@ -115,7 +115,7 @@ class Lexer {
   Symbol nextChar();
   void rollback();
   bool isAcceptState(StateId state) const;
-  static std::string stateName(StateId s);
+  static std::string stateName(StateId s, const std::string_view& n = "n");
   static constexpr StateId BadState = 101010;
   std::string toString(const std::deque<StateId>& stack);
 
