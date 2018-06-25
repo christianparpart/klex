@@ -70,7 +70,6 @@ TEST(Lexer, lookahead) {
   ASSERT_EQ(LookaheadToken::Eof, lexer.recognize());
 }
 
-// TODO
 TEST(Lexer, match_eol) {
   klex::Compiler cc;
   cc.parse(std::make_unique<std::stringstream>(RULES));
