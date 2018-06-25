@@ -11,6 +11,22 @@
 
 using namespace klex;
 
+/* FEATURE UNITTEST CHECKLIST:
+ *
+ * - [ ] concatenation
+ * - [ ] alternation
+ * - [ ] {n}
+ * - [ ] {m,n}
+ * - [ ] {m,}
+ * - [ ] ?
+ * - [ ] character class, [a-z], [a-z0-9]
+ * - [ ] character class by name, such as [[:upper:]]
+ * - [ ] inverted character class, [^a-z], [^a-z0-9]
+ * - [ ] generic lookahead r/s
+ * - [ ] EOL lookahead r$
+ * - [ ] BOL lookbehind ^r
+ */
+
 const std::string RULES = R"(
   Space(ignore) ::= [\s\t]+
   Eof           ::= <<EOF>>
