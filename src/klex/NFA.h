@@ -36,6 +36,7 @@ class NFA {
  private:
   NFA(const NFA& other) = default;
   NFA& operator=(const NFA& other) = default;
+
  public:
   //! holds a vector of State Ids.
   using StateIdVec = std::vector<StateId>;
