@@ -100,8 +100,8 @@ TEST(Lexer, match_eol) {
 TEST(Lexer, empty_alt) {
   Compiler cc;
   cc.parse(std::make_unique<std::stringstream>(R"(
-      Test            ::= aa(bb|)
       Spacing(ignore) ::= [\s\t\n]+
+      Test            ::= aa(bb|)
       Eof             ::= <<EOF>>
   )"));
 
