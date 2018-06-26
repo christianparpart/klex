@@ -83,15 +83,24 @@ TrueLiteral       ::= true
 FalseLiteral      ::= false
 StringLiteral     ::= '([^'\n]|\\\\')*'|\"([^\"\n]|\\\")*\"
 NumberLiteral     ::= [0-9]+|[0-9]{1,3}(_[0-9]{3})*
-# IPv4Literal       ::= {IP4}
+
+IPv4Octet(ref)    ::= [0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]
+IPv4(ref)         ::= {IPv4Octet}(\.{IPv4Octet}){3}
+IPv4Literal       ::= {IPv4}
+
+CidrPart(ref)     ::= [0-9]|[1-2][0-9]|3[012]
+Cidr              ::= {IPv4}\/{CidrPart}
+
 # IP6             ::= TODO
-# IP4Cidr         ::= TODO
 
 # misc
 Ident             ::= [a-zA-Z_][a-zA-Z_0-9]*
 RegExpGroup       ::= \$[0-9]+
 
-# # specials
-# TODO Comment(ignore)   ::= "#[^$]*"
+# TODO:
+# <re>RegExp        ::= [^/]*/
+
+# specials
+Comment(ignore)   ::= "#.*"
 Spacing(ignore)   ::= [\s\t\n]+
 Eof               ::= <<EOF>>
