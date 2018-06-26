@@ -30,7 +30,14 @@
   alternation             := concatenation ('|' concatenation)*
   concatenation           := closure (closure)*
   closure                 := atom ['*' | '?' | '{' NUM [',' NUM] '}']
-  atom                    := character | characterClass | '(' expr ')'
+  atom                    := character
+                           | '^'
+                           | '$'
+                           | '<<EOF>>'
+                           | '"' LITERAL '"'
+                           | characterClass
+                           | '(' expr ')'
+                           | EPSILON
   characterClass          := '[' ['^'] characterClassFragment+ ']'
   characterClassFragment  := character | character '-' character
 */
