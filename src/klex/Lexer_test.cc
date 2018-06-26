@@ -96,3 +96,26 @@ TEST(Lexer, match_eol) {
 
   ASSERT_EQ(LookaheadToken::Eof, lexer.recognize());
 }
+
+TEST(Lexer, empty_alt) {
+  Compiler cc;
+  cc.parse(std::make_unique<std::stringstream>(R"(
+      Test            ::= aa(bb|)
+      Spacing(ignore) ::= [\s\t\n]+
+      Eof             ::= <<EOF>>
+  )"));
+
+  DotWriter writer{ std::cerr };
+  cc.compileMinimalDFA().visit(writer);
+
+  LexerDef lexerDef = cc.compile();
+  logf("LexerDef:\n{}", lexerDef.to_string());
+  Lexer<Tag, true> lexer { lexerDef,
+                           std::make_unique<std::stringstream>("aabb aa aabb"),
+                           [this](const std::string& msg) { log(msg); } };
+
+  ASSERT_EQ(1, lexer.recognize());
+  ASSERT_EQ(1, lexer.recognize());
+  ASSERT_EQ(1, lexer.recognize());
+  ASSERT_EQ(2, lexer.recognize());
+}

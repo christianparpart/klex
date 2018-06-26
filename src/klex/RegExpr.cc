@@ -171,4 +171,12 @@ std::string ClosureExpr::to_string() const {
   return sstr.str();
 }
 
+void EmptyExpr::accept(RegExprVisitor& visitor) {
+  visitor.visit(*this);
+}
+
+std::string EmptyExpr::to_string() const {
+  return {};
+}
+
 } // namespace klex

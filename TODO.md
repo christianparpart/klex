@@ -1,8 +1,8 @@
 ### The very incomplete TODO checklist
 
 - [ ] <<more unit tests>>
-- [ ] RE: be able to parse "(a|)", which is either "a" or ""
 - [ ] FA: create RE pattern out of FA
+- [x] RE: be able to parse "(a|)", which is either "a" or ""
 - [x] RE: invertible character classes ([^abc])
 - [x] RE: support named character classes (see https://en.wikipedia.org/wiki/Regular_expression#Character_classes)
 - [x] RE: double-quoted raw string patterns (just like in flex)

@@ -185,6 +185,15 @@ class EndOfFileExpr : public RegExpr {
   void accept(RegExprVisitor& visitor) override;
 };
 
+class EmptyExpr : public RegExpr {
+ public:
+  explicit EmptyExpr()
+      : RegExpr{4} {}
+
+  std::string to_string() const override;
+  void accept(RegExprVisitor& visitor) override;
+};
+
 class RegExprVisitor {
  public:
   virtual ~RegExprVisitor() {}
@@ -199,6 +208,7 @@ class RegExprVisitor {
   virtual void visit(EndOfLineExpr& eolExpr) = 0;
   virtual void visit(EndOfFileExpr& eofExpr) = 0;
   virtual void visit(DotExpr& dotExpr) = 0;
+  virtual void visit(EmptyExpr& emptyExpr) = 0;
 };
 
 } // namespace klex

@@ -101,4 +101,8 @@ void NFABuilder::visit(DotExpr& dotExpr) {
   }
 }
 
+void NFABuilder::visit(EmptyExpr& emptyExpr) {
+  fa_ = NFA{Symbols::Epsilon};
+}
+
 } // namespace klex

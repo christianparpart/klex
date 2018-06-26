@@ -176,6 +176,9 @@ unsigned RegExprParser::parseInt() {
 
 std::unique_ptr<RegExpr> RegExprParser::parseAtom() {
   switch (currentChar()) {
+    case -1: // EOF
+    case ')':
+      return std::make_unique<EmptyExpr>();
     case '<':
       consume();
       consume('<');
