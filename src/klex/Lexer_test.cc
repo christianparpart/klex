@@ -6,7 +6,6 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/util/testing.h>
-#include <klex/DotWriter.h>
 #include <klex/DFA.h>
 #include <klex/Compiler.h>
 #include <klex/Lexer.h>
@@ -74,9 +73,6 @@ TEST(Lexer, match_eol) {
   klex::Compiler cc;
   cc.parse(std::make_unique<std::stringstream>(RULES));
 
-  klex::DotWriter writer{ std::cerr };
-  cc.compileMinimalDFA().visit(writer);
-
   LexerDef lexerDef = cc.compile();
   logf("LexerDef:\n{}", lexerDef.to_string());
   Lexer<LookaheadToken, true> lexer { lexerDef,
@@ -104,9 +100,6 @@ TEST(Lexer, empty_alt) {
       Test            ::= aa(bb|)
       Eof             ::= <<EOF>>
   )"));
-
-  DotWriter writer{ std::cerr };
-  cc.compileMinimalDFA().visit(writer);
 
   LexerDef lexerDef = cc.compile();
   logf("LexerDef:\n{}", lexerDef.to_string());
