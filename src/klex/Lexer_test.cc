@@ -6,6 +6,7 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/util/testing.h>
+#include <klex/DotWriter.h>
 #include <klex/DFA.h>
 #include <klex/Compiler.h>
 #include <klex/Lexer.h>
@@ -101,14 +102,46 @@ TEST(Lexer, empty_alt) {
       Eof             ::= <<EOF>>
   )"));
 
-  LexerDef lexerDef = cc.compile();
-  logf("LexerDef:\n{}", lexerDef.to_string());
-  Lexer<Tag, true> lexer { lexerDef,
-                           std::make_unique<std::stringstream>("aabb aa aabb"),
-                           [this](const std::string& msg) { log(msg); } };
+  Lexer<Tag> lexer { cc.compile(),
+                     std::make_unique<std::stringstream>("aabb aa aabb") };
 
   ASSERT_EQ(1, lexer.recognize());
   ASSERT_EQ(1, lexer.recognize());
   ASSERT_EQ(1, lexer.recognize());
   ASSERT_EQ(2, lexer.recognize());
+}
+
+TEST(Lexer, realworld_ipv4) {
+  Compiler cc;
+  cc.parse(std::make_unique<std::stringstream>(R"(
+      Spacing(ignore)   ::= [\s\t\n]+
+      Eof               ::= <<EOF>>
+      IPv4Octet(ref)    ::= [0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]
+      IPv4(ref)         ::= {IPv4Octet}(\.{IPv4Octet}){3}
+      IPv4Literal       ::= {IPv4}
+  )"));
+
+  // DotWriter dw{std::cerr};
+  // cc.compileMinimalDFA().visit(dw);
+
+  LexerDef lexerDef = cc.compile();
+  logf("LexerDef:\n{}", lexerDef.to_string());
+  Lexer<int, true> lexer { lexerDef,
+                           std::make_unique<std::stringstream>(
+                               R"(0.0.0.0 4.2.2.1 10.10.40.199 255.255.255.255)"),
+                           [this](const std::string& msg) { log(msg); } };
+
+  ASSERT_EQ(2, lexer.recognize());
+  ASSERT_EQ("0.0.0.0", lexer.word());
+
+  ASSERT_EQ(2, lexer.recognize());
+  ASSERT_EQ("4.2.2.1", lexer.word());
+
+  ASSERT_EQ(2, lexer.recognize());
+  ASSERT_EQ("10.10.40.199", lexer.word());
+
+  ASSERT_EQ(2, lexer.recognize());
+  ASSERT_EQ("255.255.255.255", lexer.word());
+
+  ASSERT_EQ(1, lexer.recognize());
 }

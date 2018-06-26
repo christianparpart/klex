@@ -10,6 +10,8 @@
 #include <memory>
 #include <sstream>
 
+using namespace klex;
+
 TEST(RuleParser, simple) {
   klex::RuleParser rp{std::make_unique<std::stringstream>(R"(
     main ::= blah
@@ -71,4 +73,24 @@ TEST(RuleParser, stringRule) {
   klex::RuleList rules = rp.parseRules();
   ASSERT_EQ(1, rules.size());
   EXPECT_EQ(R"(\"[^\"]*\")", rules[0].pattern);
+}
+
+TEST(RuleParser, ref) {
+  RuleParser rp{std::make_unique<std::stringstream>(R"(
+    Foo(ref) ::= foo
+    Bar(ref) ::= bar
+    FooBar   ::= {Foo}_{Bar}
+  )")};
+  RuleList rules = rp.parseRules();
+  ASSERT_EQ(1, rules.size());
+  EXPECT_EQ("(foo)_(bar)", rules[0].pattern);
+}
+
+TEST(RuleParser, ref_duplicated) {
+  RuleParser rp{std::make_unique<std::stringstream>(R"(
+    Foo(ref) ::= foo
+    Foo(ref) ::= bar
+    FooBar   ::= {Foo}
+  )")};
+  EXPECT_THROW(rp.parseRules(), RuleParser::DuplicateRule);
 }

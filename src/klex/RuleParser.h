@@ -7,11 +7,14 @@
 #pragma once
 
 #include <klex/Rule.h>
+
 #include <fmt/format.h>
-#include <stdexcept>
 #include <istream>
-#include <string>
+#include <map>
 #include <memory>
+#include <optional>
+#include <stdexcept>
+#include <string>
 
 namespace klex {
 
@@ -24,9 +27,10 @@ class RuleParser {
   class UnexpectedChar;
   class UnexpectedToken;
   class InvalidRuleOption;
+  class DuplicateRule;
 
  private:
-  Rule parseRule();
+  std::optional<Rule> parseRule();
   std::string parseExpression();
 
  private:
@@ -38,14 +42,30 @@ class RuleParser {
   char consumeChar(char ch);
   char consumeChar();
   bool eof() const noexcept;
+  std::string replaceRefs(const std::string& pattern);
 
  private:
   std::unique_ptr<std::istream> stream_;
+  std::map<std::string, Rule> refRules_;
   char currentChar_;
   unsigned int line_;
   unsigned int column_;
   unsigned int offset_;
   int nextTag_;
+};
+
+class RuleParser::DuplicateRule : public std::runtime_error {
+ public:
+  DuplicateRule(Rule duplicate, const Rule& other)
+      : std::runtime_error{fmt::format("{}:{}: Duplicated rule definition with name {}, previously defined in {}:{}.",
+            duplicate.line, duplicate.column, duplicate.name,
+            other.line, other.column)},
+        duplicate_{std::move(duplicate)},
+        other_{other} {}
+
+ private:
+  const Rule duplicate_;
+  const Rule& other_;
 };
 
 class RuleParser::UnexpectedToken : public std::runtime_error {

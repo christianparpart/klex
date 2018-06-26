@@ -6,10 +6,14 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/RuleParser.h>
-#include <klex/LexerDef.h> // special tags
+#include <klex/RegExpr.h>
+#include <klex/RegExprParser.h>
+#include <klex/LexerDef.h>        // special tags
 #include <sstream>
 #include <iostream>
 #include <cstring>
+
+#include <klex/Symbols.h>
 
 namespace klex {
 
@@ -32,21 +36,22 @@ RuleList RuleParser::parseRules() {
       break;
     } else if (currentChar() == '\n') {
       consumeChar();
-    } else {
-      rules.emplace_back(parseRule());
+    } else if (std::optional<Rule> rule = parseRule(); rule.has_value()) {
+      rules.emplace_back(std::move(*rule));
     }
   }
 
   return rules;
 }
 
-Rule RuleParser::parseRule() {
+std::optional<Rule> RuleParser::parseRule() {
   // Rule ::= TOKEN RuleOptions? SP '::=' SP RegEx SP? LF
   // RuleOptions ::= '(' RuleOption (',' RuleOption)*
   // RuleOption ::= ignore
 
   std::string token = consumeToken();
   bool ignore = false;
+  bool ref = false;
   if (currentChar_ == '(') {
     consumeChar();
     unsigned optionOffset = offset_;
@@ -55,6 +60,8 @@ Rule RuleParser::parseRule() {
 
     if (option == "ignore")
       ignore = true;
+    else if (option == "ref")
+      ref = true;
     else
       throw InvalidRuleOption{optionOffset, option};
   }
@@ -67,12 +74,21 @@ Rule RuleParser::parseRule() {
   consumeChar('\n');
 
   Tag tag{};
-  if (ignore)
+  if (ignore || ref)
     tag = IgnoreTag;
   else
     tag = nextTag_++;
 
-  return Rule{line, column, tag, token, pattern};
+  // TODO: verify `token` hasn't been used by another rule yet & throw if not so.
+
+  if (!ref) {
+    return {{line, column, tag, token, pattern}};
+  } else if (auto i = refRules_.find(token); i != refRules_.end()) {
+    throw DuplicateRule{Rule{line, column, tag, token, pattern}, i->second};
+  } else {
+    refRules_[token] = {line, column, tag, token, "(" + pattern + ")"};
+    return std::nullopt;
+  }
 }
 
 std::string RuleParser::parseExpression() {
@@ -89,7 +105,23 @@ std::string RuleParser::parseExpression() {
     i++;
     sstr << consumeChar();
   }
-  return sstr.str().substr(0, lastGraph); // skips trailing spaces
+  std::string pattern = sstr.str().substr(0, lastGraph); // skips trailing spaces
+
+  // replace all occurrences of {ref}
+  for (const std::pair<const std::string, Rule>& ref : refRules_) {
+    const Rule& rule = ref.second;
+    const std::string name = fmt::format("{{{}}}", rule.name);
+    // for (size_t i = 0; (i = pattern.find(name, i)) != std::string::npos; i += rule.pattern.size()) {
+    //   pattern.replace(i, name.size(), rule.pattern);
+    // }
+    size_t i = 0;
+    while ((i = pattern.find(name, i)) != std::string::npos) {
+      pattern.replace(i, name.size(), rule.pattern);
+      i += rule.pattern.size();
+    }
+  }
+
+  return pattern;
 }
 
 // skips space until LF or EOF
