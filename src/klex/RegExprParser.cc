@@ -415,6 +415,8 @@ Symbol RegExprParser::parseSingleCharacter() {
     case '^':
     case '{':
     case '}':
+    case '.':
+    case '/':
       return consume();
     default: {
       throw UnexpectedToken{line_, column_, 
