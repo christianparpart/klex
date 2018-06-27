@@ -44,7 +44,7 @@ void Compiler::declare(Rule rule) {
   std::unique_ptr<RegExpr> re = RegExprParser{}.parse(rule.pattern, rule.line, rule.column);
   NFA nfa = NFABuilder{}.construct(re.get(), rule.tag);
 
-  NFA& fa = fa_["default"];
+  NFA& fa = fa_["INITIAL"]; // TODO: honor client's wish ;)
 
   if (fa.empty()) {
     fa = std::move(nfa);
@@ -69,7 +69,8 @@ MultiDFA Compiler::compileDFA(OvershadowMap* overshadows) {
 }
 
 MultiDFA Compiler::compileMinimalDFA() {
-  return klex::DFAMinimizer{compileDFA()}.construct();
+  //TODO return klex::DFAMinimizer{compileDFA()}.construct();
+  return compileDFA();
 }
 
 LexerDef Compiler::compile() {

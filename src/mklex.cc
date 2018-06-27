@@ -93,7 +93,7 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
 
   os << "klex::LexerDef " << tableName << " {\n";
   os << "  // initial states\n";
-  os << "  InitialState {\n";
+  os << "  std::map<std::string, klex::StateId> {\n";
   for (const std::pair<const std::string, klex::StateId>& s0 : lexerDef.initialStates)
     os << fmt::format("  {{ \"{}\", {} }},\n", s0.first, s0.second);
   os << "  },\n";
@@ -141,7 +141,8 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
     os << "\n} // namespace " << ns << "\n";
 }
 
-void generateTokenDefCxx(std::ostream& os, const klex::RuleList& rules, const std::string& symbol) {
+void generateTokenDefCxx(std::ostream& os, const klex::RuleList& rules, const std::string& symbol,
+    const std::map<std::string, klex::StateId>& initialStates) {
   // TODO: is symbol contains ::, everything before the last :: is considered a (nested) namespace
   auto [ns, typeName] = splitNamespace(symbol);
 
@@ -155,6 +156,13 @@ void generateTokenDefCxx(std::ostream& os, const klex::RuleList& rules, const st
     if (rule.tag != klex::IgnoreTag)
       os << fmt::format("  {:<20} = {:<4}, // {} \n", rule.name, rule.tag, rule.pattern);
   }
+  os << "};\n\n";
+
+  const std::string machineTypeName = "Machine";
+
+  os << "enum class " << machineTypeName << " {\n";
+  for (const std::pair<const std::string, klex::StateId>& s0 : initialStates)
+    os << fmt::format("  {:<10} = {:<4},\n", s0.first, s0.second);
   os << "};\n\n";
 
   os << "inline constexpr std::string_view to_string(" << typeName << " t) {\n";
@@ -260,9 +268,9 @@ int main(int argc, const char* argv[]) {
     if (auto p = fs::path{tokenFile}.remove_filename(); p != "")
       fs::create_directories(p);
     std::ofstream ofs {tokenFile};
-    generateTokenDefCxx(ofs, rules, flags.getString("token-name"));
+    generateTokenDefCxx(ofs, rules, flags.getString("token-name"), lexerDef.initialStates);
   } else {
-    generateTokenDefCxx(std::cerr, rules, flags.getString("token-name"));
+    generateTokenDefCxx(std::cerr, rules, flags.getString("token-name"), lexerDef.initialStates);
   }
 
   return EXIT_SUCCESS;

@@ -87,7 +87,8 @@ void DFA::prepareStateIds(StateId baseId, StateId q0) {
   //        traverse through each element and add BASE_ID
 
   auto transformId = [baseId, q0, this](StateId s) -> StateId {
-    return s != initialState_ ? baseId + s : q0;
+    // we subtract 1, because we already have a slot for q0 elsewhere (pre-allocated)
+    return s != initialState_ ? baseId + s - 1 : q0;
   };
 
   // for each state's transitions

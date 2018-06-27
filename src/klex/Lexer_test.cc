@@ -63,7 +63,13 @@ namespace fmt { // it sucks that I've to specify that here
 TEST(Lexer, lookahead) {
   klex::Compiler cc;
   cc.parse(std::make_unique<std::stringstream>(RULES));
+
   Lexer<LookaheadToken> lexer { cc.compile(), std::make_unique<std::stringstream>("abba abcd cdef") };
+  // LexerDef lexerDef = cc.compile();
+  // logf("LexerDef:\n{}", lexerDef.to_string());
+  // Lexer<LookaheadToken, true> lexer { lexerDef,
+  //                                     std::make_unique<std::stringstream>("abba abcd cdef"),
+  //                                     [this](const std::string& msg) { log(msg); } };
 
   ASSERT_EQ(LookaheadToken::ABBA, lexer.recognize());
   ASSERT_EQ(LookaheadToken::AB_CD, lexer.recognize());
@@ -75,11 +81,12 @@ TEST(Lexer, match_eol) {
   klex::Compiler cc;
   cc.parse(std::make_unique<std::stringstream>(RULES));
 
-  LexerDef lexerDef = cc.compile();
-  logf("LexerDef:\n{}", lexerDef.to_string());
-  Lexer<LookaheadToken, true> lexer { lexerDef,
-                                      std::make_unique<std::stringstream>("abba eol\nabba"),
-                                      [this](const std::string& msg) { log(msg); } };
+  Lexer<LookaheadToken> lexer { cc.compile(), std::make_unique<std::stringstream>("abba eol\nabba") };
+  // LexerDef lexerDef = cc.compile();
+  // logf("LexerDef:\n{}", lexerDef.to_string());
+  // Lexer<LookaheadToken, true> lexer { lexerDef,
+  //                                     std::make_unique<std::stringstream>("abba eol\nabba"),
+  //                                     [this](const std::string& msg) { log(msg); } };
 
   ASSERT_EQ(LookaheadToken::ABBA, lexer.recognize());
   ASSERT_EQ(0, lexer.offset().first);
@@ -122,15 +129,10 @@ TEST(Lexer, realworld_ipv4) {
       IPv4Literal       ::= {IPv4}
   )"));
 
-  // DotWriter dw{std::cerr};
-  // cc.compileMinimalDFA().visit(dw);
-
-  LexerDef lexerDef = cc.compile();
-  logf("LexerDef:\n{}", lexerDef.to_string());
-  Lexer<int, true> lexer { lexerDef,
-                           std::make_unique<std::stringstream>(
-                               R"(0.0.0.0 4.2.2.1 10.10.40.199 255.255.255.255)"),
-                           [this](const std::string& msg) { log(msg); } };
+  Lexer<int> lexer { cc.compile(),
+                     std::make_unique<std::stringstream>(
+                       R"(0.0.0.0 4.2.2.1 10.10.40.199 255.255.255.255)"),
+                     [this](const std::string& msg) { log(msg); } };
 
   ASSERT_EQ(2, lexer.recognize());
   ASSERT_EQ("0.0.0.0", lexer.word());
