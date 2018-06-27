@@ -92,8 +92,11 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
     os << "namespace " << ns << " {\n\n";
 
   os << "klex::LexerDef " << tableName << " {\n";
-  os << "  // initial state\n";
-  os << "  " << lexerDef.initialStateId << ",\n";
+  os << "  // initial states\n";
+  os << "  InitialState {\n";
+  for (const std::pair<const std::string, klex::StateId>& s0 : lexerDef.initialStates)
+    os << fmt::format("  {{ \"{}\", {} }},\n", s0.first, s0.second);
+  os << "  },\n";
   os << "  // state transition table \n";
   os << "  klex::TransitionMap::Container {\n";
   for (klex::StateId stateId : lexerDef.transitions.states()) {
@@ -204,17 +207,18 @@ int main(int argc, const char* argv[]) {
   klex::Compiler builder;
   builder.parse(std::make_unique<std::ifstream>(klexFileName.string()));
   const klex::RuleList& rules = builder.rules();
-  perfTimer.lap("NFA construction", builder.nfa().size(), "states");
+  perfTimer.lap("NFA construction", builder.size(), "states");
 
-  if (flags.getBool("debug-nfa")) {
-    klex::DotWriter writer{ std::cout };
-    builder.nfa().visit(writer);
-    return EXIT_SUCCESS;
-  }
+  // TODO
+  // if (flags.getBool("debug-nfa")) {
+  //   klex::DotWriter writer{ std::cout };
+  //   builder.nfa().visit(writer);
+  //   return EXIT_SUCCESS;
+  // }
 
   klex::Compiler::OvershadowMap overshadows;
-  klex::DFA dfa = builder.compileDFA(&overshadows);
-  perfTimer.lap("DFA construction", dfa.size(), "states");
+  klex::MultiDFA multiDFA = builder.compileDFA(&overshadows);
+  perfTimer.lap("DFA construction", multiDFA.dfa.size(), "states");
 
   // check for unmatchable rules
   for (const std::pair<klex::Tag, klex::Tag>& overshadow : overshadows) {
@@ -228,21 +232,21 @@ int main(int argc, const char* argv[]) {
     return EXIT_FAILURE;
 
   if (!flags.getBool("no-dfa-minimize")) {
-    dfa = std::move(klex::DFAMinimizer{dfa}.construct());
-    perfTimer.lap("DFA minimization", dfa.size(), "states");
+    multiDFA = std::move(klex::DFAMinimizer{multiDFA}.construct());
+    perfTimer.lap("DFA minimization", multiDFA.dfa.size(), "states");
   }
 
   if (std::string dotfile = flags.getString("debug-dfa"); !dotfile.empty()) {
     if (dotfile == "-") {
       klex::DotWriter writer{ std::cout };
-      dfa.visit(writer);
+      multiDFA.dfa.visit(writer);
     } else {
       klex::DotWriter writer{ dotfile };
-      dfa.visit(writer);
+      multiDFA.dfa.visit(writer);
     }
   }
 
-  klex::LexerDef lexerDef = klex::Compiler::generateTables(dfa, builder.names());
+  klex::LexerDef lexerDef = klex::Compiler::generateTables(multiDFA, builder.names());
   if (std::string tableFile = flags.getString("output-table"); tableFile != "-") {
     if (auto p = fs::path{tableFile}.remove_filename(); p != "")
       fs::create_directories(p);

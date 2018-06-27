@@ -16,10 +16,11 @@ namespace klex {
 template<typename Token, const bool Debug>
 inline Lexer<Token, Debug>::Lexer(LexerDef info, DebugLogger logger)
     : transitions_{std::move(info.transitions)},
-      initialStateId_{info.initialStateId},
+      initialStates_{info.initialStates},
       acceptStates_{std::move(info.acceptStates)},
       tagNames_{std::move(info.tagNames)},
       debug_{logger},
+      initialStateId_{1},
       word_{},
       ownedStream_{},
       stream_{nullptr},

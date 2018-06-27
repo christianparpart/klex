@@ -24,6 +24,13 @@ namespace klex {
 
 DFAMinimizer::DFAMinimizer(const DFA& dfa)
     : dfa_{dfa},
+      initialStates_{{"INITIAL", dfa.initialState()}},
+      alphabet_{dfa_.alphabet()} {
+}
+
+DFAMinimizer::DFAMinimizer(const MultiDFA& multiDFA)
+    : dfa_{multiDFA.dfa},
+      initialStates_{multiDFA.initialStates},
       alphabet_{dfa_.alphabet()} {
 }
 
@@ -104,7 +111,7 @@ void DFAMinimizer::dumpGroups(const PartitionVec& T) {
   }
 }
 
-DFA DFAMinimizer::construct() {
+MultiDFA DFAMinimizer::construct() {
   // group all accept states by their tag
   for (StateId s : dfa_.acceptStates()) {
     if (auto group = findGroup(s); group != T.end())
@@ -130,23 +137,33 @@ DFA DFAMinimizer::construct() {
   return constructFromPartitions(P);
 }
 
-DFA DFAMinimizer::constructFromPartitions(const PartitionVec& P) const {
+MultiDFA DFAMinimizer::constructFromPartitions(const PartitionVec& P) const {
   DEBUG("minimization terminated with {} unique partition sets", P.size());
-  DFA dfamin;
-  dfamin.createStates(P.size());
 
-  // build remaps table (used as cache for quickly finding DFAmin StateIds from DFA StateIds)
-  std::unordered_map<StateId, StateId> remaps;
-  StateId p_i = 0;
-  for (const StateIdVec& p : P) {
-    for (StateId s : p) {
-      remaps[s] = p_i;
+  // TODO: first find main initial state and then all secondary initial states
+  // TODO: then make sure the code below skips those in generation
+
+  // build table to quickly get target state ID from input DFA's state ID
+  std::unordered_map<StateId, StateId> targetStateIdMap = [P]() {
+    std::unordered_map<StateId, StateId> remaps;
+    StateId p_i = 0;
+    for (const StateIdVec& p : P) {
+      for (StateId s : p) {
+        remaps[s] = p_i;
+      }
+      p_i++;
     }
-    p_i++;
-  }
+    return std::move(remaps);
+  }();
+
+  MultiDFA::InitialStateMap initialStates = initialStates_;
+  for (auto& p : initialStates)
+    p.second = targetStateIdMap[p.second];
 
   // instanciate states
-  p_i = 0;
+  DFA dfamin;
+  dfamin.createStates(P.size());
+  StateId p_i = 0;
   for (const StateIdVec& p : P) {
     const StateId s = *p.begin();
     const StateId q = p_i;
@@ -160,7 +177,7 @@ DFA DFAMinimizer::constructFromPartitions(const PartitionVec& P) const {
       dfamin.setInitialState(q);
 
     if (std::optional<StateId> bt = containsBacktrackState(p); bt.has_value())
-      dfamin.setBacktrack(p_i, remaps[*bt]);
+      dfamin.setBacktrack(p_i, targetStateIdMap[*bt]);
 
     p_i++;
   }
@@ -178,7 +195,7 @@ DFA DFAMinimizer::constructFromPartitions(const PartitionVec& P) const {
     p_i++;
   }
 
-  return dfamin;
+  return MultiDFA{std::move(initialStates), std::move(dfamin)};
 }
 
 std::optional<StateId> DFAMinimizer::containsBacktrackState(const std::vector<StateId>& Q) const {

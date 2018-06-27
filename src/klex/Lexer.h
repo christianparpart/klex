@@ -121,11 +121,12 @@ class Lexer {
 
  private:
   const TransitionMap transitions_;
-  const StateId initialStateId_;
+  const std::map<std::string, StateId> initialStates_;
   const std::map<StateId, Tag> acceptStates_;
   const BacktrackingMap backtracking_;
   const std::map<Tag, std::string> tagNames_;
   const DebugLogger debug_;
+  StateId initialStateId_;
   std::string word_;
   std::unique_ptr<std::istream> ownedStream_;
   std::istream* stream_;

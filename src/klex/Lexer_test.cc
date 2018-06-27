@@ -6,10 +6,11 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/util/testing.h>
-#include <klex/DotWriter.h>
-#include <klex/DFA.h>
 #include <klex/Compiler.h>
+#include <klex/DFA.h>
+#include <klex/DotWriter.h>
 #include <klex/Lexer.h>
+#include <klex/MultiDFA.h>
 
 using namespace klex;
 
