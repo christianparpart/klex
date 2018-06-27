@@ -7,6 +7,7 @@
 
 #include <klex/util/testing.h>
 #include <klex/DFABuilder.h>
+#include <klex/MultiDFA.h>
 #include <klex/DFA.h>
 #include <klex/Compiler.h>
 #include <sstream>
@@ -22,7 +23,7 @@ TEST(DFABuilder, shadowing) {
   )"));
   // rule 2 is overshadowed by rule 1
   Compiler::OvershadowMap overshadows;
-  DFA dfa = cc.compileDFA(&overshadows);
+  MultiDFA dfa = cc.compileDFA(&overshadows);
   ASSERT_EQ(1, overshadows.size());
   EXPECT_EQ(2, overshadows[0].first); // overshadowee
   EXPECT_EQ(1, overshadows[0].second); // overshadower

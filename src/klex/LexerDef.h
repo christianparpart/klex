@@ -24,7 +24,7 @@ using AcceptStateMap = std::map<StateId, Tag>;
 using BacktrackingMap = std::map<StateId, StateId>;
 
 struct LexerDef {
-  StateId initialStateId;
+  std::map<std::string, StateId> initialStates;
   TransitionMap transitions;
   AcceptStateMap acceptStates;
   BacktrackingMap backtrackingStates;
@@ -43,7 +43,9 @@ struct LexerDef {
 inline std::string LexerDef::to_string() const {
   std::stringstream sstr;
 
-  sstr << fmt::format("initializerState: n{}\n", initialStateId);
+  sstr << fmt::format("initializerStates:\n");
+  for (const std::pair<std::string, StateId> q0 : initialStates)
+    sstr << fmt::format("  {}: {}\n", q0.first, q0.second);
   sstr << fmt::format("totalStates: {}\n", transitions.states().size());
 
   sstr << "transitions:\n";
@@ -55,9 +57,11 @@ inline std::string LexerDef::to_string() const {
   for (const std::pair<StateId, Tag> a : acceptStates)
     sstr << fmt::format("- n{} to {} ({})\n", a.first, a.second, tagName(a.second));
 
-  sstr << "backtracking:\n";
-  for (const std::pair<StateId, StateId> bt : backtrackingStates)
-    sstr << fmt::format("- n{} to n{}\n", bt.first, bt.second);
+  if (!backtrackingStates.empty()) {
+    sstr << "backtracking:\n";
+    for (const std::pair<StateId, StateId> bt : backtrackingStates)
+      sstr << fmt::format("- n{} to n{}\n", bt.first, bt.second);
+  }
 
   return sstr.str();
 }

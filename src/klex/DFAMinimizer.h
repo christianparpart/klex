@@ -7,6 +7,7 @@
 #pragma once
 
 #include <klex/State.h>
+#include <klex/MultiDFA.h>
 #include <klex/Alphabet.h>
 
 #include <vector>
@@ -19,8 +20,9 @@ class DFA;
 class DFAMinimizer {
  public:
   explicit DFAMinimizer(const DFA& dfa);
+  explicit DFAMinimizer(const MultiDFA& multiDFA);
 
-  DFA construct();
+  MultiDFA construct();
 
  private:
   using PartitionVec = std::vector<StateIdVec>;
@@ -30,13 +32,14 @@ class DFAMinimizer {
   PartitionVec::iterator findGroup(StateId s);
   std::optional<int> partitionId(StateId s) const;
   PartitionVec split(const StateIdVec& S) const;
-  DFA constructFromPartitions(const PartitionVec& P) const;
+  MultiDFA constructFromPartitions(const PartitionVec& P) const;
   std::optional<StateId> containsBacktrackState(const std::vector<StateId>& Q) const;
 
   static void dumpGroups(const PartitionVec& T);
 
  private:
   const DFA& dfa_;
+  const MultiDFA::InitialStateMap initialStates_;
   const Alphabet alphabet_;
   PartitionVec T;
   PartitionVec P;
