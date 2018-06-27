@@ -100,7 +100,7 @@ class Lexer {
   class LexerError : public std::runtime_error {
    public:
     LexerError(unsigned int offset, unsigned int line, unsigned int column)
-        : std::runtime_error{fmt::format("[{}:{}] Failed to lexically recognize a word.")},
+        : std::runtime_error{fmt::format("[{}:{}] Failed to lexically recognize a word.", line, column)},
           offset_{offset}, line_{line}, column_{column} {}
 
    private:
