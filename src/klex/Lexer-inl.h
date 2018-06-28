@@ -13,14 +13,14 @@
 
 namespace klex {
 
-template<typename Token, const bool Debug>
-inline Lexer<Token, Debug>::Lexer(LexerDef info, DebugLogger logger)
+template<typename Token, typename Machine, const bool Debug>
+inline Lexer<Token, Machine, Debug>::Lexer(LexerDef info, DebugLogger logger)
     : transitions_{std::move(info.transitions)},
       initialStates_{info.initialStates},
       acceptStates_{std::move(info.acceptStates)},
       tagNames_{std::move(info.tagNames)},
       debug_{logger},
-      initialStateId_{1},
+      initialStateId_{defaultMachine()},
       word_{},
       ownedStream_{},
       stream_{nullptr},
@@ -31,19 +31,19 @@ inline Lexer<Token, Debug>::Lexer(LexerDef info, DebugLogger logger)
       token_{0} {
 }
 
-template<typename Token, const bool Debug>
-inline Lexer<Token, Debug>::Lexer(LexerDef info, std::unique_ptr<std::istream> stream, DebugLogger logger)
+template<typename Token, typename Machine, const bool Debug>
+inline Lexer<Token, Machine, Debug>::Lexer(LexerDef info, std::unique_ptr<std::istream> stream, DebugLogger logger)
     : Lexer{std::move(info), std::move(logger)} {
   open(std::move(stream));
 }
 
-template<typename Token, const bool Debug>
-inline Lexer<Token, Debug>::Lexer(LexerDef info, std::istream& stream, DebugLogger logger)
+template<typename Token, typename Machine, const bool Debug>
+inline Lexer<Token, Machine, Debug>::Lexer(LexerDef info, std::istream& stream, DebugLogger logger)
     : Lexer{std::move(info), std::move(logger)} {
 }
 
-template<typename Token, const bool Debug>
-inline void Lexer<Token, Debug>::open(std::unique_ptr<std::istream> stream) {
+template<typename Token, typename Machine, const bool Debug>
+inline void Lexer<Token, Machine, Debug>::open(std::unique_ptr<std::istream> stream) {
   ownedStream_ = std::move(stream);
   stream_ = ownedStream_.get();
   oldOffset_ = 0;
@@ -52,8 +52,8 @@ inline void Lexer<Token, Debug>::open(std::unique_ptr<std::istream> stream) {
   column_ = 0;
 }
 
-template<typename Token, const bool Debug>
-inline std::string Lexer<Token, Debug>::stateName(StateId s, const std::string_view& n) {
+template<typename Token, typename Machine, const bool Debug>
+inline std::string Lexer<Token, Machine, Debug>::stateName(StateId s, const std::string_view& n) {
   switch (s) {
     case BadState:
       return "Bad";
@@ -64,8 +64,8 @@ inline std::string Lexer<Token, Debug>::stateName(StateId s, const std::string_v
   }
 }
 
-template<typename Token, const bool Debug>
-inline std::string Lexer<Token, Debug>::toString(const std::deque<StateId>& stack) {
+template<typename Token, typename Machine, const bool Debug>
+inline std::string Lexer<Token, Machine, Debug>::toString(const std::deque<StateId>& stack) {
   std::stringstream sstr;
   sstr << "{";
   int i = 0;
@@ -79,8 +79,8 @@ inline std::string Lexer<Token, Debug>::toString(const std::deque<StateId>& stac
   return sstr.str();
 }
 
-template<typename Token, const bool Debug>
-inline Token Lexer<Token, Debug>::recognize() {
+template<typename Token, typename Machine, const bool Debug>
+inline Token Lexer<Token, Machine, Debug>::recognize() {
   for (;;) {
     if (Token tag = recognizeOne(); static_cast<Tag>(tag) != IgnoreTag) {
       return tag;
@@ -88,12 +88,12 @@ inline Token Lexer<Token, Debug>::recognize() {
   }
 }
 
-template<typename Token, const bool Debug>
-inline Token Lexer<Token, Debug>::recognizeOne() {
+template<typename Token, typename Machine, const bool Debug>
+inline Token Lexer<Token, Machine, Debug>::recognizeOne() {
   // init
   oldOffset_ = offset_;
   word_.clear();
-  StateId state = initialStateId_;
+  StateId state = static_cast<StateId>(initialStateId_);
   std::deque<StateId> stack;
   stack.push_back(BadState);
 
@@ -116,12 +116,6 @@ inline Token Lexer<Token, Debug>::recognizeOne() {
     state = delta(state, ch);
   }
 
-  // trackback
-  if (state == BadState) {
-    line_ = savedLine;
-    column_ = savedCol;
-  }
-
   // backtrack to last (right-most) accept state
   while (state != BadState && !isAcceptState(state)) {
     if constexpr(Debug) debugf("recognize: backtrack: current state {} {}; stack: {}",
@@ -135,6 +129,12 @@ inline Token Lexer<Token, Debug>::recognizeOne() {
       rollback();
       word_.resize(word_.size() - 1);
     }
+  }
+
+  // trackback
+  if (state == BadState) {
+    line_ = savedLine;
+    column_ = savedCol;
   }
 
   // backtrack to right-most non-lookahead position in input stream
@@ -168,8 +168,8 @@ inline Token Lexer<Token, Debug>::recognizeOne() {
   abort();
 }
 
-template<typename Token, const bool Debug>
-inline StateId Lexer<Token, Debug>::delta(StateId currentState, Symbol inputSymbol) const {
+template<typename Token, typename Machine, const bool Debug>
+inline StateId Lexer<Token, Machine, Debug>::delta(StateId currentState, Symbol inputSymbol) const {
   const StateId nextState = transitions_.apply(currentState, inputSymbol);
   if constexpr(Debug) debugf("recognize: state {:>4} --{:-^7}--> {:<6} {}",
                              stateName(currentState),
@@ -180,13 +180,13 @@ inline StateId Lexer<Token, Debug>::delta(StateId currentState, Symbol inputSymb
   return nextState;
 }
 
-template<typename Token, const bool Debug>
-inline bool Lexer<Token, Debug>::isAcceptState(StateId id) const {
+template<typename Token, typename Machine, const bool Debug>
+inline bool Lexer<Token, Machine, Debug>::isAcceptState(StateId id) const {
   return acceptStates_.find(id) != acceptStates_.end();
 }
 
-template<typename Token, const bool Debug>
-inline Symbol Lexer<Token, Debug>::nextChar() {
+template<typename Token, typename Machine, const bool Debug>
+inline Symbol Lexer<Token, Machine, Debug>::nextChar() {
   if (!buffered_.empty()) {
     offset_++;
     int ch = buffered_.back();
@@ -209,8 +209,8 @@ inline Symbol Lexer<Token, Debug>::nextChar() {
   return ch;
 }
 
-template<typename Token, const bool Debug>
-inline void Lexer<Token, Debug>::rollback() {
+template<typename Token, typename Machine, const bool Debug>
+inline void Lexer<Token, Machine, Debug>::rollback() {
   if (word_.back() != -1) {
     offset_--;
     // TODO: rollback (line, column)

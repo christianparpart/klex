@@ -95,7 +95,7 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
   os << "  // initial states\n";
   os << "  std::map<std::string, klex::StateId> {\n";
   for (const std::pair<const std::string, klex::StateId>& s0 : lexerDef.initialStates)
-    os << fmt::format("  {{ \"{}\", {} }},\n", s0.first, s0.second);
+    os << fmt::format("    {{ \"{}\", {} }},\n", s0.first, s0.second);
   os << "  },\n";
   os << "  // state transition table \n";
   os << "  klex::TransitionMap::Container {\n";
@@ -141,30 +141,39 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
     os << "\n} // namespace " << ns << "\n";
 }
 
-void generateTokenDefCxx(std::ostream& os, const klex::RuleList& rules, const std::string& symbol,
+void generateTokenDefCxx(std::ostream& os, const klex::RuleList& rules, const std::string& tokenTypeName,
+    const std::string& machineTypeName,
     const std::map<std::string, klex::StateId>& initialStates) {
-  // TODO: is symbol contains ::, everything before the last :: is considered a (nested) namespace
-  auto [ns, typeName] = splitNamespace(symbol);
+  auto [ns, typeName] = splitNamespace(tokenTypeName);
 
   os << "#pragma once\n\n";
   os << "#include <cstdlib>       // for abort()\n";
   os << "#include <string_view>\n\n";
   if (!ns.empty())
     os << "namespace " << ns << " {\n\n";
+
+  // -------------------------------------------------------------------------------------------------
   os << "enum class " << typeName << " {\n";
+  const size_t tokenSize = std::max_element(rules.begin(), rules.end(),
+      [](const auto& a, const auto& b) { return a.name.size() < b.name.size(); })->name.size();
+  const std::string tokenFmt = fmt::format("  {{:<{}}} = {{:<5}} // {{}} \n", tokenSize);
   for (const klex::Rule& rule : rules) {
     if (rule.tag != klex::IgnoreTag)
-      os << fmt::format("  {:<20} = {:<4}, // {} \n", rule.name, rule.tag, rule.pattern);
+      os << fmt::format(tokenFmt, rule.name, fmt::format("{},", rule.tag), rule.pattern);
   }
   os << "};\n\n";
 
-  const std::string machineTypeName = "Machine";
-
+  // -------------------------------------------------------------------------------------------------
   os << "enum class " << machineTypeName << " {\n";
+  const size_t machineSize = std::max_element(initialStates.begin(), initialStates.end(),
+      [](const auto& a, const auto& b) { return a.first.size() < b.first.size(); })->first.size();
+  const std::string machineFmt = fmt::format("  {{:<{}}} = {{:}},\n", machineSize);
+
   for (const std::pair<const std::string, klex::StateId>& s0 : initialStates)
-    os << fmt::format("  {:<10} = {:<4},\n", s0.first, s0.second);
+    os << fmt::format(machineFmt, s0.first, s0.second);
   os << "};\n\n";
 
+  // -------------------------------------------------------------------------------------------------
   os << "inline constexpr std::string_view to_string(" << typeName << " t) {\n";
   os << "  switch (t) { \n";
   for (const klex::Rule& rule : rules)
@@ -186,6 +195,7 @@ std::optional<int> prepareAndParseCLI(klex::util::Flags& flags, int argc, const 
   flags.defineString("output-token", 'T', "FILE", "Output file that will contain the compiled tables (use - to represent stderr)");
   flags.defineString("table-name", 'n', "IDENTIFIER", "Symbol name for generated table (may include namespace).", "lexerDef");
   flags.defineString("token-name", 'N', "IDENTIFIER", "Symbol name for generated token enum type (may include namespace).", "Token");
+  flags.defineString("machine-name", 'M', "IDENTIFIER", "Symbol name for generated machine enum type (must not include namespace).", "Machine");
   flags.defineString("debug-dfa", 'x', "DOT_FILE", "Writes dot graph of final finite automaton. Use - to represent stdout.", "");
   flags.defineBool("debug-nfa", 'd', "Writes dot graph of non-deterministic finite automaton to stdout and exits.");
   flags.defineBool("no-dfa-minimize", 0, "Do not minimize the DFA");
@@ -225,7 +235,7 @@ int main(int argc, const char* argv[]) {
   // }
 
   klex::Compiler::OvershadowMap overshadows;
-  klex::MultiDFA multiDFA = builder.compileDFA(&overshadows);
+  klex::MultiDFA multiDFA = builder.compileMultiDFA(&overshadows);
   perfTimer.lap("DFA construction", multiDFA.dfa.size(), "states");
 
   // check for unmatchable rules
@@ -240,16 +250,16 @@ int main(int argc, const char* argv[]) {
     return EXIT_FAILURE;
 
   if (!flags.getBool("no-dfa-minimize")) {
-    multiDFA = std::move(klex::DFAMinimizer{multiDFA}.construct());
+    multiDFA = std::move(klex::DFAMinimizer{multiDFA}.constructMultiDFA());
     perfTimer.lap("DFA minimization", multiDFA.dfa.size(), "states");
   }
 
   if (std::string dotfile = flags.getString("debug-dfa"); !dotfile.empty()) {
     if (dotfile == "-") {
-      klex::DotWriter writer{ std::cout };
+      klex::DotWriter writer{ std::cout, "n", multiDFA.initialStates };
       multiDFA.dfa.visit(writer);
     } else {
-      klex::DotWriter writer{ dotfile };
+      klex::DotWriter writer{ dotfile, "n", multiDFA.initialStates };
       multiDFA.dfa.visit(writer);
     }
   }
@@ -268,9 +278,9 @@ int main(int argc, const char* argv[]) {
     if (auto p = fs::path{tokenFile}.remove_filename(); p != "")
       fs::create_directories(p);
     std::ofstream ofs {tokenFile};
-    generateTokenDefCxx(ofs, rules, flags.getString("token-name"), lexerDef.initialStates);
+    generateTokenDefCxx(ofs, rules, flags.getString("token-name"), flags.getString("machine-name"), lexerDef.initialStates);
   } else {
-    generateTokenDefCxx(std::cerr, rules, flags.getString("token-name"), lexerDef.initialStates);
+    generateTokenDefCxx(std::cerr, rules, flags.getString("token-name"), flags.getString("machine-name"), lexerDef.initialStates);
   }
 
   return EXIT_SUCCESS;

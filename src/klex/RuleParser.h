@@ -27,10 +27,12 @@ class RuleParser {
   class UnexpectedChar;
   class UnexpectedToken;
   class InvalidRuleOption;
+  class InvalidRefRuleWithConditions;
   class DuplicateRule;
 
  private:
   std::optional<Rule> parseRule();
+  std::vector<std::string> parseRuleConditions();
   std::string parseExpression();
 
  private:
@@ -54,14 +56,30 @@ class RuleParser {
   int nextTag_;
 };
 
+class RuleParser::InvalidRefRuleWithConditions : public std::runtime_error {
+ public:
+  InvalidRefRuleWithConditions(unsigned line, unsigned column, Rule rule)
+      : std::runtime_error{fmt::format("{}:{}: Invalid rule \"{}\". Reference rules must not be labelled with conditions.",
+          line, column, rule.name)},
+      rule_{rule} {}
+
+  const Rule& rule() const noexcept { return rule_; }
+
+ private:
+  const Rule rule_;
+};
+
 class RuleParser::DuplicateRule : public std::runtime_error {
  public:
   DuplicateRule(Rule duplicate, const Rule& other)
-      : std::runtime_error{fmt::format("{}:{}: Duplicated rule definition with name {}, previously defined in {}:{}.",
+      : std::runtime_error{fmt::format("{}:{}: Duplicated rule definition with name \"{}\", previously defined in {}:{}.",
             duplicate.line, duplicate.column, duplicate.name,
             other.line, other.column)},
         duplicate_{std::move(duplicate)},
         other_{other} {}
+
+  const Rule& duplicate() const noexcept { return duplicate_; }
+  const Rule& other() const noexcept { return other_; }
 
  private:
   const Rule duplicate_;

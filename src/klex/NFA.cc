@@ -259,7 +259,7 @@ NFA& NFA::repeat(unsigned minimum, unsigned maximum) {
 }
 
 void NFA::visit(DotVisitor& v) const {
-  v.start();
+  v.start(initialState_);
 
   for (StateId i = 0, e = size(); i != e; ++i) {
     const bool isInitialState = i == initialState_;

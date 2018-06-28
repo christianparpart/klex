@@ -7,6 +7,7 @@
 #pragma once
 
 #include <klex/DotVisitor.h>
+#include <klex/MultiDFA.h>
 #include <klex/State.h>
 
 #include <fstream>
@@ -20,20 +21,46 @@ namespace klex {
 
 class DotWriter : public DotVisitor {
  public:
-  explicit DotWriter(std::ostream& os, std::string stateLabelPrefix = "n")
+  DotWriter(std::ostream& os, std::string stateLabelPrefix)
       : ownedStream_{},
         stream_{os},
-        stateLabelPrefix_{stateLabelPrefix}
+        stateLabelPrefix_{stateLabelPrefix},
+        transitionGroups_{},
+        initialStates_{nullptr},
+        initialState_{0}
   {}
 
-  explicit DotWriter(const std::string& filename, std::string stateLabelPrefix = "n")
+  DotWriter(const std::string& filename, std::string stateLabelPrefix)
       : ownedStream_{std::make_unique<std::ofstream>(filename)},
         stream_{*ownedStream_.get()},
-        stateLabelPrefix_{stateLabelPrefix}
+        stateLabelPrefix_{stateLabelPrefix},
+        transitionGroups_{},
+        initialStates_{nullptr},
+        initialState_{0}
+  {}
+
+  DotWriter(std::ostream& os, std::string stateLabelPrefix,
+            const MultiDFA::InitialStateMap& initialStates)
+      : ownedStream_{},
+        stream_{os},
+        stateLabelPrefix_{stateLabelPrefix},
+        transitionGroups_{},
+        initialStates_{&initialStates},
+        initialState_{0}
+  {}
+
+  DotWriter(const std::string& filename, std::string stateLabelPrefix,
+            const MultiDFA::InitialStateMap& initialStates)
+      : ownedStream_{std::make_unique<std::ofstream>(filename)},
+        stream_{*ownedStream_.get()},
+        stateLabelPrefix_{stateLabelPrefix},
+        transitionGroups_{},
+        initialStates_{&initialStates},
+        initialState_{0}
   {}
 
  public:
-  void start() override;
+  void start(int initialState) override;
   void visitNode(int number, bool start, bool accept) override;
   void visitEdge(int from, int to, Symbol s) override;
   void endVisitEdge(int from, int to) override;
@@ -44,6 +71,8 @@ class DotWriter : public DotVisitor {
   std::ostream& stream_;
   std::string stateLabelPrefix_;
   std::map<StateId /*target state*/, std::vector<Symbol> /*transition symbols*/> transitionGroups_;
+  const MultiDFA::InitialStateMap* initialStates_;
+  int initialState_;
 };
 
 } // namespace klex

@@ -56,12 +56,14 @@ class Compiler {
   /**
    * Compiles all previousely parsed rules into a DFA.
    */
-  MultiDFA compileDFA(OvershadowMap* overshadows = nullptr);
+  DFA compileDFA(OvershadowMap* overshadows = nullptr);
+  MultiDFA compileMultiDFA(OvershadowMap* overshadows = nullptr);
 
   /**
    * Compiles all previousely parsed rules into a minimal DFA.
    */
-  MultiDFA compileMinimalDFA();
+  DFA compileMinimalDFA();
+  MultiDFA compileMinimalMultiDFA();
 
   /**
    * Compiles all previousely parsed rules into a suitable data structure for Lexer.
@@ -69,12 +71,14 @@ class Compiler {
    * @see Lexer
    */
   LexerDef compile();
+  LexerDef compileMulti();
 
   /**
    * Translates the given DFA @p dfa with a given TagNameMap @p names into trivial table mappings.
    *
    * @see Lexer
    */
+  static LexerDef generateTables(const DFA& dfa, const TagNameMap& names);
   static LexerDef generateTables(const MultiDFA& dfa, const TagNameMap& names);
 
  private:

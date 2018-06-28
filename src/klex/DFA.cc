@@ -66,6 +66,13 @@ void DFA::setTransition(StateId from, Symbol symbol, StateId to) {
   states_[from].transitions[symbol] = to;
 }
 
+void DFA::removeTransition(StateId from, Symbol symbol) {
+  State& s = states_[from];
+  if (auto i = s.transitions.find(symbol); i != s.transitions.end()) {
+    s.transitions.erase(i);
+  }
+}
+
 StateId DFA::append(DFA other, StateId q0) {
   assert(other.initialState() == 0);
 
@@ -110,7 +117,7 @@ void DFA::prepareStateIds(StateId baseId, StateId q0) {
 }
 
 void DFA::visit(DotVisitor& v) const {
-  v.start();
+  v.start(initialState_);
 
   // STATE: initial
   v.visitNode(initialState_, true, isAccepting(initialState_));
