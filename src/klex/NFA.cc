@@ -251,9 +251,14 @@ NFA& NFA::repeat(unsigned minimum, unsigned maximum) {
 
   NFA factor = clone();
 
-  times(minimum);
+  if (minimum != 0)
+    times(minimum);
+
   for (unsigned n = minimum + 1; n <= maximum; n++)
     alternate(std::move(factor.clone().times(n)));
+
+  if (minimum == 0)
+    optional();
 
   return *this;
 }
