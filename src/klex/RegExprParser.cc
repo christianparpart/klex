@@ -253,57 +253,57 @@ void RegExprParser::parseNamedCharacterClass(SymbolSet& ss) {
   consume(':');
   consume(']');
 
-  static const std::unordered_map<std::string_view, std::function<void()>> names = {
-    {"alnum", [&]() {
+  static const std::unordered_map<std::string_view, std::function<void(SymbolSet&)>> names = {
+    {"alnum", [](SymbolSet& ss) {
       for (Symbol c = 'a'; c <= 'z'; c++) ss.insert(c);
       for (Symbol c = 'A'; c <= 'Z'; c++) ss.insert(c);
       for (Symbol c = '0'; c <= '9'; c++) ss.insert(c);
     }},
-    {"alpha", [&]() {
+    {"alpha", [](SymbolSet& ss) {
       for (Symbol c = 'a'; c <= 'z'; c++) ss.insert(c);
       for (Symbol c = 'A'; c <= 'Z'; c++) ss.insert(c);
     }},
-    {"blank", [&]() {
+    {"blank", [](SymbolSet& ss) {
       ss.insert(' ');
       ss.insert('\t');
     }},
-    {"cntrl", [&]() {
+    {"cntrl", [](SymbolSet& ss) {
       for (Symbol c = 0; c <= 255; c++)
         if (std::iscntrl(c))
           ss.insert(c);
     }},
-    {"digit", [&]() {
+    {"digit", [](SymbolSet& ss) {
       for (Symbol c = '0'; c <= '9'; c++)
         ss.insert(c);
     }},
-    {"graph", [&]() {
+    {"graph", [](SymbolSet& ss) {
       for (Symbol c = 0; c <= 255; c++)
         if (std::isgraph(c))
           ss.insert(c);
     }},
-    {"lower", [&]() {
+    {"lower", [](SymbolSet& ss) {
       for (Symbol c = 'a'; c <= 'z'; c++)
         ss.insert(c);
     }},
-    {"print", [&]() {
+    {"print", [](SymbolSet& ss) {
       for (Symbol c = 0; c <= 255; c++)
         if (std::isprint(c) || c == ' ')
           ss.insert(c);
     }},
-    {"punct", [&]() {
+    {"punct", [](SymbolSet& ss) {
       for (Symbol c = 0; c <= 255; c++)
         if (std::ispunct(c))
           ss.insert(c);
     }},
-    {"space", [&]() {
+    {"space", [](SymbolSet& ss) {
       for (Symbol c : "\f\n\r\t\v")
         ss.insert(c);
     }},
-    {"upper", [&]() {
+    {"upper", [](SymbolSet& ss) {
       for (Symbol c = 'A'; c <= 'Z'; c++)
         ss.insert(c);
     }},
-    {"xdigit", [&]() {
+    {"xdigit", [](SymbolSet& ss) {
       for (Symbol c = '0'; c <= '9'; c++) ss.insert(c);
       for (Symbol c = 'a'; c <= 'f'; c++) ss.insert(c);
       for (Symbol c = 'A'; c <= 'F'; c++) ss.insert(c);
@@ -311,7 +311,7 @@ void RegExprParser::parseNamedCharacterClass(SymbolSet& ss) {
   };
 
   if (auto i = names.find(token); i != names.end())
-    i->second();
+    i->second(ss);
   else
     throw UnexpectedToken{line_, column_, token, "<valid character class>"};
 }
