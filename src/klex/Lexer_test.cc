@@ -148,3 +148,117 @@ TEST(Lexer, realworld_ipv4) {
 
   ASSERT_EQ(1, lexer.recognize());
 }
+
+enum class RealWorld { Eof = 1, IPv4, IPv6 };
+namespace fmt { // it sucks that I've to specify that here
+  template<>
+  struct formatter<RealWorld> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    constexpr auto format(const RealWorld& v, FormatContext &ctx) {
+      switch (v) {
+        case RealWorld::Eof: return format_to(ctx.begin(), "Eof");
+        case RealWorld::IPv4: return format_to(ctx.begin(), "IPv4");
+        case RealWorld::IPv6: return format_to(ctx.begin(), "IPv6");
+        default: return format_to(ctx.begin(), "<{}>", static_cast<unsigned>(v));
+      }
+    }
+  };
+}
+
+TEST(Lexer, realworld_ipv6) {
+  Compiler cc;
+  cc.parse(std::make_unique<std::stringstream>(R"(
+      Spacing(ignore)   ::= [\s\t\n]+
+      Eof               ::= <<EOF>>
+      IPv4Octet(ref)    ::= [0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]
+      IPv4(ref)         ::= {IPv4Octet}(\.{IPv4Octet}){3}
+      IPv4Literal       ::= {IPv4}
+
+      ipv6Part(ref)     ::= [[:xdigit:]]{1,4}
+      IPv6              ::= {ipv6Part}(:{ipv6Part}){7,7}
+      IPv6              ::= ({ipv6Part}:){1,7}:
+      IPv6              ::= :(:{ipv6Part}){1,7}
+      IPv6              ::= ::
+      IPv6              ::= ({ipv6Part}:){1}(:{ipv6Part}){0,6}
+      IPv6              ::= ({ipv6Part}:){2}(:{ipv6Part}){0,5}
+      IPv6              ::= ({ipv6Part}:){3}(:{ipv6Part}){0,4}
+      IPv6              ::= ({ipv6Part}:){4}(:{ipv6Part}){0,3}
+      IPv6              ::= ({ipv6Part}:){5}(:{ipv6Part}){0,2}
+      IPv6              ::= ({ipv6Part}:){6}(:{ipv6Part}){0,1}
+      IPv6              ::= ::[fF]{4}:{IPv4}
+  )"));
+
+  Lexer<RealWorld> lexer { cc.compile(),
+                       std::make_unique<std::stringstream>(
+                           R"(0:0:0:0:0:0:0:0
+                              1234:5678:90ab:cdef:aaaa:bbbb:cccc:dddd
+                              2001:0db8:85a3:0000:0000:8a2e:0370:7334
+                              1234:5678::
+                              0::
+                              ::0
+                              ::
+                              1::3:4:5:6:7:8
+                              1::4:5:6:7:8
+                              1::5:6:7:8
+                              1::8
+                              1:2::4:5:6:7:8
+                              1:2::5:6:7:8
+                              1:2::8
+                              ::ffff:127.0.0.1
+                              ::ffff:c000:0280
+                             )"),
+                       [this](const std::string& msg) { log(msg); } };
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("0:0:0:0:0:0:0:0", lexer.word());
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("1234:5678:90ab:cdef:aaaa:bbbb:cccc:dddd", lexer.word());
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("2001:0db8:85a3:0000:0000:8a2e:0370:7334", lexer.word());
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("1234:5678::", lexer.word());
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("0::", lexer.word());
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("::0", lexer.word());
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("::", lexer.word());
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("1::3:4:5:6:7:8", lexer.word());
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("1::4:5:6:7:8", lexer.word());
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("1::5:6:7:8", lexer.word());
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("1::8", lexer.word());
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("1:2::4:5:6:7:8", lexer.word());
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("1:2::5:6:7:8", lexer.word());
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("1:2::8", lexer.word());
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("::ffff:127.0.0.1", lexer.word());
+
+  ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
+  ASSERT_EQ("::ffff:c000:0280", lexer.word());
+
+  ASSERT_EQ(RealWorld::Eof, lexer.recognize());
+}
