@@ -147,17 +147,14 @@ int main(int argc, const char* argv[]) {
   cc.parse(std::make_unique<std::stringstream>(RULES));
 
   if (flags.getBool("dfa")) {
-    klex::DotWriter writer { std::cout };
+    klex::DotWriter writer { std::cout, "n" };
     klex::DFA dfa = cc.compileMinimalDFA();
     dfa.visit(writer);
     return EXIT_SUCCESS;
   }
 
-  const klex::LexerDef def = cc.compile();
-
-  // Lexer lexer { def, std::cin };
   std::string input = argc == 1 ? std::string("2+3*4") : flags.parameters()[0];
-  Lexer lexer { def, std::make_unique<std::stringstream>(input) };
+  Lexer lexer { cc.compile(), std::make_unique<std::stringstream>(input) };
 
   lexer.recognize();
   Number n = expr(lexer);

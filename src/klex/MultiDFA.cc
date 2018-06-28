@@ -10,8 +10,6 @@ namespace klex {
 
 MultiDFA constructMultiDFA(std::map<std::string, DFA> many) {
   MultiDFA multiDFA{};
-
-  // allocate initial selector state
   multiDFA.dfa.createStates(1 + many.size());
   multiDFA.dfa.setInitialState(0);
 

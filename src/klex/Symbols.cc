@@ -75,7 +75,7 @@ std::string prettyCharRange(Symbol ymin, Symbol ymax) {
   return sstr.str();
 }
 
-static std::string _groupCharacterClassRanges(const std::vector<bool>& syms) {
+std::string groupCharacterClassRanges(const std::vector<bool>& syms) {
   // {1,3,5,a,b,c,d,e,f,z]
   // ->
   // {{1}, {3}, {5}, {a-f}, {z}}
@@ -106,6 +106,39 @@ static std::string _groupCharacterClassRanges(const std::vector<bool>& syms) {
   return sstr.str();
 }
 
+std::string groupCharacterClassRanges(std::vector<Symbol> chars) {
+  // we took a copy in tgroup here, so I can sort() later
+  std::sort(chars.begin(), chars.end());
+
+  if (chars.size() == 1)
+    return prettySymbol(chars.front());
+
+  // {1,3,5,a,b,c,d,e,f,z]
+  // ->
+  // "123a-fz"
+
+  std::stringstream sstr;
+  Symbol ymin = 0;
+  Symbol ymax = ymin;
+  int i = 0;
+
+  for (Symbol c : chars) {
+    if (c == ymax + 1) {  // range growing
+      ymax = c;
+    }
+    else { // gap found
+      if (i) {
+        sstr << prettyCharRange(ymin, ymax);
+      }
+      ymin = ymax = c;
+    }
+    i++;
+  }
+  sstr << prettyCharRange(ymin, ymax);
+
+  return sstr.str();
+}
+
 SymbolSet::SymbolSet(DotMode) : set_(256, true), size_{255}, hash_{2166136261} {
   set_[(size_t) '\n'] = false;
   for (Symbol s : *this) {
@@ -130,7 +163,7 @@ std::string SymbolSet::to_string() const {
   if (isDot())
     return ".";
 
-  return _groupCharacterClassRanges(set_);
+  return groupCharacterClassRanges(set_);
 }
 
 void SymbolSet::complement() {

@@ -67,9 +67,9 @@ TEST(Lexer, lookahead) {
   Lexer<LookaheadToken> lexer { cc.compile(), std::make_unique<std::stringstream>("abba abcd cdef") };
   // LexerDef lexerDef = cc.compile();
   // logf("LexerDef:\n{}", lexerDef.to_string());
-  // Lexer<LookaheadToken, true> lexer { lexerDef,
-  //                                     std::make_unique<std::stringstream>("abba abcd cdef"),
-  //                                     [this](const std::string& msg) { log(msg); } };
+  // Lexer<LookaheadToken, StateId, true> lexer { lexerDef,
+  //                                              std::make_unique<std::stringstream>("abba abcd cdef"),
+  //                                              [this](const std::string& msg) { log(msg); } };
 
   ASSERT_EQ(LookaheadToken::ABBA, lexer.recognize());
   ASSERT_EQ(LookaheadToken::AB_CD, lexer.recognize());
@@ -84,9 +84,9 @@ TEST(Lexer, match_eol) {
   Lexer<LookaheadToken> lexer { cc.compile(), std::make_unique<std::stringstream>("abba eol\nabba") };
   // LexerDef lexerDef = cc.compile();
   // logf("LexerDef:\n{}", lexerDef.to_string());
-  // Lexer<LookaheadToken, true> lexer { lexerDef,
-  //                                     std::make_unique<std::stringstream>("abba eol\nabba"),
-  //                                     [this](const std::string& msg) { log(msg); } };
+  // Lexer<LookaheadToken, StateId, true> lexer { lexerDef,
+  //                                              std::make_unique<std::stringstream>("abba eol\nabba"),
+  //                                              [this](const std::string& msg) { log(msg); } };
 
   ASSERT_EQ(LookaheadToken::ABBA, lexer.recognize());
   ASSERT_EQ(0, lexer.offset().first);

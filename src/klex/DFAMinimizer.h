@@ -6,12 +6,14 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <klex/State.h>
-#include <klex/MultiDFA.h>
 #include <klex/Alphabet.h>
+#include <klex/MultiDFA.h>
+#include <klex/State.h>
 
-#include <vector>
+#include <cstdlib>
 #include <optional>
+#include <unordered_map>
+#include <vector>
 
 namespace klex {
 
@@ -22,20 +24,29 @@ class DFAMinimizer {
   explicit DFAMinimizer(const DFA& dfa);
   explicit DFAMinimizer(const MultiDFA& multiDFA);
 
-  MultiDFA construct();
+  DFA constructDFA();
+  MultiDFA constructMultiDFA();
 
  private:
   using PartitionVec = std::vector<StateIdVec>;
 
+  void constructPartitions();
   StateIdVec nonAcceptStates() const;
   bool containsInitialState(const StateIdVec& S) const;
   PartitionVec::iterator findGroup(StateId s);
   std::optional<int> partitionId(StateId s) const;
   PartitionVec split(const StateIdVec& S) const;
-  MultiDFA constructFromPartitions(const PartitionVec& P) const;
+  DFA constructFromPartitions(const PartitionVec& P) const;
   std::optional<StateId> containsBacktrackState(const std::vector<StateId>& Q) const;
 
   static void dumpGroups(const PartitionVec& T);
+
+  StateId targetStateId(StateId oldId) const {
+    if (auto i = targetStateIdMap_.find(oldId); i != targetStateIdMap_.end())
+      return i->second;
+
+    abort();
+  }
 
  private:
   const DFA& dfa_;
@@ -43,6 +54,7 @@ class DFAMinimizer {
   const Alphabet alphabet_;
   PartitionVec T;
   PartitionVec P;
+  std::unordered_map<StateId, StateId> targetStateIdMap_;
 };
 
 } // namespace klex
