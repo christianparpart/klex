@@ -1,3 +1,11 @@
+
+```
+ipv6Part(ref)     ::= [[:xdigit:]]{1,4}
+IPv6              ::= {ipv6Part}(:{ipv6Part}){7,7}
+IPv6              ::= {ipv6Part}(:{ipv6Part}){0,6}::
+IPv6              ::= ::{ipv6Part}(:{ipv6Part}){0,6}
+```
+
 ### The very incomplete TODO checklist
 
 - [ ] <<more unit tests>>
