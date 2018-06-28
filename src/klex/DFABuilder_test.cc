@@ -7,6 +7,7 @@
 
 #include <klex/util/testing.h>
 #include <klex/DFABuilder.h>
+#include <klex/MultiDFA.h>
 #include <klex/DFA.h>
 #include <klex/Compiler.h>
 #include <sstream>

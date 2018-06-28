@@ -6,11 +6,14 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <klex/State.h>
 #include <klex/Alphabet.h>
+#include <klex/MultiDFA.h>
+#include <klex/State.h>
 
-#include <vector>
+#include <cstdlib>
 #include <optional>
+#include <unordered_map>
+#include <vector>
 
 namespace klex {
 
@@ -19,12 +22,15 @@ class DFA;
 class DFAMinimizer {
  public:
   explicit DFAMinimizer(const DFA& dfa);
+  explicit DFAMinimizer(const MultiDFA& multiDFA);
 
-  DFA construct();
+  DFA constructDFA();
+  MultiDFA constructMultiDFA();
 
  private:
   using PartitionVec = std::vector<StateIdVec>;
 
+  void constructPartitions();
   StateIdVec nonAcceptStates() const;
   bool containsInitialState(const StateIdVec& S) const;
   PartitionVec::iterator findGroup(StateId s);
@@ -35,11 +41,20 @@ class DFAMinimizer {
 
   static void dumpGroups(const PartitionVec& T);
 
+  StateId targetStateId(StateId oldId) const {
+    if (auto i = targetStateIdMap_.find(oldId); i != targetStateIdMap_.end())
+      return i->second;
+
+    abort();
+  }
+
  private:
   const DFA& dfa_;
+  const MultiDFA::InitialStateMap initialStates_;
   const Alphabet alphabet_;
   PartitionVec T;
   PartitionVec P;
+  std::unordered_map<StateId, StateId> targetStateIdMap_;
 };
 
 } // namespace klex

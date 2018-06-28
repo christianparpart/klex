@@ -25,6 +25,8 @@ using Symbol = int;
 
 std::string prettySymbol(Symbol input);
 std::string prettyCharRange(Symbol ymin, Symbol ymax);
+std::string groupCharacterClassRanges(const std::vector<bool>& syms);
+std::string groupCharacterClassRanges(std::vector<Symbol> syms);
 
 // new way of wrapping up Symbols
 struct Symbols {

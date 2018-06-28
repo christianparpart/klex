@@ -13,7 +13,7 @@
 extern klex::LexerDef lexerDef; // generated via mklex
 
 int main(int argc, const char* argv[]) {
-  klex::Lexer<Token> lexer {lexerDef, std::make_unique<std::ifstream>(argv[1])};
+  klex::Lexer<Token, Machine> lexer {lexerDef, std::make_unique<std::ifstream>(argv[1])};
 
   for (Token t = lexer.recognize(); t != Token::Eof; t = lexer.recognize()) {
     std::cerr << fmt::format("[{}-{}]: token {} (\"{}\")\n",

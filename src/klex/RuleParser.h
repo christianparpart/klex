@@ -27,10 +27,13 @@ class RuleParser {
   class UnexpectedChar;
   class UnexpectedToken;
   class InvalidRuleOption;
+  class InvalidRefRuleWithConditions;
   class DuplicateRule;
+  class MismatchingConditions;
 
  private:
-  std::optional<Rule> parseRule();
+  void parseRule(RuleList& rules);
+  std::vector<std::string> parseRuleConditions();
   std::string parseExpression();
 
  private:
@@ -54,14 +57,30 @@ class RuleParser {
   int nextTag_;
 };
 
+class RuleParser::InvalidRefRuleWithConditions : public std::runtime_error {
+ public:
+  InvalidRefRuleWithConditions(unsigned line, unsigned column, Rule rule)
+      : std::runtime_error{fmt::format("{}:{}: Invalid rule \"{}\". Reference rules must not be labelled with conditions.",
+          line, column, rule.name)},
+      rule_{rule} {}
+
+  const Rule& rule() const noexcept { return rule_; }
+
+ private:
+  const Rule rule_;
+};
+
 class RuleParser::DuplicateRule : public std::runtime_error {
  public:
   DuplicateRule(Rule duplicate, const Rule& other)
-      : std::runtime_error{fmt::format("{}:{}: Duplicated rule definition with name {}, previously defined in {}:{}.",
+      : std::runtime_error{fmt::format("{}:{}: Duplicated rule definition with name \"{}\", previously defined in {}:{}.",
             duplicate.line, duplicate.column, duplicate.name,
             other.line, other.column)},
         duplicate_{std::move(duplicate)},
         other_{other} {}
+
+  const Rule& duplicate() const noexcept { return duplicate_; }
+  const Rule& other() const noexcept { return other_; }
 
  private:
   const Rule duplicate_;
@@ -125,6 +144,23 @@ class RuleParser::InvalidRuleOption : public std::runtime_error {
  private:
   unsigned offset_;
   std::string option_;
+};
+
+class RuleParser::MismatchingConditions : public std::runtime_error {
+ public:
+  MismatchingConditions(const Rule& first, const Rule& second)
+      : std::runtime_error{fmt::format("[{}:{}] Mismatching conditions in rule \"{}\" with alternating rule at {}:{}.",
+          second.line, second.column, second.name, first.line, first.column)},
+        first_{first},
+        second_{second}
+  {}
+
+  const Rule& first() const noexcept { return first_; }
+  const Rule& second() const noexcept { return second_; }
+
+ private:
+  const Rule first_;
+  const Rule second_;
 };
 
 } // namespace klex

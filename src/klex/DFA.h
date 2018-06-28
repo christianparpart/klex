@@ -126,6 +126,7 @@ class DFA {
   }
 
   void setTransition(StateId from, Symbol symbol, StateId to);
+  void removeTransition(StateId from, Symbol symbol);
 
   StateIdVec nonAcceptStates() const {
     StateIdVec result;
@@ -145,6 +146,11 @@ class DFA {
 
     return false;
   }
+
+  StateId append(DFA other, StateId q0);
+
+ private:
+  void prepareStateIds(StateId baseId, StateId q0);
 
  private:
   StateVec states_;

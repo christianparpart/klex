@@ -66,8 +66,58 @@ void DFA::setTransition(StateId from, Symbol symbol, StateId to) {
   states_[from].transitions[symbol] = to;
 }
 
+void DFA::removeTransition(StateId from, Symbol symbol) {
+  State& s = states_[from];
+  if (auto i = s.transitions.find(symbol); i != s.transitions.end()) {
+    s.transitions.erase(i);
+  }
+}
+
+StateId DFA::append(DFA other, StateId q0) {
+  assert(other.initialState() == 0);
+
+  other.prepareStateIds(states_.size(), q0);
+
+  states_.reserve(size() + other.size() - 1);
+  states_[q0] = other.states_[0];
+  states_.insert(states_.end(), std::next(other.states_.begin()), other.states_.end());
+  backtrackStates_.insert(other.backtrackStates_.begin(), other.backtrackStates_.end());
+  acceptTags_.insert(other.acceptTags_.begin(), other.acceptTags_.end());
+
+  return other.initialState();
+}
+
+void DFA::prepareStateIds(StateId baseId, StateId q0) {
+  // adjust transition state IDs
+  // traverse through each state's transition set
+  //    traverse through each transition in the transition set
+  //        traverse through each element and add BASE_ID
+
+  auto transformId = [baseId, q0, this](StateId s) -> StateId {
+    // we subtract 1, because we already have a slot for q0 elsewhere (pre-allocated)
+    return s != initialState_ ? baseId + s - 1 : q0;
+  };
+
+  // for each state's transitions
+  for (State& state : states_)
+    for (std::pair<const Symbol, StateId>& t : state.transitions)
+      t.second = transformId(t.second);
+
+  AcceptMap remapped;
+  for (auto& a : acceptTags_)
+    remapped[transformId(a.first)] = a.second;
+  acceptTags_ = std::move(remapped);
+
+  BacktrackingMap backtracking;
+  for (const auto& bt : backtrackStates_)
+    backtracking[transformId(bt.first)] = transformId(bt.second);
+  backtrackStates_ = std::move(backtracking);
+
+  initialState_ = q0;
+}
+
 void DFA::visit(DotVisitor& v) const {
-  v.start();
+  v.start(initialState_);
 
   // STATE: initial
   v.visitNode(initialState_, true, isAccepting(initialState_));

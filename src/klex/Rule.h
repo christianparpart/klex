@@ -17,6 +17,7 @@ struct Rule {
   unsigned int line;
   unsigned int column;
   Tag tag;
+  std::vector<std::string> conditions;
   std::string name;
   std::string pattern;
 

@@ -20,7 +20,7 @@
 
 namespace klex {
 
-class DFA;
+class MultiDFA;
 
 /**
  * Top-Level API for compiling lexical patterns into table definitions for Lexer.
@@ -50,18 +50,20 @@ class Compiler {
   void declare(Rule rule);
 
   const RuleList& rules() const noexcept { return rules_; }
-  const NFA& nfa() const { return fa_; }
   const TagNameMap& names() const noexcept { return names_; }
+  size_t size() const;
 
   /**
    * Compiles all previousely parsed rules into a DFA.
    */
   DFA compileDFA(OvershadowMap* overshadows = nullptr);
+  MultiDFA compileMultiDFA(OvershadowMap* overshadows = nullptr);
 
   /**
    * Compiles all previousely parsed rules into a minimal DFA.
    */
   DFA compileMinimalDFA();
+  MultiDFA compileMinimalMultiDFA();
 
   /**
    * Compiles all previousely parsed rules into a suitable data structure for Lexer.
@@ -69,6 +71,7 @@ class Compiler {
    * @see Lexer
    */
   LexerDef compile();
+  LexerDef compileMulti();
 
   /**
    * Translates the given DFA @p dfa with a given TagNameMap @p names into trivial table mappings.
@@ -76,10 +79,11 @@ class Compiler {
    * @see Lexer
    */
   static LexerDef generateTables(const DFA& dfa, const TagNameMap& names);
+  static LexerDef generateTables(const MultiDFA& dfa, const TagNameMap& names);
 
  private:
   RuleList rules_;
-  NFA fa_;
+  std::map<std::string, NFA> fa_;
   TagNameMap names_;
 };
 

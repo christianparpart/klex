@@ -23,7 +23,7 @@ namespace klex {
 /**
  * Lexer API for recognizing words.
  */
-template<typename Token = Tag, const bool Debug = false>
+template<typename Token = Tag, typename Machine = StateId, const bool Debug = false>
 class Lexer {
  private:
   using DebugLogger = std::function<void(const std::string&)>;
@@ -95,12 +95,43 @@ class Lexer {
   }
 
   /**
+   * Retrieves the next state for given input state and input symbol.
+   *
+   * @param currentState the current State the DFA is in to.
+   * @param inputSymbol the input symbol that is used for transitioning from current state to the next state.
+   * @returns the next state to transition to.
+   */
+  inline StateId delta(StateId currentState, Symbol inputSymbol) const;
+
+  /**
+   * Sets the active deterministic finite automaton to use for recognizing words.
+   *
+   * @param machine the DFA machine to use for recognizing words.
+   */
+  Machine setMachine(Machine machine) {
+    // since Machine is a 1:1 mapping into the State's ID, we can simply cast here.
+    initialStateId_ = static_cast<StateId>(machine);
+  }
+
+  /**
+   * Retrieves the default DFA machine that is used to recognize words.
+   */
+  Machine defaultMachine() const {
+    if (auto i = initialStates_.find("INITIAL"); i != initialStates_.end()) {
+      return static_cast<Machine>(i->second);
+    } else {
+      // internal error
+      abort();
+    }
+  }
+
+  /**
    * Runtime exception that is getting thrown when a word could not be recognized.
    */
   class LexerError : public std::runtime_error {
    public:
     LexerError(unsigned int offset, unsigned int line, unsigned int column)
-        : std::runtime_error{fmt::format("[{}:{}] Failed to lexically recognize a word.")},
+        : std::runtime_error{fmt::format("[{}:{}] Failed to lexically recognize a word.", line, column)},
           offset_{offset}, line_{line}, column_{column} {}
 
    private:
@@ -108,8 +139,6 @@ class Lexer {
     unsigned int line_;
     unsigned int column_;
   };
-
-  inline StateId delta(StateId currentState, Symbol inputSymbol) const;
 
  private:
   Symbol nextChar();
@@ -121,11 +150,12 @@ class Lexer {
 
  private:
   const TransitionMap transitions_;
-  const StateId initialStateId_;
+  const std::map<std::string, StateId> initialStates_;
   const std::map<StateId, Tag> acceptStates_;
   const BacktrackingMap backtracking_;
   const std::map<Tag, std::string> tagNames_;
   const DebugLogger debug_;
+  Machine initialStateId_;
   std::string word_;
   std::unique_ptr<std::istream> ownedStream_;
   std::istream* stream_;

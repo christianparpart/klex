@@ -36,18 +36,23 @@ RuleList RuleParser::parseRules() {
       break;
     } else if (currentChar() == '\n') {
       consumeChar();
-    } else if (std::optional<Rule> rule = parseRule(); rule.has_value()) {
-      rules.emplace_back(std::move(*rule));
+    } else {
+      parseRule(rules);
     }
   }
 
   return rules;
 }
 
-std::optional<Rule> RuleParser::parseRule() {
-  // Rule ::= TOKEN RuleOptions? SP '::=' SP RegEx SP? LF
+void RuleParser::parseRule(RuleList& rules) {
+  // Rule ::= RuleConditionList? TOKEN RuleOptions? SP '::=' SP RegEx SP? LF
   // RuleOptions ::= '(' RuleOption (',' RuleOption)*
   // RuleOption ::= ignore
+
+  std::vector<std::string> conditions = parseRuleConditions();
+
+  const unsigned int beginLine = line_;
+  const unsigned int beginColumn = column_;
 
   std::string token = consumeToken();
   bool ignore = false;
@@ -68,27 +73,66 @@ std::optional<Rule> RuleParser::parseRule() {
   consumeSP();
   consumeAssoc();
   consumeSP();
-  unsigned int line = line_;
-  unsigned int column = column_;
+  const unsigned int line = line_;
+  const unsigned int column = column_;
   std::string pattern = parseExpression();
   consumeChar('\n');
 
-  Tag tag{};
-  if (ignore || ref)
-    tag = IgnoreTag;
-  else
-    tag = nextTag_++;
+  const Tag tag = [&] {
+    if (ignore || ref)
+      return IgnoreTag;
+    else if (auto i = std::find_if(rules.begin(), rules.end(),
+                                   [&](const auto& r) { return r.name == token; }); i != rules.end())
+      return i->tag;
+    else
+      return nextTag_++;
+  }();
 
-  // TODO: verify `token` hasn't been used by another rule yet & throw if not so.
+  if (ref && !conditions.empty())
+    throw InvalidRefRuleWithConditions{beginLine, beginColumn,
+                                       Rule{line, column, tag, std::move(conditions), token, pattern}};
+
+  if (conditions.empty())
+    conditions.emplace_back("INITIAL");
+
+  std::sort(conditions.begin(), conditions.end());
 
   if (!ref) {
-    return {{line, column, tag, token, pattern}};
+    if (auto i = std::find_if(rules.begin(), rules.end(),
+                              [&](const Rule& r) { return r.name == token; }); i != rules.end()) {
+      // in that case, tag is also equal already
+      // TODO ensure conditions is equal
+      if (conditions != i->conditions) {
+        throw MismatchingConditions{*i, Rule{line, column, tag, conditions, token, pattern}};
+      }
+      i->pattern = fmt::format("({})|({})", i->pattern, pattern);
+    } else {
+      rules.emplace_back(Rule{line, column, tag, conditions, token, pattern});
+    }
   } else if (auto i = refRules_.find(token); i != refRules_.end()) {
-    throw DuplicateRule{Rule{line, column, tag, token, pattern}, i->second};
+    throw DuplicateRule{Rule{line, column, tag, std::move(conditions), token, pattern}, i->second};
   } else {
-    refRules_[token] = {line, column, tag, token, "(" + pattern + ")"};
-    return std::nullopt;
+    // TODO: throw if !conditions.empty();
+    refRules_[token] = {line, column, tag, {}, token, "(" + pattern + ")"};
   }
+}
+
+std::vector<std::string> RuleParser::parseRuleConditions() {
+  // RuleConditionList ::= '<' TOKEN (',' TOKEN) '>'
+  if (currentChar() != '<')
+    return {};
+
+  consumeChar();
+  std::vector<std::string> conditions { consumeToken() };
+
+  while (currentChar() == ',') {
+    consumeChar();
+    conditions.emplace_back(consumeToken());
+  }
+
+  consumeChar('>');
+
+  return std::move(conditions);
 }
 
 std::string RuleParser::parseExpression() {

@@ -46,37 +46,8 @@ static std::string escapeString(const StringType& str) {
   return stream_.str();
 }
 
-static std::string groupCharacterClassRanges(std::vector<Symbol> chars) {
-  // we took a copy in tgroup here, so I can sort() later
-  std::sort(chars.begin(), chars.end());
-
-  // {1,3,5,a,b,c,d,e,f,z]
-  // ->
-  // {{1}, {3}, {5}, {a-f}, {z}}
-
-  std::stringstream sstr;
-  Symbol ymin = '\0';
-  Symbol ymax = ymin;
-  int i = 0;
-
-  for (Symbol c : chars) {
-    if (c == ymax + 1) {  // range growing
-      ymax = c;
-    }
-    else { // gap found
-      if (i) {
-        sstr << prettyCharRange(ymin, ymax);
-      }
-      ymin = ymax = c;
-    }
-    i++;
-  }
-  sstr << prettyCharRange(ymin, ymax);
-
-  return sstr.str();
-}
-
-void DotWriter::start() {
+void DotWriter::start(int initialState) {
+  initialState_ = initialState;
   stream_ << "digraph {\n";
   stream_ << "  rankdir=LR;\n";
   //stream_ << "  label=\"" << escapeString("FA" /*TODO*/) << "\";\n";
@@ -104,11 +75,26 @@ void DotWriter::visitEdge(int from, int to, Symbol s) {
 void DotWriter::endVisitEdge(int from, int to) {
 	auto& tgroup = transitionGroups_[to];
   if (!tgroup.empty()) {
-    std::string label = groupCharacterClassRanges(std::move(tgroup));
-    stream_ << fmt::format("  {}{} -> {}{} [label=\"{}\"];\n",
-                           stateLabelPrefix_, from,
-                           stateLabelPrefix_, to,
-                           escapeString(label));
+    if (from == initialState_ && initialStates_ != nullptr) {
+      for (Symbol s : tgroup) {
+        const std::string label = [this, s]() {
+          for (const auto& p : *initialStates_)
+            if (p.second == static_cast<StateId>(s))
+              return fmt::format("<{}>", p.first);
+          return prettySymbol(s);
+        }();
+        stream_ << fmt::format("  {}{} -> {}{} [label=\"{}\"];\n",
+                               stateLabelPrefix_, from,
+                               stateLabelPrefix_, to,
+                               escapeString(label));
+      }
+    } else {
+      std::string label = groupCharacterClassRanges(std::move(tgroup));
+      stream_ << fmt::format("  {}{} -> {}{} [label=\"{}\"];\n",
+                             stateLabelPrefix_, from,
+                             stateLabelPrefix_, to,
+                             escapeString(label));
+    }
     tgroup.clear();
   }
 }
