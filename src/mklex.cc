@@ -114,11 +114,12 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
   os << "  klex::AcceptStateMap {\n";
   for (const std::pair<klex::StateId, klex::Tag>& accept : lexerDef.acceptStates) {
     os << fmt::format("    {{ {:>3}, {:>3} }}, //", accept.first, accept.second);
-    for (const klex::Rule& rule : rules) {
-      if (accept.second == rule.tag) {
-        os << " " << rule.name;
-      }
-    }
+    std::set<std::string> names;
+    std::for_each(rules.begin(), rules.end(), [&](const auto& rule) {
+      if (accept.second == rule.tag)
+        names.emplace(rule.name);
+    });
+    std::for_each(names.begin(), names.end(), [&](const auto& name) { os << " " << name; });
     os << "\n";
   }
   os << "  },\n";

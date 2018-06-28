@@ -29,9 +29,10 @@ class RuleParser {
   class InvalidRuleOption;
   class InvalidRefRuleWithConditions;
   class DuplicateRule;
+  class MismatchingConditions;
 
  private:
-  std::optional<Rule> parseRule();
+  void parseRule(RuleList& rules);
   std::vector<std::string> parseRuleConditions();
   std::string parseExpression();
 
@@ -143,6 +144,23 @@ class RuleParser::InvalidRuleOption : public std::runtime_error {
  private:
   unsigned offset_;
   std::string option_;
+};
+
+class RuleParser::MismatchingConditions : public std::runtime_error {
+ public:
+  MismatchingConditions(const Rule& first, const Rule& second)
+      : std::runtime_error{fmt::format("[{}:{}] Mismatching conditions in rule \"{}\" with alternating rule at {}:{}.",
+          second.line, second.column, second.name, first.line, first.column)},
+        first_{first},
+        second_{second}
+  {}
+
+  const Rule& first() const noexcept { return first_; }
+  const Rule& second() const noexcept { return second_; }
+
+ private:
+  const Rule first_;
+  const Rule second_;
 };
 
 } // namespace klex

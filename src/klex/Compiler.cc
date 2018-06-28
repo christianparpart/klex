@@ -44,9 +44,6 @@ void Compiler::declare(Rule rule) {
   std::unique_ptr<RegExpr> re = RegExprParser{}.parse(rule.pattern, rule.line, rule.column);
   NFA nfa = NFABuilder{}.construct(re.get(), rule.tag);
 
-  if (rule.conditions.empty())
-    rule.conditions.emplace_back("INITIAL");
-
   for (const std::string& condition : rule.conditions) {
     NFA& fa = fa_[condition];
 
@@ -57,7 +54,7 @@ void Compiler::declare(Rule rule) {
     }
   }
 
-  if (auto i = names_.find(rule.tag); i != names_.end())
+  if (auto i = names_.find(rule.tag); i != names_.end() && i->first != rule.tag)
     names_[rule.tag] = fmt::format("{}, {}", i->second, rule.name);
   else
     names_[rule.tag] = rule.name;
