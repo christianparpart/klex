@@ -225,6 +225,7 @@ The following constructs are supported for describing the syntax of a word in `k
 - `\0` matches the NUL-byte (ASCII value 0)
 - `\x` with `x` being one of `a`, `b`, `f`, `n`, `r`, `t`, `v`, matches the ANSI-C complient escape
   sequence interpretation of `\x` - otherwise the literal `x`, such as `\*` matches character `*`
+- `{name}` matches the ref-rule with the name `name` (see above)
 - `r?` either matches `r` or no `r`
 - `r*` matches zero or more `r`
 - `r+` matches one or more `r`
