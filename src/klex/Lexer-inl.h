@@ -24,8 +24,8 @@ inline Lexer<Token, Machine, Debug>::Lexer(LexerDef info, DebugLogger logger)
       word_{},
       ownedStream_{},
       stream_{nullptr},
-      oldOffset_{},
-      offset_{},
+      oldOffset_{0},
+      offset_{0},
       line_{1},
       column_{0},
       token_{0} {
@@ -40,6 +40,7 @@ inline Lexer<Token, Machine, Debug>::Lexer(LexerDef info, std::unique_ptr<std::i
 template<typename Token, typename Machine, const bool Debug>
 inline Lexer<Token, Machine, Debug>::Lexer(LexerDef info, std::istream& stream, DebugLogger logger)
     : Lexer{std::move(info), std::move(logger)} {
+  stream_ = &stream;
 }
 
 template<typename Token, typename Machine, const bool Debug>
