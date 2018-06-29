@@ -86,9 +86,9 @@ class Lexer {
   //! @returns the name of the current token.
   const std::string& name() const { return name(token_); }
 
-  //! @returns the name of the token represented by Token @p tag.
-  const std::string& name(Token tag) const {
-    if (auto i = tagNames_.find(tag); i != tagNames_.end())
+  //! @returns the name of the token represented by Token @p t.
+  const std::string& name(Token t) const {
+    if (auto i = tagNames_.find(static_cast<Tag>(t)); i != tagNames_.end())
       return i->second;
 
     throw std::invalid_argument{"tag"};
@@ -147,6 +147,13 @@ class Lexer {
   static std::string stateName(StateId s, const std::string_view& n = "n");
   static constexpr StateId BadState = 101010;
   std::string toString(const std::deque<StateId>& stack);
+
+  Token token(StateId s) const {
+    if (auto i = acceptStates_.find(s); i != acceptStates_.end())
+      return static_cast<Token>(i->second);
+
+    throw std::invalid_argument{"tag"};
+  }
 
  private:
   const TransitionMap transitions_;

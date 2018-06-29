@@ -94,3 +94,18 @@ TEST(RuleParser, ref_duplicated) {
   )")};
   EXPECT_THROW(rp.parseRules(), RuleParser::DuplicateRule);
 }
+
+TEST(RuleParser, multiline_alt) {
+  RuleParser rp{std::make_unique<std::stringstream>(R"(
+    Rule1       ::= foo
+                  | bar
+    Rule2(ref)  ::= fnord
+                  | hard
+    Rule3       ::= {Rule2}
+                  | {Rule2}
+  )")};
+  RuleList rules = rp.parseRules();
+  ASSERT_EQ(2, rules.size());
+  EXPECT_EQ("foo|bar", rules[0].pattern);
+  EXPECT_EQ("(fnord|hard)|(fnord|hard)", rules[1].pattern);
+}

@@ -14,7 +14,7 @@ syn keyword klexTodo contained TODO FIXME XXX NOTE BUG
 syn match klexComment "#.*$" contains=klexTodo
 syn match klexOptions '^%\s*pragma\>.*$'
 syn match klexRuleName '^\s*\(<[a-zA-Z,]\+>\)\?[a-zA-Z_][a-zA-Z0-9_]*'
-syn match klexOperator "(\|)"
+syn match klexOperator "(\|)\||"
 syn match klexAssign "::="
 syn match klexRulePattern /\".*\"/
 syn match lexEof "<<EOF>>"

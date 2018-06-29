@@ -93,16 +93,16 @@ Cidr              ::= {IPv4}\/{CidrPart}
 
 ipv6Part(ref)     ::= [[:xdigit:]]{1,4}
 IPv6              ::= {ipv6Part}(:{ipv6Part}){7,7}
-IPv6              ::= ({ipv6Part}:){1,7}:
-IPv6              ::= :(:{ipv6Part}){1,7}
-IPv6              ::= ::
-IPv6              ::= ({ipv6Part}:){1}(:{ipv6Part}){0,6}
-IPv6              ::= ({ipv6Part}:){2}(:{ipv6Part}){0,5}
-IPv6              ::= ({ipv6Part}:){3}(:{ipv6Part}){0,4}
-IPv6              ::= ({ipv6Part}:){4}(:{ipv6Part}){0,3}
-IPv6              ::= ({ipv6Part}:){5}(:{ipv6Part}){0,2}
-IPv6              ::= ({ipv6Part}:){6}(:{ipv6Part}){0,1}
-IPv6              ::= ::[fF]{4}:{IPv4}
+                    | ({ipv6Part}:){1,7}:
+                    | :(:{ipv6Part}){1,7}
+                    | ::
+                    | ({ipv6Part}:){1}(:{ipv6Part}){0,6}
+                    | ({ipv6Part}:){2}(:{ipv6Part}){0,5}
+                    | ({ipv6Part}:){3}(:{ipv6Part}){0,4}
+                    | ({ipv6Part}:){4}(:{ipv6Part}){0,3}
+                    | ({ipv6Part}:){5}(:{ipv6Part}){0,2}
+                    | ({ipv6Part}:){6}(:{ipv6Part}){0,1}
+                    | ::[fF]{4}:{IPv4}
 
 # misc
 Ident             ::= [a-zA-Z_][a-zA-Z_0-9]*

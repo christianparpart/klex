@@ -173,44 +173,51 @@ TEST(Lexer, realworld_ipv6) {
   cc.parse(std::make_unique<std::stringstream>(R"(
       Spacing(ignore)   ::= [\s\t\n]+
       Eof               ::= <<EOF>>
+
       IPv4Octet(ref)    ::= [0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]
       IPv4(ref)         ::= {IPv4Octet}(\.{IPv4Octet}){3}
       IPv4Literal       ::= {IPv4}
 
       ipv6Part(ref)     ::= [[:xdigit:]]{1,4}
       IPv6              ::= {ipv6Part}(:{ipv6Part}){7,7}
-      IPv6              ::= ({ipv6Part}:){1,7}:
-      IPv6              ::= :(:{ipv6Part}){1,7}
-      IPv6              ::= ::
-      IPv6              ::= ({ipv6Part}:){1}(:{ipv6Part}){0,6}
-      IPv6              ::= ({ipv6Part}:){2}(:{ipv6Part}){0,5}
-      IPv6              ::= ({ipv6Part}:){3}(:{ipv6Part}){0,4}
-      IPv6              ::= ({ipv6Part}:){4}(:{ipv6Part}){0,3}
-      IPv6              ::= ({ipv6Part}:){5}(:{ipv6Part}){0,2}
-      IPv6              ::= ({ipv6Part}:){6}(:{ipv6Part}){0,1}
-      IPv6              ::= ::[fF]{4}:{IPv4}
+                          | ({ipv6Part}:){1,7}:
+                          | :(:{ipv6Part}){1,7}
+                          | ::
+                          | ({ipv6Part}:){1}(:{ipv6Part}){0,6}
+                          | ({ipv6Part}:){2}(:{ipv6Part}){0,5}
+                          | ({ipv6Part}:){3}(:{ipv6Part}){0,4}
+                          | ({ipv6Part}:){4}(:{ipv6Part}){0,3}
+                          | ({ipv6Part}:){5}(:{ipv6Part}){0,2}
+                          | ({ipv6Part}:){6}(:{ipv6Part}){0,1}
+                          | ::[fF]{4}:{IPv4}
   )"));
 
-  Lexer<RealWorld> lexer { cc.compile(),
-                       std::make_unique<std::stringstream>(
-                           R"(0:0:0:0:0:0:0:0
-                              1234:5678:90ab:cdef:aaaa:bbbb:cccc:dddd
-                              2001:0db8:85a3:0000:0000:8a2e:0370:7334
-                              1234:5678::
-                              0::
-                              ::0
-                              ::
-                              1::3:4:5:6:7:8
-                              1::4:5:6:7:8
-                              1::5:6:7:8
-                              1::8
-                              1:2::4:5:6:7:8
-                              1:2::5:6:7:8
-                              1:2::8
-                              ::ffff:127.0.0.1
-                              ::ffff:c000:0280
-                             )"),
-                       [this](const std::string& msg) { log(msg); } };
+  static const std::string TEXT = R"(0:0:0:0:0:0:0:0
+                                     1234:5678:90ab:cdef:aaaa:bbbb:cccc:dddd
+                                     2001:0db8:85a3:0000:0000:8a2e:0370:7334
+                                     1234:5678::
+                                     0::
+                                     ::0
+                                     ::
+                                     1::3:4:5:6:7:8
+                                     1::4:5:6:7:8
+                                     1::5:6:7:8
+                                     1::8
+                                     1:2::4:5:6:7:8
+                                     1:2::5:6:7:8
+                                     1:2::8
+                                     ::ffff:127.0.0.1
+                                     ::ffff:c000:0280
+                                     )";
+
+  LexerDef lexerDef = cc.compile();
+#if 1
+  Lexer<RealWorld, StateId, true> lexer { lexerDef,
+                                          std::make_unique<std::stringstream>(TEXT),
+                                          [this](const std::string& msg) { log(msg); } };
+#else
+  Lexer<RealWorld> lexer { cc.compile(), std::make_unique<std::stringstream>(TEXT), [](auto) {} };
+#endif
 
   ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
   ASSERT_EQ("0:0:0:0:0:0:0:0", lexer.word());

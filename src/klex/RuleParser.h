@@ -50,6 +50,8 @@ class RuleParser {
  private:
   std::unique_ptr<std::istream> stream_;
   std::map<std::string, Rule> refRules_;
+  Rule* lastParsedRule_;
+  bool lastParsedRuleIsRef_;
   char currentChar_;
   unsigned int line_;
   unsigned int column_;

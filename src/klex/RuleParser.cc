@@ -19,6 +19,9 @@ namespace klex {
 
 RuleParser::RuleParser(std::unique_ptr<std::istream> input)
     : stream_{std::move(input)},
+      refRules_{},
+      lastParsedRule_{nullptr},
+      lastParsedRuleIsRef_{false},
       currentChar_{0},
       line_{1},
       column_{0},
@@ -48,6 +51,19 @@ void RuleParser::parseRule(RuleList& rules) {
   // Rule ::= RuleConditionList? TOKEN RuleOptions? SP '::=' SP RegEx SP? LF
   // RuleOptions ::= '(' RuleOption (',' RuleOption)*
   // RuleOption ::= ignore
+
+  consumeSP();
+  if (currentChar_ == '|' && lastParsedRule_ != nullptr) {
+    consumeChar();
+    consumeSP();
+    const std::string pattern = parseExpression();
+    lastParsedRule_->pattern += '|' + pattern;
+    return;
+  }
+
+  // finalize ref-rule by surrounding it with round braces
+  if (lastParsedRuleIsRef_)
+    lastParsedRule_->pattern = fmt::format("({})", lastParsedRule_->pattern);
 
   std::vector<std::string> conditions = parseRuleConditions();
 
@@ -100,20 +116,19 @@ void RuleParser::parseRule(RuleList& rules) {
   if (!ref) {
     if (auto i = std::find_if(rules.begin(), rules.end(),
                               [&](const Rule& r) { return r.name == token; }); i != rules.end()) {
-      // in that case, tag is also equal already
-      // TODO ensure conditions is equal
-      if (conditions != i->conditions) {
-        throw MismatchingConditions{*i, Rule{line, column, tag, conditions, token, pattern}};
-      }
-      i->pattern = fmt::format("({})|({})", i->pattern, pattern);
+      throw DuplicateRule{Rule{line, column, tag, std::move(conditions), token, pattern}, *i};
     } else {
       rules.emplace_back(Rule{line, column, tag, conditions, token, pattern});
+      lastParsedRule_ = &rules.back();
+      lastParsedRuleIsRef_ = false;
     }
   } else if (auto i = refRules_.find(token); i != refRules_.end()) {
     throw DuplicateRule{Rule{line, column, tag, std::move(conditions), token, pattern}, i->second};
   } else {
     // TODO: throw if !conditions.empty();
-    refRules_[token] = {line, column, tag, {}, token, "(" + pattern + ")"};
+    refRules_[token] = {line, column, tag, {}, token, pattern};
+    lastParsedRule_ = &refRules_[token];
+    lastParsedRuleIsRef_ = true;
   }
 }
 
@@ -233,12 +248,8 @@ std::string RuleParser::consumeToken() {
 }
 
 void RuleParser::consumeSP() {
-  // require at least one SP character (0x20 or 0x09)
-  if (currentChar_ != ' ' && currentChar_ != '\t')
-    throw UnexpectedChar{line_, column_, currentChar_, ' '};
-
-  do consumeChar();
-  while (currentChar_ == ' ' || currentChar_ == '\t');
+  while (currentChar_ == ' ' || currentChar_ == '\t')
+    consumeChar();
 }
 
 void RuleParser::consumeAssoc() {

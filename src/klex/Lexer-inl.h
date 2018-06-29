@@ -153,9 +153,10 @@ inline Token Lexer<Token, Machine, Debug>::recognizeOne() {
     state = tmp;
   }
 
-  if constexpr(Debug) debugf("recognize: final state {} {}",
+  if constexpr(Debug) debugf("recognize: final state {} {} {}",
                              stateName(state),
-                             isAcceptState(state) ? "accepting" : "non-accepting");
+                             isAcceptState(state) ? "accepting" : "non-accepting",
+                             isAcceptState(state) ? name(token(state)) : std::string());
 
   if (!isAcceptState(state))
     throw LexerError{offset_, line_, column_};
