@@ -69,6 +69,9 @@ or even multiple protocols within the same lexer.
 Stard conditions denote when a rule is going to be visible to the lexer. The lexer can switch
 between the standard condition (called `INITIAL`) and any other custom named stard condition.
 
+A rule can also given the condition `*`, which tells the lexer to recognize that rule
+in all stard conditions. This is particulary useful for EOF tokens.
+
 Example:
 
 ```
@@ -76,6 +79,7 @@ Example:
 Div             ::= /
 RegMatch        ::= =~
 <RE>RegExpr     ::= /.*/
+<*>Eof          ::= <<EOF>>
 # ...
 ```
 
