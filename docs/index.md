@@ -11,6 +11,7 @@ Features
 - Intuitive input syntax
 - Supports most features that the historic projects such as `flex` also have.
 - Outputs modern C++17 code.
+- Also outputs the token enumeration that can be used by parsers.
 
 klex File Syntax
 ----------------
