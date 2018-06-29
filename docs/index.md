@@ -206,17 +206,11 @@ Regular Expression Syntax
 
 The following constructs are supported for describing the syntax of a word in `klex`:
 
-- `r|s` (alternation) matches either `r` or `s`
-- `rs` (concatenation) matches `r` and then `s`
-- `r/s` matches `r` if and only if followed by `s` (without consuming `s`)
-- `r$` matches `r` if and only if followed by a line feed (without consuming the line feed)
-- `r?` either matches `r` or no `r`
-- `r*` matches zero or more `r`
-- `r+` matches one or more `r`
-- `r{n}` matches exactly `n` times `r`
-- `r{m,n}` matches `r` at least `m` times and at most `n` times
-- `r{m,}` matches `r` at least `m` times
-- `"T"` matches uninterpreted literal `T` (may include spaces but no line feeds)
+- `x` matches the character `x`
+- `"T"` matches uninterpreted literal character sequence `T` (may include spaces but no newlines)
+- `(r)` matches `r` - use round braces to override or strengthen operator precedence
+- `<<EOF>>` matches the end of input (typically the end of the file, hence EOF)
+- `.` matches any character, except newline
 - `[abc]` matches either `a` or `b` or `c`
 - `[a-f]` matches one character between `a` and `f`, e.g. `a`, `b`, `c`, `d`, `e`, `f`
 - `[a-f0-9]` matches one character between `a` and `f` or `0` and `9`
@@ -224,8 +218,22 @@ The following constructs are supported for describing the syntax of a word in `k
 - `[[:name:]]` matches a named character class; supported named character classes are:
   `alnum`, `alpha`, `blank`, `cntrl`, `digit`, `graph`, `lower`, `print`, `punct`, `space`,
   `upper`, `xdigit`; the meaning directly maps to their counter-parts in the POSIX API, such as
-  `isalpha(c)`, `isupper()` etc.
-- `(r)` matches `r` - use round braces to override or strengthen operator precedence
-- `<<EOF>>` matches the end of input (typically the end of the file, hence EOF)
+  `isalpha(c)`, `isupper()` etc; character classes may be combined, such as in `[[:lower:]0-9]` to
+  match one of `a-z` or `0-9`
+- `\x2f` matches a character with the exadecimal representation `2f`
+- `\123` matches a character with the octal representation `123`
+- `\0` matches the NUL-byte (ASCII value 0)
+- `\x` with `x` being one of `a`, `b`, `f`, `n`, `r`, `t`, `v`, matches the ANSI-C complient escape
+  sequence interpretation of `\x` - otherwise the literal `x`, such as `\*` matches character `*`
+- `r?` either matches `r` or no `r`
+- `r*` matches zero or more `r`
+- `r+` matches one or more `r`
+- `r{n}` matches exactly `n` times `r`
+- `r{m,n}` matches `r` at least `m` times and at most `n` times
+- `r{m,}` matches `r` at least `m` times
+- `rs` (concatenation) matches `r` and then `s`
+- `r/s` matches `r` if and only if followed by `s` (without consuming `s`)
+- `r$` matches `r` if and only if followed by a newline (without consuming the newline)
+- `r|s` (alternation) matches either `r` or `s`
 
 Matching the beginning of the line (`^`) is not yet supported.
