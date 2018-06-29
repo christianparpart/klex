@@ -15,8 +15,11 @@ mklex - klex lexer generator
  -T, --output-token=FILE      Output file that will contain the compiled tables (use - to represent stderr)
  -n, --table-name=IDENTIFIER  Symbol name for generated table (may include namespace). [lexerDef]
  -N, --token-name=IDENTIFIER  Symbol name for generated token enum type (may include namespace). [Token]
+ -M, --machine-name=IDENTIFIER
+                              Symbol name for generated machine enum type (must not include namespace). [Machine]
  -x, --debug-dfa=DOT_FILE     Writes dot graph of final finite automaton. Use - to represent stdout. []
  -d, --debug-nfa              Writes dot graph of non-deterministic finite automaton to stdout and exits.
+     --no-dfa-minimize        Do not minimize the DFA
  -p, --perf                   Print performance counters to stderr.
 ```
 
