@@ -5,22 +5,27 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/Lexer.h>
+#include <fmt/format.h>
 #include <fstream>
+#include <iostream>
+#include <klex/Lexer.h>
 
 #include "token.h" // generated via mklex
 
-extern klex::LexerDef lexerDef; // generated via mklex
+extern const klex::LexerDef lexerDef; // generated via mklex
 
 int main(int argc, const char* argv[]) {
-  klex::Lexer<Token, Machine> lexer {lexerDef, std::make_unique<std::ifstream>(argv[1])};
+  klex::Lexer<Token, Machine> lexer {lexerDef, std::cin};
+  if (argc == 2)
+    lexer.open(std::make_unique<std::ifstream>(argv[1]));
 
-  for (Token t = lexer.recognize(); t != Token::Eof; t = lexer.recognize()) {
+  do {
+    lexer.recognize();
     std::cerr << fmt::format("[{}-{}]: token {} (\"{}\")\n",
                              lexer.offset().first,
                              lexer.offset().second,
-                             to_string(t), lexer.word());
-  }
+                             to_string(lexer.token()), lexer.word());
+  } while (lexer.token() != Token::Eof);
 
   return EXIT_SUCCESS;
 }
