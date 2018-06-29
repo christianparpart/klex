@@ -209,7 +209,7 @@ The following constructs are supported for describing the syntax of a word in `k
 - `r|s` (alternation) matches either `r` or `s`
 - `rs` (concatenation) matches `r` and then `s`
 - `r/s` matches `r` if and only if followed by `s` (without consuming `s`)
-- `r$` matches `r` if and only if followed by a line feed (without consuming)
+- `r$` matches `r` if and only if followed by a line feed (without consuming the line feed)
 - `r?` either matches `r` or no `r`
 - `r*` matches zero or more `r`
 - `r+` matches one or more `r`
