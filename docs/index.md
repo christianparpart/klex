@@ -226,6 +226,6 @@ The following constructs are supported for describing the syntax of a word in `k
   `upper`, `xdigit`; the meaning directly maps to their counter-parts in the POSIX API, such as
   `isalpha(c)`, `isupper()` etc.
 - `(r)` matches `r` - use round braces to override or strengthen operator precedence
-` `<<EOF>>` matches the end of input (typically the end of the file, hence EOF)
+- `<<EOF>>` matches the end of input (typically the end of the file, hence EOF)
 
 Matching the beginning of the line (`^`) is not yet supported.
