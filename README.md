@@ -27,7 +27,7 @@ mklex - klex lexer generator
 
 ```
 # specials
-Spacing(ignore) ::= "[ \t\s]+"
+Spacing(ignore) ::= "[\t\s]+"
 Eof             ::= <<EOF>>
 
 # symbols
