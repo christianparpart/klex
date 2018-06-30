@@ -91,7 +91,7 @@ void RuleParser::parseRule(RuleList& rules) {
   consumeSP();
   const unsigned int line = line_;
   const unsigned int column = column_;
-  std::string pattern = parseExpression();
+  const std::string pattern = parseExpression();
   consumeChar('\n');
 
   const Tag tag = [&] {
