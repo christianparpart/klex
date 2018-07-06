@@ -55,25 +55,16 @@ StateId NFA::createState(Tag acceptTag) {
   return id;
 }
 
-std::vector<StateId> NFA::delta(const std::vector<StateId>& S, Symbol c) const {
-  std::vector<StateId> result;
-
-  for (StateId s : S) {
-    for (const std::pair<Symbol, StateIdVec>& transition : stateTransitions(s)) {
-      if (transition.first == c) {
-        for (StateId targetState : transition.second) {
-          result.push_back(targetState);
-        }
-      }
-    }
-  }
-
+StateIdVec NFA::delta(const StateIdVec& S, Symbol c) const {
+  StateIdVec result;
+  delta(S, c, &result);
   return std::move(result);
 }
 
-StateIdVec* NFA::delta(const std::vector<StateId>& S, Symbol c, StateIdVec* result) const {
+StateIdVec* NFA::delta(const StateIdVec& S, Symbol c, StateIdVec* result) const {
   for (StateId s : S) {
-    for (const std::pair<Symbol, StateIdVec>& transition : stateTransitions(s)) {
+    const TransitionMap& transitions = stateTransitions(s);
+    for (const auto& transition : transitions) {
       if (transition.first == c) {
         for (StateId targetState : transition.second) {
           result->push_back(targetState);
@@ -88,15 +79,16 @@ StateIdVec* NFA::delta(const std::vector<StateId>& S, Symbol c, StateIdVec* resu
 StateIdVec NFA::epsilonTransitions(StateId s) const {
   StateIdVec t;
 
-  for (const std::pair<Symbol, StateIdVec>& p : stateTransitions(s))
+  const TransitionMap& transitions = stateTransitions(s);
+  for (const std::pair<Symbol, StateIdVec>& p : transitions)
     if (p.first == Symbols::Epsilon)
       t.insert(t.end(), p.second.begin(), p.second.end());
 
   return std::move(t);
 }
 
-std::vector<StateId> NFA::epsilonClosure(const std::vector<StateId>& S) const {
-  std::vector<StateId> eclosure;
+StateIdVec NFA::epsilonClosure(const StateIdVec& S) const {
+  StateIdVec eclosure;
   epsilonClosure(S, &eclosure);
   return std::move(eclosure);
 }
