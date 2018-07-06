@@ -38,9 +38,6 @@ class NFA {
   NFA& operator=(const NFA& other) = default;
 
  public:
-  //! holds a vector of State Ids.
-  using StateIdVec = std::vector<StateId>;
-
   //! represent a transition table for a specific state
   using TransitionMap = std::map<Symbol, StateIdVec>;
 
