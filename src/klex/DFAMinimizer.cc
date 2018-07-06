@@ -66,6 +66,7 @@ std::optional<int> DFAMinimizer::partitionId(StateId s) const {
 }
 
 DFAMinimizer::PartitionVec DFAMinimizer::split(const StateIdVec& S) const {
+  PartitionVec result;
   for (Symbol c : alphabet_) {
     // if c splits S into s_1 and s_2
     //      that is, phi(s_1, c) and phi(s_2, c) reside in two different p_i's (partitions)
@@ -85,12 +86,11 @@ DFAMinimizer::PartitionVec DFAMinimizer::split(const StateIdVec& S) const {
     }
     if (t_i.size() > 1) {
       DEBUG("split: {} on character '{}' into {} sets", to_string(S), (char)c, t_i.size());
-      PartitionVec result;
       for (const std::pair<int, StateIdVec>& t : t_i) {
         result.emplace_back(std::move(t.second));
         DEBUG(" partition {}: {}", t.first, t.second);
       }
-      return result;
+      return std::move(result);
     }
   }
   DEBUG("split: no split needed for {}", to_string(S));
@@ -150,13 +150,14 @@ void DFAMinimizer::constructPartitions() {
 
   dumpGroups(T);
 
+  PartitionVec splits;
   while (P != T) {
     std::swap(P, T);
     T.clear();
 
-    for (StateIdVec& p : P)
-      for (StateIdVec& s : split(p))
-        T.emplace_back(std::move(s));
+    for (StateIdVec& p : P) {
+      T.splice(T.end(), split(p));
+    }
   }
 
   // build up cache to quickly get target state ID from input DFA's state ID
@@ -214,7 +215,7 @@ DFA DFAMinimizer::constructFromPartitions(const PartitionVec& P) const {
   return std::move(dfamin);
 }
 
-std::optional<StateId> DFAMinimizer::containsBacktrackState(const std::vector<StateId>& Q) const {
+std::optional<StateId> DFAMinimizer::containsBacktrackState(const StateIdVec& Q) const {
   for (StateId q : Q)
     if (std::optional<StateId> t = dfa_.backtrack(q); t.has_value())
       return *t;

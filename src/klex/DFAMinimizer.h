@@ -14,6 +14,7 @@
 #include <optional>
 #include <unordered_map>
 #include <vector>
+#include <list>
 
 namespace klex {
 
@@ -28,7 +29,7 @@ class DFAMinimizer {
   MultiDFA constructMultiDFA();
 
  private:
-  using PartitionVec = std::vector<StateIdVec>;
+  using PartitionVec = std::list<StateIdVec>;
 
   void constructPartitions();
   StateIdVec nonAcceptStates() const;
@@ -37,7 +38,7 @@ class DFAMinimizer {
   std::optional<int> partitionId(StateId s) const;
   PartitionVec split(const StateIdVec& S) const;
   DFA constructFromPartitions(const PartitionVec& P) const;
-  std::optional<StateId> containsBacktrackState(const std::vector<StateId>& Q) const;
+  std::optional<StateId> containsBacktrackState(const StateIdVec& Q) const;
 
   static void dumpGroups(const PartitionVec& T);
 
