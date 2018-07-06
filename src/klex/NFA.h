@@ -181,12 +181,35 @@ class NFA {
     return acceptTags_.find(s) != acceptTags_.end();
   }
 
+  /**
+   * Returns whether or not the StateSet @p Q contains at least one State that is also "accepting".
+   */
+  bool isAnyAccepting(const StateIdVec& Q) const {
+    for (StateId q : Q)
+      if (isAccepting(q))
+        return true;
+
+    return false;
+  }
+
   const AcceptMap& acceptMap() const noexcept { return acceptTags_; }
   AcceptMap& acceptMap() noexcept { return acceptTags_; }
 
   std::optional<StateId> backtrack(StateId s) const {
     if (auto i = backtrackStates_.find(s); i != backtrackStates_.end())
       return i->second;
+
+    return std::nullopt;
+  }
+
+  /**
+   * Checks if @p Q contains a state that is flagged as backtracking state in the NFA and returns
+   * the target state within the NFA or @c std::nullopt if not a backtracking state.
+   */
+  std::optional<StateId> containsBacktrackState(const StateIdVec& Q) const {
+    for (StateId q : Q)
+      if (std::optional<StateId> t = backtrack(q); t.has_value())
+        return *t;
 
     return std::nullopt;
   }

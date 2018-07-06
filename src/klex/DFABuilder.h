@@ -39,39 +39,9 @@ class DFABuilder {
                    OvershadowMap* overshadows) const;
 
   /**
-   * Builds a list of states that can be exclusively reached from S via epsilon-transitions.
-   */
-  void epsilonClosure(StateId s, std::vector<StateId>* result) const;
-  std::vector<StateId> epsilonClosure(const std::vector<StateId>& S) const;
-  // [[deprecated]] std::vector<StateId> epsilonClosure(StateId S) const;
-
-  /**
-   * Computes a valid configuration the FA can reach with the given input @p q and @p c.
-   * 
-   * @param q valid input configuration of the original NFA.
-   * @param c the input character that the FA would consume next
-   *
-   * @return set of states that the FA can reach from @p c given the input @p c.
-   */
-  void delta(StateId s, Symbol c, std::vector<StateId>* result) const;
-  std::vector<StateId> delta(const std::vector<StateId>& q, Symbol c) const;
-
-  /**
    * Finds @p t in @p Q and returns its offset (aka configuration number) or -1 if not found.
    */
-  static int configurationNumber(const std::vector<std::vector<StateId>>& Q,
-                                 const std::vector<StateId>& t);
-
-  /**
-   * Returns whether or not the StateSet @p Q contains at least one State that is also "accepting".
-   */
-  bool containsAcceptingState(const std::vector<StateId>& Q) const;
-
-  /**
-   * Checks if @p Q contains a state that is flagged as backtracking state in the NFA and returns
-   * the target state within the NFA or @c std::nullopt if not a backtracking state.
-   */
-  std::optional<StateId> containsBacktrackState(const std::vector<StateId>& Q) const;
+  static int configurationNumber(const std::vector<StateIdVec>& Q, const StateIdVec& t);
 
   /**
    * Determines the tag to use for the deterministic state representing @p q from non-deterministic FA @p fa.
@@ -80,11 +50,10 @@ class DFABuilder {
    *
    * @returns the determined tag or std::nullopt if none
    */
-  std::optional<Tag> determineTag(const StateIdVec& q) const;
+  std::optional<Tag> determineTag(const StateIdVec& q, std::map<Tag, Tag>* overshadows) const;
 
  private:
   const NFA nfa_;
-  mutable std::map<Tag, Tag> overshadows_;
 };
 
 } // namespace klex

@@ -119,6 +119,7 @@ DFA DFABuilder::constructDFA(const std::vector<StateIdVec>& Q,
   }
 
   // map q_i to d_i and flag accepting states
+  std::map<Tag, Tag> overshadowing;
   q_i = 0;
   for (const StateIdVec& q : Q) {
     // d_i represents the corresponding state in the DFA for all states of q from the NFA
@@ -126,8 +127,8 @@ DFA DFABuilder::constructDFA(const std::vector<StateIdVec>& Q,
     // std::cerr << fmt::format("map q{} to d{} for {} states, {}.\n", q_i, d_i->id(), q.size(), to_string(q, "d"));
 
     // if q contains an accepting state, then d is an accepting state in the DFA
-    if (containsAcceptingState(q)) {
-      if (std::optional<Tag> tag = determineTag(q); tag.has_value()) {
+    if (nfa_.isAnyAccepting(q)) {
+      if (std::optional<Tag> tag = determineTag(q, &overshadowing); tag.has_value()) {
         //DEBUG("determineTag: q{} tag {} from {}.", q_i, *tag, q);
         dfa.setAccept(d_i, *tag);
       } else {
@@ -138,7 +139,7 @@ DFA DFABuilder::constructDFA(const std::vector<StateIdVec>& Q,
       }
     }
 
-    if (std::optional<StateId> bt = containsBacktrackState(q); bt.has_value()) {
+    if (std::optional<StateId> bt = nfa_.containsBacktrackState(q); bt.has_value()) {
       // TODO: verify: must not contain more than one backtracking mapping
       assert(dfa.isAccepting(d_i));
       dfa.setBacktrack(d_i, remaps[*bt]);
@@ -168,7 +169,7 @@ DFA DFABuilder::constructDFA(const std::vector<StateIdVec>& Q,
     for (const std::pair<StateId, Tag> a : nfa_.acceptMap()) {
       const Tag tag = a.second;
       if (!dfa.isAcceptor(tag)) {
-        if (auto i = overshadows_.find(tag); i != overshadows_.end()) {
+        if (auto i = overshadowing.find(tag); i != overshadowing.end()) {
           overshadows->emplace_back(tag, i->second);
         }
       }
@@ -178,9 +179,9 @@ DFA DFABuilder::constructDFA(const std::vector<StateIdVec>& Q,
   return dfa;
 }
 
-int DFABuilder::configurationNumber(const std::vector<std::vector<StateId>>& Q, const std::vector<StateId>& t) {
+int DFABuilder::configurationNumber(const std::vector<StateIdVec>& Q, const StateIdVec& t) {
   int i = 0;
-  for (const std::vector<StateId>& q_i : Q) {
+  for (const StateIdVec& q_i : Q) {
     if (q_i == t) {
       return i;
     }
@@ -190,23 +191,7 @@ int DFABuilder::configurationNumber(const std::vector<std::vector<StateId>>& Q, 
   return -1;
 }
 
-std::optional<StateId> DFABuilder::containsBacktrackState(const std::vector<StateId>& Q) const {
-  for (StateId q : Q)
-    if (std::optional<StateId> t = nfa_.backtrack(q); t.has_value())
-      return *t;
-
-  return std::nullopt;
-}
-
-bool DFABuilder::containsAcceptingState(const std::vector<StateId>& Q) const {
-  for (StateId q : Q)
-    if (nfa_.isAccepting(q))
-      return true;
-
-  return false;
-}
-
-std::optional<Tag> DFABuilder::determineTag(const StateIdVec& qn) const {
+std::optional<Tag> DFABuilder::determineTag(const StateIdVec& qn, std::map<Tag, Tag>* overshadows) const {
   std::deque<Tag> tags;
 
   for (StateId s : qn)
@@ -222,7 +207,7 @@ std::optional<Tag> DFABuilder::determineTag(const StateIdVec& qn) const {
   tags.erase(tags.begin());
 
   for (Tag tag : tags)
-    overshadows_[tag] = *lowestTag; // {tag} is overshadowed by {lowestTag}
+    (*overshadows)[tag] = *lowestTag; // {tag} is overshadowed by {lowestTag}
 
   return lowestTag;
 }
