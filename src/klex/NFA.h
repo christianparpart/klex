@@ -150,7 +150,8 @@ class NFA {
   }
 
   //! Retrieves all states that can be reached from @p S with one single input Symbol @p c.
-  std::vector<StateId> delta(const std::vector<StateId>& S, Symbol c) const;
+  StateIdVec delta(const StateIdVec& S, Symbol c) const;
+  StateIdVec* delta(const StateIdVec& S, Symbol c, StateIdVec* result) const;
 
   //! Retrieves all states that can be directly or indirectly accessed via epsilon-transitions exclusively.
   StateIdVec epsilonClosure(const StateIdVec& S) const;

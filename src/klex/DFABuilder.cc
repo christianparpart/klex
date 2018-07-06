@@ -67,48 +67,35 @@ inline void DFABuilder::TransitionTable::insert(int q, Symbol c, int t) {
 */
 
 DFA DFABuilder::construct(OvershadowMap* overshadows) {
-  StateIdVec q_0 = nfa_.epsilonClosure({nfa_.initialStateId()});
-  DEBUG("q_0 = epsilonClosure({}) = {}", to_string(std::vector<StateId>{nfa_.initialStateId()}), q_0);
+  const StateIdVec q_0 = nfa_.epsilonClosure({nfa_.initialStateId()});
   std::vector<StateIdVec> Q = {q_0};          // resulting states
   std::deque<StateIdVec> workList = {q_0};
   TransitionTable T;
 
-  DEBUG("Dumping accept map ({}):", nfa_.acceptMap().size());
-  for ([[maybe_unused]] std::pair<StateId, Tag>&& p : nfa_.acceptMap())
-    DEBUG(" n{} -> {}", p.first, p.second);
-
   const Alphabet alphabet = nfa_.alphabet();
-  DEBUG("alphabet size: {}", alphabet.size());
-  DEBUG("alphabet = {}", alphabet);
-  DEBUG(" {:<8} | {:<14} | {:<24} | {:<}", "set name", "DFA state", "NFA states", "ε-closures(q, *)");
-  DEBUG("{}", "------------------------------------------------------------------------");
 
-  StateIdVec t;
+  StateIdVec eclosure;
+  StateIdVec delta;
   while (!workList.empty()) {
-    StateIdVec q = workList.front();    // each set q represents a valid configuration from the NFA
+    const StateIdVec q = std::move(workList.front());    // each set q represents a valid configuration from the NFA
     workList.pop_front();
     const int q_i = configurationNumber(Q, q);
 
-    std::stringstream dbg;
     for (Symbol c : alphabet) {
-      nfa_.epsilonClosure(nfa_.delta(q, c), &t);
-
-      int t_i = configurationNumber(Q, t);
-
-      if (!dbg.str().empty()) dbg << ", ";
-      if (t_i != -1) {
-        dbg << prettySymbol(c) << ": q" << t_i;
-      } else if (t.empty()) {
-        dbg << prettySymbol(c) << ": none";
-      } else {
-        Q.push_back(t);
-        workList.push_back(t);
-        t_i = configurationNumber(Q, t);
-        dbg << prettySymbol(c) << ": " << to_string(t);
+      nfa_.epsilonClosure(*nfa_.delta(q, c, &delta), &eclosure);
+      if (!eclosure.empty()) {
+        if (int t_i = configurationNumber(Q, eclosure); t_i != -1) {
+          T.insert(q_i, c, t_i); // T[q][c] = eclosure;
+        } else {
+          Q.emplace_back(eclosure);
+          t_i = Q.size() - 1; // equal to configurationNumber(Q, eclosure);
+          T.insert(q_i, c, t_i); // T[q][c] = eclosure;
+          workList.emplace_back(std::move(eclosure));
+        }
+        eclosure.clear();
       }
-      T.insert(q_i, c, t_i); // T[q][c] = t;
+      delta.clear();
     }
-    DEBUG(" q{:<7} | d{:<13} | {:24} | {}", q_i, q_i, to_string(q), dbg.str());
   }
 
   // Q now contains all the valid configurations and T all transitions between them

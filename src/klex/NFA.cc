@@ -71,6 +71,20 @@ std::vector<StateId> NFA::delta(const std::vector<StateId>& S, Symbol c) const {
   return std::move(result);
 }
 
+StateIdVec* NFA::delta(const std::vector<StateId>& S, Symbol c, StateIdVec* result) const {
+  for (StateId s : S) {
+    for (const std::pair<Symbol, StateIdVec>& transition : stateTransitions(s)) {
+      if (transition.first == c) {
+        for (StateId targetState : transition.second) {
+          result->push_back(targetState);
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
 StateIdVec NFA::epsilonTransitions(StateId s) const {
   StateIdVec t;
 
