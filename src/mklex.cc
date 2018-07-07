@@ -42,7 +42,7 @@ std::string charLiteral(klex::Symbol ch) {
     case '\\':
       return std::string{"'\\\\'"};
     default:
-      if (std::isprint(ch))
+      if (ch >= 0 && ch <= 255 && std::isprint(ch))
         return fmt::format("'{}'", (char)ch);
       else
         return fmt::format("{}", (int)ch);

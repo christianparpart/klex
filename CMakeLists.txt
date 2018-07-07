@@ -23,8 +23,10 @@ else()
 endif()
 
 # ----------------------------------------------------------------------------
-add_definitions(-Wall)
-add_definitions(-pedantic)
+if(NOT MSVC)
+  add_definitions(-Wall)
+  add_definitions(-pedantic)
+endif()
 
 # ----------------------------------------------------------------------------
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/src
@@ -52,7 +54,12 @@ add_library(klex STATIC
     src/klex/util/Flags.cc
     )
 
-target_link_libraries(klex PUBLIC fmt::fmt-header-only stdc++fs)
+target_link_libraries(klex PUBLIC fmt::fmt-header-only)
+if(MSVC)
+  target_link_libraries(klex PUBLIC Shlwapi)
+else()
+  target_link_libraries(klex PUBLIC stdc++fs)
+endif()
 set_target_properties(klex PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 if(CLANG_TIDY_EXE)
   set_target_properties(klex PROPERTIES CXX_CLANG_TIDY "${DO_CLANG_TIDY}")
@@ -96,7 +103,7 @@ if(KLEX_TESTS)
       )
 
   target_link_libraries(klex_test PUBLIC klex)
-  target_link_libraries(klex_test PUBLIC fmt::fmt-header-only stdc++fs)
+  target_link_libraries(klex_test PUBLIC fmt::fmt-header-only)
   set_target_properties(klex_test PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
   if(CLANG_TIDY_EXE)
     set_target_properties(klex_test PROPERTIES CXX_CLANG_TIDY "${DO_CLANG_TIDY}")
@@ -112,7 +119,7 @@ if(KLEX_EXAMPLES)
   add_executable(example_flowlexer examples/flowlexer.cc ${FLOW_TABLE_SRC})
   set_target_properties(example_flowlexer PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
   target_include_directories(example_flowlexer PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/examples)
-  target_link_libraries(example_flowlexer PUBLIC fmt::fmt-header-only stdc++fs)
+  target_link_libraries(example_flowlexer PUBLIC fmt::fmt-header-only)
   set_target_properties(example_flowlexer PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 
   add_executable(example_mathexpr examples/mathexpr.cc)
