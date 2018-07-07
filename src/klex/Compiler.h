@@ -20,7 +20,7 @@
 
 namespace klex {
 
-class MultiDFA;
+struct MultiDFA;
 
 /**
  * Top-Level API for compiling lexical patterns into table definitions for Lexer.

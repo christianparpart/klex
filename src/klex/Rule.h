@@ -10,6 +10,7 @@
 #include <klex/State.h>       // Tag
 #include <string>
 #include <vector>
+#include <optional>
 
 namespace klex {
 

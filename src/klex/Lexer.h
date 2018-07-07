@@ -29,10 +29,10 @@ class Lexer {
   using DebugLogger = std::function<void(const std::string&)>;
 
   template<typename... Args>
-  inline void debugf(const char* fmt, Args... args) const {
+  inline void debugf(const char* msg, Args... args) const {
     if constexpr (Debug) {
       if (debug_) {
-        debug_(fmt::format(fmt, args...));
+        debug_(fmt::format(msg, args...));
       }
     }
   }

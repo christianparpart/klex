@@ -11,6 +11,7 @@
 #include <map>
 #include <cmath>
 #include <algorithm>
+#include <optional>
 
 namespace klex {
 
@@ -130,7 +131,7 @@ class DFA {
 
   StateIdVec nonAcceptStates() const {
     StateIdVec result;
-    result.reserve(abs(states_.size() - acceptTags_.size()));
+    result.reserve(abs(static_cast<long int>(states_.size()) - static_cast<long int>(acceptTags_.size())));
 
     for (StateId s = 0, sE = size(); s != sE; ++s)
       if (!isAccepting(s))
