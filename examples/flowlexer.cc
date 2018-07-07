@@ -12,7 +12,7 @@
 
 #include "token.h" // generated via mklex
 
-extern const klex::LexerDef lexerDef; // generated via mklex
+extern klex::LexerDef lexerDef; // generated via mklex
 
 int main(int argc, const char* argv[]) {
   klex::Lexer<Token, Machine> lexer {lexerDef, std::cin};
