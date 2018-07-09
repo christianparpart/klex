@@ -209,10 +209,10 @@ void UnitTest::filterTests(const std::string& filter,
         testInfo->testCaseName(), testInfo->testName());
 
 #if defined(_WIN32) || defined(_WIN64)
-    if (!exclude.empty() && PathMatchSpec(matchName.c_str(), exclude.c_str()) == S_OK)
+    if (!exclude.empty() && PathMatchSpec(matchName.c_str(), exclude.c_str()) == TRUE)
       continue; // exclude this one
 
-    if (PathMatchSpec(matchName.c_str(), filter.c_str()) == S_OK)
+    if (PathMatchSpec(matchName.c_str(), filter.c_str()) == TRUE)
       filtered.push_back(activeTests_[i]);
 #else
     const int flags = 0;
