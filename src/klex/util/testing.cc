@@ -116,7 +116,7 @@ UnitTest* UnitTest::instance() {
 }
 
 void UnitTest::randomizeTestOrder() {
-  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+  unsigned long long seed = std::chrono::system_clock::now().time_since_epoch().count();
 
   std::shuffle(activeTests_.begin(), activeTests_.end(),
       std::default_random_engine(seed));

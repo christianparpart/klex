@@ -12,8 +12,6 @@
 #include <iostream>
 #include <iomanip>
 
-extern char** environ;
-
 namespace klex::util {
 
 // {{{ Flags::Error
@@ -410,10 +408,10 @@ std::string Flags::helpText(size_t width, size_t helpTextOffset) const {
   if (parametersEnabled_) {
     sstr << std::endl;
 
-    size_t p = sstr.tellp();
-    sstr << "    [--] " << parametersPlaceholder_;
-    size_t column = static_cast<size_t>(sstr.tellp()) - p;
+    const std::streampos p = sstr.tellp();
+    const size_t column = static_cast<size_t>(sstr.tellp() - p);
 
+    sstr << "    [--] " << parametersPlaceholder_;
     if (column < helpTextOffset)
       sstr << std::setw(helpTextOffset - column) << ' ';
     else
@@ -478,7 +476,7 @@ std::string Flags::FlagDef::makeHelpText(size_t width,
   }
 
   // spacer
-  size_t column = sstr.tellp();
+  size_t column = static_cast<size_t>(sstr.tellp());
   if (column < helpTextOffset) {
     sstr << std::setw(helpTextOffset - sstr.tellp()) << ' ';
   } else {
