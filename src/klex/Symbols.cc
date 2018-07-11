@@ -82,7 +82,7 @@ std::string groupCharacterClassRanges(const std::vector<bool>& syms) {
 
   std::stringstream sstr;
   Symbol ymin = '\0';
-  Symbol ymax = ymin;
+  Symbol ymax = ymin - 1;
   int k = 0;
 
   for (size_t i = 0, e = syms.size(); i != e; ++i) {
@@ -101,7 +101,9 @@ std::string groupCharacterClassRanges(const std::vector<bool>& syms) {
     }
     k++;
   }
-  sstr << prettyCharRange(ymin, ymax);
+
+  if (ymin <= ymax)
+    sstr << prettyCharRange(ymin, ymax);
 
   return sstr.str();
 }
@@ -139,7 +141,10 @@ std::string groupCharacterClassRanges(std::vector<Symbol> chars) {
   return sstr.str();
 }
 
-SymbolSet::SymbolSet(DotMode) : set_(256, true), size_{255}, hash_{2166136261} {
+SymbolSet::SymbolSet(DotMode)
+    : set_(Symbols::max(), true),
+      size_{255},
+      hash_{2166136261} {
   set_[(size_t) '\n'] = false;
   for (size_t i = 256; i < set_.size(); ++i)
     set_[i] = false;
@@ -190,7 +195,7 @@ void SymbolSet::complement() {
     set_[i] = !set_[i];
 
   // flip size
-  size_ = set_.size() - size_;
+  size_ = 256 - size_;
 
   recalculateHash();
 }
