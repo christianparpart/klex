@@ -92,7 +92,7 @@ LexerDef Compiler::compileMulti() {
 }
 
 LexerDef Compiler::generateTables(const DFA& dfa, const std::map<Tag, std::string>& names) {
-  const Alphabet alphabet = dfa.alphabet();
+  const SymbolSet::Vector alphabet = dfa.alphabet().vector();
   TransitionMap transitionMap;
 
   for (StateId state = 0, sE = dfa.lastState(); state <= sE; ++state) {
@@ -113,7 +113,7 @@ LexerDef Compiler::generateTables(const DFA& dfa, const std::map<Tag, std::strin
 }
 
 LexerDef Compiler::generateTables(const MultiDFA& multiDFA, const std::map<Tag, std::string>& names) {
-  const Alphabet alphabet = multiDFA.dfa.alphabet();
+  const SymbolSet::Vector alphabet = multiDFA.dfa.alphabet().vector();
   TransitionMap transitionMap;
 
   for (StateId state = 0, sE = multiDFA.dfa.lastState(); state <= sE; ++state) {

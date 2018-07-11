@@ -6,9 +6,9 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <klex/Alphabet.h>
 #include <klex/MultiDFA.h>
 #include <klex/State.h>
+#include <klex/Symbols.h>
 
 #include <cstdlib>
 #include <optional>
@@ -51,7 +51,7 @@ class DFAMinimizer {
  private:
   const DFA& dfa_;
   const MultiDFA::InitialStateMap initialStates_;
-  const Alphabet alphabet_;
+  const SymbolSet::Vector alphabet_;
   PartitionVec T;
   PartitionVec P;
   std::unordered_map<StateId, StateId> targetStateIdMap_;

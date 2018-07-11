@@ -22,13 +22,13 @@
 
 namespace klex {
 
-Alphabet DFA::alphabet() const {
-  Alphabet alphabet;
+SymbolSet DFA::alphabet() const {
+  SymbolSet symbols;
   for (const State& state : states_)
     for (const std::pair<Symbol, StateId>& t : state.transitions)
-      alphabet.insert(t.first);
+      symbols.insert(t.first);
 
-  return std::move(alphabet);
+  return std::move(symbols);
 }
 
 std::vector<StateId> DFA::acceptStates() const {

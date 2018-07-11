@@ -7,6 +7,7 @@
 #pragma once
 
 #include <klex/State.h>
+#include <klex/Symbols.h>
 #include <klex/util/UnboxedRange.h>
 
 #include <map>
@@ -16,7 +17,6 @@
 
 namespace klex {
 
-class Alphabet;
 class DotVisitor;
 class DFA;
 
@@ -110,7 +110,7 @@ class NFA {
   StateVec& states() { return states_; }
 
   //! Retrieves the alphabet of this finite automaton.
-  Alphabet alphabet() const;
+  SymbolSet alphabet() const;
 
   //! Clones this NFA.
   NFA clone() const;

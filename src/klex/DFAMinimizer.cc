@@ -25,14 +25,14 @@ namespace klex {
 DFAMinimizer::DFAMinimizer(const DFA& dfa)
     : dfa_{dfa},
       initialStates_{{"INITIAL", dfa.initialState()}},
-      alphabet_{dfa_.alphabet()},
+      alphabet_{dfa_.alphabet().vector()},
       targetStateIdMap_{} {
 }
 
 DFAMinimizer::DFAMinimizer(const MultiDFA& multiDFA)
     : dfa_{multiDFA.dfa},
       initialStates_{multiDFA.initialStates},
-      alphabet_{dfa_.alphabet()},
+      alphabet_{dfa_.alphabet().vector()},
       targetStateIdMap_{} {
 }
 

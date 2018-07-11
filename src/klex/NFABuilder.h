@@ -6,7 +6,6 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <klex/Alphabet.h>
 #include <klex/NFA.h>
 #include <klex/RegExpr.h>
 

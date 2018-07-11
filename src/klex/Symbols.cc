@@ -141,6 +141,9 @@ std::string groupCharacterClassRanges(std::vector<Symbol> chars) {
 
 SymbolSet::SymbolSet(DotMode) : set_(256, true), size_{255}, hash_{2166136261} {
   set_[(size_t) '\n'] = false;
+  for (size_t i = 256; i < set_.size(); ++i)
+    set_[i] = false;
+
   for (Symbol s : *this) {
     hash_ = (hash_ * 16777619) ^ s;
   }
@@ -155,8 +158,23 @@ void SymbolSet::clear(Symbol s) {
 }
 
 bool SymbolSet::isDot() const noexcept {
-  static SymbolSet dot(SymbolSet::Dot);
+#if 0
+  for (size_t i = 0; i < 10; ++i)
+    if (!set_[i])
+      return false;
+
+  if (set_[10])
+    return false;
+
+  for (size_t i = 11; i <= 255; ++i)
+    if (!set_[i])
+      return false;
+
+  return true;
+#else
+  static const SymbolSet dot(SymbolSet::Dot);
   return *this == dot;
+#endif
 }
 
 std::string SymbolSet::to_string() const {
@@ -168,9 +186,8 @@ std::string SymbolSet::to_string() const {
 
 void SymbolSet::complement() {
   // flip bits
-  for (size_t i = 0, e = set_.size(); i != e; ++i) {
+  for (size_t i = 0; i <= 255; ++i)
     set_[i] = !set_[i];
-  }
 
   // flip size
   size_ = set_.size() - size_;

@@ -6,7 +6,7 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/NFA.h>
-#include <klex/Alphabet.h>
+#include <klex/Symbols.h>
 #include <klex/DotVisitor.h>
 
 #include <algorithm>
@@ -23,8 +23,8 @@ namespace klex {
 #define DEBUG(msg, ...) do { } while (0)
 #endif
 
-Alphabet NFA::alphabet() const {
-  Alphabet alphabet;
+SymbolSet NFA::alphabet() const {
+  SymbolSet symbols;
 
   for (const TransitionMap& transitions : states_) {
     for (const std::pair<Symbol, StateIdVec>& t : transitions) {
@@ -32,12 +32,12 @@ Alphabet NFA::alphabet() const {
         case Symbols::Epsilon:
           break;
         default:
-          alphabet.insert(t.first);
+          symbols.insert(t.first);
       }
     }
   }
 
-  return std::move(alphabet);
+  return symbols;
 }
 
 NFA NFA::clone() const {

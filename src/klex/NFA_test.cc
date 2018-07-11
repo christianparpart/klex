@@ -8,7 +8,6 @@
 #include <klex/util/testing.h>
 #include <klex/NFA.h>
 #include <klex/State.h>
-#include <klex/Alphabet.h>
 
 using namespace klex;
 
@@ -68,8 +67,8 @@ TEST(NFA, delta) {
 }
 
 TEST(NFA, alphabet) {
-  ASSERT_EQ("{}", NFA{}.alphabet().to_string());
-  ASSERT_EQ("{a}", NFA{'a'}.alphabet().to_string());
-  ASSERT_EQ("{ab}", NFA{'a'}.concatenate(NFA{'b'}).alphabet().to_string());
-  ASSERT_EQ("{abc}", NFA{'a'}.concatenate(NFA{'b'}).alternate(NFA{'c'}).alphabet().to_string());
+  ASSERT_EQ("", NFA{}.alphabet().to_string());
+  ASSERT_EQ("a", NFA{'a'}.alphabet().to_string());
+  ASSERT_EQ("ab", NFA{'a'}.concatenate(NFA{'b'}).alphabet().to_string());
+  ASSERT_EQ("abc", NFA{'a'}.concatenate(NFA{'b'}).alternate(NFA{'c'}).alphabet().to_string());
 }

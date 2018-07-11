@@ -77,12 +77,11 @@ DFA DFABuilder::construct(OvershadowMap* overshadows) {
   for ([[maybe_unused]] std::pair<StateId, Tag>&& p : nfa_.acceptMap())
     DEBUG(" n{} -> {}", p.first, p.second);
 
-  const Alphabet alphabet = nfa_.alphabet();
-  DEBUG("alphabet size: {}", alphabet.size());
-  DEBUG("alphabet = {}", alphabet);
+  DEBUG("alphabet = {{{}}}", nfa_.alphabet());
   DEBUG(" {:<8} | {:<14} | {:<24} | {:<}", "set name", "DFA state", "NFA states", "ε-closures(q, *)");
   DEBUG("{}", "------------------------------------------------------------------------");
 
+  const SymbolSet::Vector alphabet = nfa_.alphabet().vector();
   StateIdVec t;
   while (!workList.empty()) {
     StateIdVec q = workList.front();    // each set q represents a valid configuration from the NFA

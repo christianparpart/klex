@@ -35,7 +35,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/klex/sysconfig.h.cmake
 
 # ----------------------------------------------------------------------------
 add_library(klex STATIC
-    src/klex/Alphabet.cc
     src/klex/Compiler.cc
     src/klex/DFA.cc
     src/klex/DFABuilder.cc

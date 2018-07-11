@@ -6,8 +6,9 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <klex/Alphabet.h>
 #include <klex/State.h>
+#include <klex/Symbols.h>
+
 #include <map>
 #include <cmath>
 #include <algorithm>
@@ -50,7 +51,7 @@ class DFA {
   }
 
   //! Retrieves the alphabet of this finite automaton.
-  Alphabet alphabet() const;
+  SymbolSet alphabet() const;
 
   //! Retrieves the initial state.
   StateId initialState() const { return initialState_; }

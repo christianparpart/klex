@@ -30,12 +30,16 @@ std::string groupCharacterClassRanges(std::vector<Symbol> syms);
 
 // new way of wrapping up Symbols
 struct Symbols {
-  constexpr static Symbol Epsilon = -1;
-  constexpr static Symbol Error = -2;
-  constexpr static Symbol BeginOfLine = -3;
-  constexpr static Symbol EndOfLine = -4;
-  constexpr static Symbol EndOfFile = -5;
+  constexpr static Symbol Epsilon = 257;
+  constexpr static Symbol Error = 258;
+  constexpr static Symbol BeginOfLine = 259;
+  constexpr static Symbol EndOfLine = 260;
+  constexpr static Symbol EndOfFile = 261;
   constexpr static Symbol Character(char ch) { return Symbol(ch); }
+
+  // numeric limits
+  static constexpr Symbol min() { return 0; }
+  static constexpr Symbol max() { return 261; }
 
   constexpr static bool isSpecial(Symbol s) {
     switch (s) {
@@ -59,7 +63,7 @@ class SymbolSet {
   enum DotMode { Dot };
 
   explicit SymbolSet(DotMode);
-  SymbolSet() : set_(256, false), size_{0}, hash_{2166136261} {}
+  SymbolSet() : set_(Symbols::max(), false), size_{0}, hash_{2166136261} {}
 
   explicit SymbolSet(std::initializer_list<Symbol> list) : SymbolSet() {
     std::for_each(list.begin(), list.end(), [this](Symbol s) { insert(s); });
@@ -92,7 +96,7 @@ class SymbolSet {
 
   //! @returns whether or not given Symbol @p s is in this set.
   bool contains(Symbol s) const {
-    assert(s >= 0 && s <= 255 && "Only ASCII allowed.");
+    assert(s >= Symbols::min() && s <= Symbols::max() && "Only ASCII and special symbols allowed.");
     return set_[(size_t) s];
   }
 
@@ -148,6 +152,18 @@ class SymbolSet {
   const_iterator end() const { return const_iterator(set_.end(), set_.end(), set_.size()); }
 
   size_t hash() const noexcept { return hash_; }
+
+  using Vector = std::vector<Symbol>;
+
+  Vector vector() const {
+    Vector abc;
+    abc.reserve(size());
+
+    for (Symbol s : *this)
+      abc.push_back(s);
+
+    return std::move(abc);
+  }
 
  private:
   void recalculateHash();
