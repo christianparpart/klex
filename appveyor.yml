@@ -36,7 +36,7 @@ build_script:
   - cmake --build . --config %CONFIGURATION%
 
 test_script:
-  - .\klex_test.exe
+  - .\%CONFIGURATION%\klex_test.exe
 
 only_commits:
   files:
