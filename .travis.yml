@@ -1,0 +1,23 @@
+language: cpp
+dist: trusty
+
+compiler:
+  - gcc
+
+before_install:
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo apt-get update -qq
+
+install:
+  - sudo apt-get install -qqy g++-7
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
+
+before_script:
+  - git submodule update --init --recursive
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_BUILD_TYPE=Debug ..
+
+script:
+  - cmake --build .
+  - ./klex_test
