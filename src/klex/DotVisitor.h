@@ -9,10 +9,10 @@ class DotVisitor {
  public:
   virtual ~DotVisitor() {}
 
-  virtual void start(int initialState) = 0;
-  virtual void visitNode(int number, bool start, bool accept) = 0;
-  virtual void visitEdge(int from, int to, Symbol s) = 0;
-  virtual void endVisitEdge(int from, int to) = 0;
+  virtual void start(StateId initialState) = 0;
+  virtual void visitNode(StateId number, bool start, bool accept) = 0;
+  virtual void visitEdge(StateId from, StateId to, Symbol s) = 0;
+  virtual void endVisitEdge(StateId from, StateId to) = 0;
   virtual void end() = 0;
 };
 

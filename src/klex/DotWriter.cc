@@ -46,14 +46,14 @@ static std::string escapeString(const StringType& str) {
   return stream_.str();
 }
 
-void DotWriter::start(int initialState) {
+void DotWriter::start(StateId initialState) {
   initialState_ = initialState;
   stream_ << "digraph {\n";
   stream_ << "  rankdir=LR;\n";
   //stream_ << "  label=\"" << escapeString("FA" /*TODO*/) << "\";\n";
 }
 
-void DotWriter::visitNode(int number, bool start, bool accept) {
+void DotWriter::visitNode(StateId number, bool start, bool accept) {
   if (start) {
     const std::string_view shape = accept ? "doublecircle" : "circle";
     stream_ << "  \"\" [shape=plaintext];\n";
@@ -68,11 +68,11 @@ void DotWriter::visitNode(int number, bool start, bool accept) {
   }
 }
 
-void DotWriter::visitEdge(int from, int to, Symbol s) {
+void DotWriter::visitEdge(StateId from, StateId to, Symbol s) {
   transitionGroups_[to].push_back(s);
 }
 
-void DotWriter::endVisitEdge(int from, int to) {
+void DotWriter::endVisitEdge(StateId from, StateId to) {
 	auto& tgroup = transitionGroups_[to];
   if (!tgroup.empty()) {
     if (from == initialState_ && initialStates_ != nullptr) {
