@@ -60,10 +60,10 @@ class DotWriter : public DotVisitor {
   {}
 
  public:
-  void start(int initialState) override;
-  void visitNode(int number, bool start, bool accept) override;
-  void visitEdge(int from, int to, Symbol s) override;
-  void endVisitEdge(int from, int to) override;
+  void start(StateId initialState) override;
+  void visitNode(StateId number, bool start, bool accept) override;
+  void visitEdge(StateId from, StateId to, Symbol s) override;
+  void endVisitEdge(StateId from, StateId to) override;
   void end() override;
 
  private:
@@ -72,7 +72,7 @@ class DotWriter : public DotVisitor {
   std::string stateLabelPrefix_;
   std::map<StateId /*target state*/, std::vector<Symbol> /*transition symbols*/> transitionGroups_;
   const MultiDFA::InitialStateMap* initialStates_;
-  int initialState_;
+  StateId initialState_;
 };
 
 } // namespace klex
