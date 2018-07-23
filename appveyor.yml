@@ -31,8 +31,9 @@ environment:
 build_script:
   - git submodule update --init --recursive
   - mkdir build
-  - cmake -G "%GENERATOR%" --config "%CONFIG%" --build build .
-  - cmake --build build --config "%CONFIG%"
+  - cd build
+  - cmake -G "%GENERATOR%" --config "%CONFIG%" ..
+  - cmake --build . --config "%CONFIG%"
 
 test_script:
   - .\build\klex_test
