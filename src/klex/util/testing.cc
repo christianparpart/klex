@@ -140,7 +140,26 @@ void UnitTest::sortTestsAlphabetically() {
       });
 }
 
+bool initializeTTY() {
+#if defined(_WIN32) && defined(ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+	HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (output == INVALID_HANDLE_VALUE)
+		return false;
+
+	DWORD mode = 0;
+	if (!GetConsoleMode(output, &mode))
+		return false;
+
+	mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	if (!SetConsoleMode(output, mode))
+		return false;
+#endif
+
+  return true;
+}
+
 int UnitTest::main(int argc, const char* argv[]) {
+  initializeTTY();
   // TODO: add CLI parameters (preferably gtest compatible)
   //
   // --no-color | --color   explicitely enable/disable color output
