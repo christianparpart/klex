@@ -14,20 +14,12 @@ platform:
 matrix:
   fast_finish: true
 
-environment:
-  matrix:
-    - GENERATOR: "Visual Studio 15 Win64"
-      CONFIG: Debug
-
-    - GENERATOR: "Visual Studio 15 Win64"
-      CONFIG: Release
-
 build_script:
   - git submodule update --init --recursive
   - mkdir build
   - cd build
   - cmake -G "%GENERATOR%" --config "%CONFIG%" ..
-  - cmake --build . --config "%CONFIG%"
+  - cmake --build . --config "%CONFIGURATION%"
 
 test_script:
   - .\build\klex_test
