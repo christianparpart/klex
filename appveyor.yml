@@ -35,8 +35,8 @@ build_script:
   - cmake -G %generator% --config %CONFIGURATION% ..
   - cmake --build . --config %CONFIGURATION%
 
-test_script:
-  - .\build\klex_test
+# test_script:
+#   - .\build\klex_test
 
 only_commits:
   files:
