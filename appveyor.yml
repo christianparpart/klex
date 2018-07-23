@@ -19,6 +19,8 @@ build_script:
   - git submodule update --init --recursive
   - mkdir build
   - cd build
+  - echo "Generator: %GENERATOR%"
+  - echo "Configuration: %CONFIGURATION%"
   - cmake -G "%GENERATOR%" --config "%CONFIGURATION%" ..
   - cmake --build . --config "%CONFIGURATION%"
 
