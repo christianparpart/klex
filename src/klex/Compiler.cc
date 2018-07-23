@@ -1,3 +1,4 @@
+// This file is part of the "klex" project, http://github.com/christianparpart/klex>
 //   (c) 2018 Christian Parpart <christian@parpart.family>
 //
 // Licensed under the MIT License (the "License"); you may not use this
