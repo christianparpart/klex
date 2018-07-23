@@ -88,7 +88,7 @@ DFA DFABuilder::construct(OvershadowMap* overshadows) {
           T.insert(q_i, c, t_i); // T[q][c] = eclosure;
         } else {
           Q.emplace_back(eclosure);
-          t_i = Q.size() - 1; // equal to configurationNumber(Q, eclosure);
+          t_i = static_cast<int>(Q.size()) - 1; // equal to configurationNumber(Q, eclosure);
           T.insert(q_i, c, t_i); // T[q][c] = eclosure;
           workList.emplace_back(std::move(eclosure));
         }
