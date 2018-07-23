@@ -16,12 +16,6 @@ matrix:
 
 environment:
   matrix:
-    - GENERATOR: "Visual Studio 15"
-      CONFIG: Debug
-
-    - GENERATOR: "Visual Studio 15"
-      CONFIG: Release
-
     - GENERATOR: "Visual Studio 15 Win64"
       CONFIG: Debug
 
