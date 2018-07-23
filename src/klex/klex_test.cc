@@ -1,4 +1,4 @@
-// This file is part of the "x0" project, http://github.com/christianparpart/x0>
+// This file is part of the "klex" project, http://github.com/christianparpart/klex>
 //   (c) 2009-2018 Christian Parpart <christian@parpart.family>
 //
 // Licensed under the MIT License (the "License"); you may not use this
