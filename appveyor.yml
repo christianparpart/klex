@@ -30,10 +30,10 @@ build_script:
   - git submodule update --init --recursive
   - mkdir build
   - cd build
-  - echo %GENERATOR%
+  - echo %generator%
   - echo %CONFIGURATION%
-  - cmake -G "%GENERATOR%" --config "%CONFIGURATION%" ..
-  - cmake --build . --config "%CONFIGURATION%"
+  - cmake -G %generator% --config %CONFIGURATION% ..
+  - cmake --build . --config %CONFIGURATION%
 
 test_script:
   - .\build\klex_test
