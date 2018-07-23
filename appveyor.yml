@@ -10,6 +10,7 @@ configuration:
 - Debug
 platform:
 - x64
+- x86
 
 matrix:
   fast_finish: true
@@ -18,7 +19,7 @@ build_script:
   - git submodule update --init --recursive
   - mkdir build
   - cd build
-  - cmake -G "%GENERATOR%" --config "%CONFIG%" ..
+  - cmake -G "%GENERATOR%" --config "%CONFIGURATION%" ..
   - cmake --build . --config "%CONFIGURATION%"
 
 test_script:
