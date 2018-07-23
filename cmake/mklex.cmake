@@ -8,8 +8,7 @@ function(klex_generate_cpp KLEX_FILE TOKEN_FILE TABLE_FILE)
 
   add_custom_command(
       OUTPUT "${TOKEN_FILE}" "${${TABLE_FILE}}"
-      COMMAND ${CMAKE_CURRENT_BINARY_DIR}/mklex
-      ARGS -f "${klex_file}" -t "${${TABLE_FILE}}" -T "${TOKEN_FILE}" -x "${dot_file}" -p
+      COMMAND mklex -f "${klex_file}" -t "${${TABLE_FILE}}" -T "${TOKEN_FILE}" -x "${dot_file}" -p
       DEPENDS mklex ${klex_file}
       COMMENT "Generating lexer table and tokens for ${KLEX_FILE}"
       VERBATIM)
