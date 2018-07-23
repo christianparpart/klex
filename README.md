@@ -1,4 +1,6 @@
 # klex - A Scanner Generator
+[![Build status](https://ci.appveyor.com/api/projects/status/l8isxx0k38kdnatq?svg=true)](https://ci.appveyor.com/project/christianparpart/klex)
+
 
 - mklex: CLI tool for compiling regular expressions into state transition tables
 - libklex: C++ library for lexing
