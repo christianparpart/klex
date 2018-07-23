@@ -116,7 +116,7 @@ UnitTest* UnitTest::instance() {
 }
 
 void UnitTest::randomizeTestOrder() {
-  unsigned long long seed = std::chrono::system_clock::now().time_since_epoch().count();
+	unsigned int seed = static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count());
 
   std::shuffle(activeTests_.begin(), activeTests_.end(),
       std::default_random_engine(seed));
@@ -310,7 +310,7 @@ size_t UnitTest::disabledCount() const {
 }
 
 void UnitTest::runAllTestsOnce() {
-  const int totalCount = repeats_ * enabledCount();
+  const size_t totalCount = repeats_ * enabledCount();
 
   for (size_t i = 0, e = activeTests_.size(); i != e; ++i) {
     TestInfo* testCase = testCases_[activeTests_[i]].get();
@@ -321,10 +321,10 @@ void UnitTest::runAllTestsOnce() {
 
     currentTestCase_ = testCase;
     currentCount_++;
-    int percentage = currentCount_ * 100 / totalCount;
+    size_t percentage = currentCount_ * 100 / totalCount;
 
     if (printProgress_) {
-      printf("%s%3d%% Running test: %s.%s%s\n",
+      printf("%s%3zu%% Running test: %s.%s%s\n",
           colorsTestCaseHeader.c_str(),
           percentage,
           testCase->testCaseName().c_str(),
