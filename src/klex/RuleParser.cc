@@ -44,6 +44,23 @@ RuleList RuleParser::parseRules() {
     }
   }
 
+  // collect all condition labels, find all <*>-conditions, then replace their <*> with {collected conditions}
+  std::set<std::string> conditions;
+  std::list<Rule*> starRules;
+  for (Rule& rule : rules) {
+    for (const std::string& condition : rule.conditions) {
+      if (condition != "*") {
+        conditions.emplace(condition);
+      } else {
+        rule.conditions.clear();
+        starRules.emplace_back(&rule);
+      }
+    }
+  }
+  for (Rule* rule : starRules)
+    for (const std::string& condition : conditions)
+      rule->conditions.emplace_back(condition);
+
   return rules;
 }
 
@@ -151,11 +168,18 @@ void RuleParser::parseBasicRule(RuleList& rules, std::vector<std::string>&& cond
 }
 
 std::vector<std::string> RuleParser::parseRuleConditions() {
-  // RuleConditionList ::= '<' TOKEN (',' SP* TOKEN) '>'
+  // RuleConditionList ::= '<' ('*' | TOKEN (',' SP* TOKEN)) '>'
   if (currentChar() != '<')
     return {};
 
   consumeChar();
+
+  if (currentChar() == '*') {
+    consumeChar();
+    consumeChar('>');
+    return {"*"};
+  }
+
   std::vector<std::string> conditions { consumeToken() };
 
   while (currentChar() == ',') {

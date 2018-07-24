@@ -148,6 +148,36 @@ TEST(RuleParser, condition2) {
   EXPECT_EQ("foo", rules[1].conditions[1]);
 }
 
+TEST(RuleParser, conditional_star) {
+  RuleParser rp{std::make_unique<std::stringstream>(R"(
+    Zero      ::= zero
+    <one>One  ::= one
+    <two>Two  ::= two
+    <*>Tri    ::= tri
+  )")};
+  RuleList rules = rp.parseRules();
+
+  ASSERT_EQ(4, rules.size());
+
+  EXPECT_EQ("zero", rules[0].pattern);
+  ASSERT_EQ(1, rules[0].conditions.size());
+  EXPECT_EQ("INITIAL", rules[0].conditions[0]);
+
+  EXPECT_EQ("one", rules[1].pattern);
+  ASSERT_EQ(1, rules[1].conditions.size());
+  EXPECT_EQ("one", rules[1].conditions[0]);
+
+  EXPECT_EQ("two", rules[2].pattern);
+  ASSERT_EQ(1, rules[2].conditions.size());
+  EXPECT_EQ("two", rules[2].conditions[0]);
+
+  EXPECT_EQ("tri", rules[3].pattern);
+  ASSERT_EQ(3, rules[3].conditions.size());
+  EXPECT_EQ("INITIAL", rules[3].conditions[0]);
+  EXPECT_EQ("one", rules[3].conditions[1]);
+  EXPECT_EQ("two", rules[3].conditions[2]);
+}
+
 TEST(RuleParser, grouped_conditions) {
   RuleParser rp{std::make_unique<std::stringstream>(R"(
     Rule1       ::= foo
