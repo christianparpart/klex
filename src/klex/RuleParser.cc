@@ -48,9 +48,11 @@ RuleList RuleParser::parseRules() {
 }
 
 void RuleParser::parseRule(RuleList& rules) {
-  // Rule ::= RuleConditionList? TOKEN RuleOptions? SP '::=' SP RegEx SP? LF
-  // RuleOptions ::= '(' RuleOption (',' RuleOption)*
-  // RuleOption ::= ignore
+  // Rule         ::= RuleConditionList? BasicRule
+  //                | RuleConditionList '{' BasicRule* '}' LF?
+  // BasicRule    ::= TOKEN RuleOptions? SP '::=' SP RegEx SP? LF
+  // RuleOptions  ::= '(' RuleOption (',' RuleOption)*
+  // RuleOption   ::= ignore
 
   consumeSP();
   if (currentChar_ == '|' && lastParsedRule_ != nullptr) {
@@ -66,7 +68,23 @@ void RuleParser::parseRule(RuleList& rules) {
     lastParsedRule_->pattern = fmt::format("({})", lastParsedRule_->pattern);
 
   std::vector<std::string> conditions = parseRuleConditions();
+  consumeSP();
+  if (!conditions.empty() && currentChar() == '{') {
+    consumeChar();
+    consumeAnySP(); // allow whitespace, including LFs
+    while (!eof() && currentChar() != '}') {
+      parseBasicRule(rules, std::vector<std::string>(conditions));
+      consumeSP(); //  part of the next line, allow indentation
+    }
+    consumeChar('}');
+    consumeSP();
+    consumeChar('\n');
+  } else {
+    parseBasicRule(rules, std::move(conditions));
+  }
+}
 
+void RuleParser::parseBasicRule(RuleList& rules, std::vector<std::string>&& conditions) {
   const unsigned int beginLine = line_;
   const unsigned int beginColumn = column_;
 
@@ -133,7 +151,7 @@ void RuleParser::parseRule(RuleList& rules) {
 }
 
 std::vector<std::string> RuleParser::parseRuleConditions() {
-  // RuleConditionList ::= '<' TOKEN (',' TOKEN) '>'
+  // RuleConditionList ::= '<' TOKEN (',' SP* TOKEN) '>'
   if (currentChar() != '<')
     return {};
 
@@ -142,6 +160,7 @@ std::vector<std::string> RuleParser::parseRuleConditions() {
 
   while (currentChar() == ',') {
     consumeChar();
+    consumeSP();
     conditions.emplace_back(consumeToken());
   }
 
@@ -245,6 +264,11 @@ std::string RuleParser::consumeToken() {
   while (std::isalnum(currentChar_) || currentChar_ == '_');
 
   return sstr.str();
+}
+
+void RuleParser::consumeAnySP() {
+  while (currentChar_ == ' ' || currentChar_ == '\t' || currentChar_ == '\n')
+    consumeChar();
 }
 
 void RuleParser::consumeSP() {

@@ -34,10 +34,12 @@ class RuleParser {
  private:
   void parseRule(RuleList& rules);
   std::vector<std::string> parseRuleConditions();
+  void parseBasicRule(RuleList& rules, std::vector<std::string>&& conditions);
   std::string parseExpression();
 
  private:
   std::string consumeToken();
+  void consumeAnySP();
   void consumeSP();
   void consumeAssoc();
   void consumeSpace();
