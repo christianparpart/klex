@@ -109,3 +109,58 @@ TEST(RuleParser, multiline_alt) {
   EXPECT_EQ("foo|bar", rules[0].pattern);
   EXPECT_EQ("(fnord|hard)|(fnord|hard)", rules[1].pattern);
 }
+
+TEST(RuleParser, condition1) {
+  RuleParser rp{std::make_unique<std::stringstream>(R"(
+    <foo>Rule1    ::= foo
+    <bar>Rule2    ::= bar
+  )")};
+  RuleList rules = rp.parseRules();
+
+  ASSERT_EQ(2, rules.size());
+  EXPECT_EQ("foo", rules[0].pattern);
+  EXPECT_EQ("bar", rules[1].pattern);
+
+  ASSERT_EQ(1, rules[0].conditions.size());
+  EXPECT_EQ("foo", rules[0].conditions[0]);
+
+  ASSERT_EQ(1, rules[1].conditions.size());
+  EXPECT_EQ("bar", rules[1].conditions[0]);
+}
+
+TEST(RuleParser, condition2) {
+  RuleParser rp{std::make_unique<std::stringstream>(R"(
+    <foo>Rule1      ::= foo
+    <foo,bar>Rule2  ::= bar
+  )")};
+  RuleList rules = rp.parseRules();
+
+  ASSERT_EQ(2, rules.size());
+  EXPECT_EQ("foo", rules[0].pattern);
+  EXPECT_EQ("bar", rules[1].pattern);
+
+  ASSERT_EQ(1, rules[0].conditions.size());
+  EXPECT_EQ("foo", rules[0].conditions[0]);
+
+  ASSERT_EQ(2, rules[1].conditions.size());
+  // in sorted order
+  EXPECT_EQ("bar", rules[1].conditions[0]);
+  EXPECT_EQ("foo", rules[1].conditions[1]);
+}
+
+TEST(RuleParser, grouped_conditions) {
+  RuleParser rp{std::make_unique<std::stringstream>(R"(
+    Rule1       ::= foo
+    <blah> {
+      Rule2     ::= bar
+    }
+  )")};
+  RuleList rules = rp.parseRules();
+
+  ASSERT_EQ(2, rules.size());
+  EXPECT_EQ("foo", rules[0].pattern);
+  EXPECT_EQ("bar", rules[1].pattern);
+
+  ASSERT_EQ(1, rules[1].conditions.size());
+  EXPECT_EQ("blah", rules[1].conditions[0]);
+}
