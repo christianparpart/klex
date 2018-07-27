@@ -11,13 +11,16 @@ before_install:
 install:
   - sudo apt-get install -qqy g++-7
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
+  - sudo apt install -qqy python-pip
+  - sudo pip install codecov
 
 before_script:
   - git submodule update --init --recursive
   - mkdir build
   - cd build
-  - cmake -DCMAKE_BUILD_TYPE=Debug ..
+  - cmake -DCMAKE_BUILD_TYPE=Debug -DKLEX_COVERAGE=ON ..
 
 script:
   - cmake --build .
   - ./klex_test
+  - codecov --flags all
