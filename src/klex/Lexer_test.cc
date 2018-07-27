@@ -37,11 +37,10 @@ const std::string RULES = R"(
   AB_CD         ::= ab/cd
   CDEF          ::= cdef
   EOL_LF        ::= eol$
-  String        ::= '([^'\n]|\\\\')*'|\"([^\"\n]|\\\")*\"
   XAnyLine      ::= x.*
 )";
 
-enum class LookaheadToken { Eof = 1, ABBA, AB_CD, CDEF, EOL_LF, String, XAnyLine };
+enum class LookaheadToken { Eof = 1, ABBA, AB_CD, CDEF, EOL_LF, XAnyLine };
 namespace fmt { // it sucks that I've to specify that here
   template<>
   struct formatter<LookaheadToken> {
@@ -56,7 +55,6 @@ namespace fmt { // it sucks that I've to specify that here
         case LookaheadToken::AB_CD: return format_to(ctx.begin(), "ab/cd");
         case LookaheadToken::CDEF: return format_to(ctx.begin(), "cdef");
         case LookaheadToken::EOL_LF: return format_to(ctx.begin(), "eol$");
-        case LookaheadToken::String: return format_to(ctx.begin(), "<String>");
         case LookaheadToken::XAnyLine: return format_to(ctx.begin(), "<XAnyLine>");
         default: return format_to(ctx.begin(), "<{}>", static_cast<unsigned>(v));
       }
@@ -88,6 +86,7 @@ TEST(Lexer, evaluateDotToken) {
   Lexer<LookaheadToken> lexer { cc.compile(), std::make_unique<std::stringstream>("xanything") };
 
   ASSERT_EQ(LookaheadToken::XAnyLine, lexer.recognize());
+  EXPECT_EQ("<XAnyLine>", fmt::format("{}", lexer.token()));
   ASSERT_EQ(LookaheadToken::Eof, lexer.recognize());
 }
 
