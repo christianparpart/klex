@@ -11,6 +11,8 @@ before_install:
 install:
   - sudo apt-get install -qqy g++-7
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
+  - sudo apt install -qqy pip
+  - sudo pip install codecov
 
 before_script:
   - git submodule update --init --recursive
@@ -21,3 +23,4 @@ before_script:
 script:
   - cmake --build .
   - ./klex_test
+  - codecov --flags all
