@@ -196,7 +196,8 @@ TEST(RegExprParser, eof) {
 
 TEST(RegExprParser, alternation) {
   EXPECT_EQ("a|b", RegExprParser{}.parse("a|b")->to_string());
-  EXPECT_EQ("ab|cd", RegExprParser{}.parse("ab|cd")->to_string());
+  EXPECT_EQ("(a|b)c", RegExprParser{}.parse("(a|b)c")->to_string());
+  EXPECT_EQ("a(b|c)", RegExprParser{}.parse("a(b|c)")->to_string());
 }
 
 TEST(RegExprParser, lookahead) {
@@ -205,4 +206,12 @@ TEST(RegExprParser, lookahead) {
   ASSERT_TRUE(e != nullptr);
   EXPECT_EQ("ab/cd", e->to_string());
   EXPECT_EQ("(a/b)|b", RegExprParser{}.parse("(a/b)|b")->to_string());
+  EXPECT_EQ("a|(b/c)", RegExprParser{}.parse("a|(b/c)")->to_string());
+}
+
+TEST(RegExprParser, closure) {
+  auto re = RegExprParser{}.parse("(abc)*");
+  auto e = dynamic_cast<const ClosureExpr*>(re.get());
+  ASSERT_TRUE(e != nullptr);
+  EXPECT_EQ("(abc)*", re->to_string());
 }
