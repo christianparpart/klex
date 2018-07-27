@@ -213,6 +213,8 @@ TEST(RegExprParser, closure) {
   auto re = RegExprParser{}.parse("(abc)*");
   auto e = dynamic_cast<const ClosureExpr*>(re.get());
   ASSERT_TRUE(e != nullptr);
+  EXPECT_EQ(0, e->minimumOccurrences());
+  EXPECT_EQ(std::numeric_limits<unsigned>::max(), e->maximumOccurrences());
   EXPECT_EQ("(abc)*", re->to_string());
 }
 
@@ -220,5 +222,16 @@ TEST(RegExprParser, positive) {
   auto re = RegExprParser{}.parse("(abc)+");
   auto e = dynamic_cast<const ClosureExpr*>(re.get());
   ASSERT_TRUE(e != nullptr);
+  EXPECT_EQ(1, e->minimumOccurrences());
+  EXPECT_EQ(std::numeric_limits<unsigned>::max(), e->maximumOccurrences());
   EXPECT_EQ("(abc)+", re->to_string());
+}
+
+TEST(RegExprParser, closure_range) {
+  auto re = RegExprParser{}.parse("a{2,4}");
+  auto e = dynamic_cast<const ClosureExpr*>(re.get());
+  ASSERT_TRUE(e != nullptr);
+  EXPECT_EQ(2, e->minimumOccurrences());
+  EXPECT_EQ(4, e->maximumOccurrences());
+  EXPECT_EQ("a{2,4}", re->to_string());
 }
