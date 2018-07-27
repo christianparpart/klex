@@ -177,6 +177,23 @@ TEST(RegExprParser, bol) {
   EXPECT_EQ("^", bol->to_string());
 }
 
+TEST(RegExprParser, eol) {
+  std::unique_ptr<RegExpr> re = RegExprParser{}.parse("a$");
+  auto cat = dynamic_cast<const ConcatenationExpr*>(re.get());
+  ASSERT_TRUE(cat != nullptr);
+
+  auto eol = dynamic_cast<const EndOfLineExpr*>(cat->rightExpr());
+  ASSERT_TRUE(eol != nullptr);
+  EXPECT_EQ("a$", re->to_string());
+}
+
+TEST(RegExprParser, eof) {
+  std::unique_ptr<RegExpr> re = RegExprParser{}.parse("<<EOF>>");
+  auto eof = dynamic_cast<const EndOfFileExpr*>(re.get());
+  ASSERT_TRUE(eof != nullptr);
+  EXPECT_EQ("<<EOF>>", re->to_string());
+}
+
 TEST(RegExprParser, alternation) {
   EXPECT_EQ("a|b", RegExprParser{}.parse("a|b")->to_string());
   EXPECT_EQ("ab|cd", RegExprParser{}.parse("ab|cd")->to_string());
