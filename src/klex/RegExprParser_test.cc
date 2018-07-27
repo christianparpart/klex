@@ -215,3 +215,10 @@ TEST(RegExprParser, closure) {
   ASSERT_TRUE(e != nullptr);
   EXPECT_EQ("(abc)*", re->to_string());
 }
+
+TEST(RegExprParser, positive) {
+  auto re = RegExprParser{}.parse("(abc)+");
+  auto e = dynamic_cast<const ClosureExpr*>(re.get());
+  ASSERT_TRUE(e != nullptr);
+  EXPECT_EQ("(abc)+", re->to_string());
+}
