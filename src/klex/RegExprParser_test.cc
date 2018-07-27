@@ -82,3 +82,20 @@ TEST(RegExprParser, doubleQuote) {
   ASSERT_TRUE(c != nullptr);
   EXPECT_EQ(R"(")", c->value().to_string());
 }
+
+TEST(RegExprParser, dot) {
+  std::unique_ptr<RegExpr> re = RegExprParser{}.parse(".");
+  auto e = dynamic_cast<const DotExpr*>(re.get());
+  ASSERT_TRUE(e != nullptr);
+  EXPECT_EQ(".", e->to_string());
+}
+
+TEST(RegExprParser, bol) {
+  std::unique_ptr<RegExpr> re = RegExprParser{}.parse("^a");
+  auto cat = dynamic_cast<const ConcatenationExpr*>(re.get());
+  ASSERT_TRUE(cat != nullptr);
+
+  auto bol = dynamic_cast<const BeginOfLineExpr*>(cat->leftExpr());
+  ASSERT_TRUE(bol != nullptr);
+  EXPECT_EQ("^", bol->to_string());
+}
