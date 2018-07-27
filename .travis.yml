@@ -23,4 +23,4 @@ before_script:
 script:
   - cmake --build .
   - ./klex_test
-  - codecov --flags all --build-root .
+  - codecov --flags all
