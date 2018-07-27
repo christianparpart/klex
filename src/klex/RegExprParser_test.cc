@@ -176,3 +176,16 @@ TEST(RegExprParser, bol) {
   ASSERT_TRUE(bol != nullptr);
   EXPECT_EQ("^", bol->to_string());
 }
+
+TEST(RegExprParser, alternation) {
+  EXPECT_EQ("a|b", RegExprParser{}.parse("a|b")->to_string());
+  EXPECT_EQ("ab|cd", RegExprParser{}.parse("ab|cd")->to_string());
+}
+
+TEST(RegExprParser, lookahead) {
+  auto re = RegExprParser{}.parse("ab/cd");
+  auto e = dynamic_cast<const LookAheadExpr*>(re.get());
+  ASSERT_TRUE(e != nullptr);
+  EXPECT_EQ("ab/cd", e->to_string());
+  EXPECT_EQ("(a/b)|b", RegExprParser{}.parse("(a/b)|b")->to_string());
+}
