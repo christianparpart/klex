@@ -13,6 +13,12 @@ option(KLEX_EMBEDDED_FMTLIB "Build against embedded fmtlib [default: ${MASTER_PR
 option(KLEX_EXAMPLES "Build examples [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
 option(KLEX_TESTS "Build test suite [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
 option(MKLEX_LINK_STATIC "Build mklex as staticaly linked binary [default: OFF]" OFF)
+option(KLEX_COVERAGE "Builds with codecov [default: OFF]" OFF)
+
+if(KLEX_COVERAGE)
+  add_compile_options(-g --coverage)
+  set(CMAKE_EXE_LINKER_FLAGS "--coverage ${CMAKE_EXE_LINKER_FLAGS}")
+endif()
 
 # fmtlib
 if(KLEX_EMBEDDED_FMTLIB)
