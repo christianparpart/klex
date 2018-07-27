@@ -102,6 +102,7 @@ if(KLEX_TESTS)
       src/klex/NFA_test.cc
       src/klex/RegExprParser_test.cc
       src/klex/RuleParser_test.cc
+      src/klex/State_test.cc
       src/klex/Symbols_test.cc
       src/klex/klex_test.cc
       src/klex/util/AnsiColor.cc

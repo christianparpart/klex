@@ -34,12 +34,12 @@ std::string to_string(const StateIdVec& S, std::string_view stateLabelPrefix = "
 
 namespace fmt {
   template<>
-  struct formatter<std::vector<klex::StateId>> {
+  struct formatter<klex::StateIdVec> {
     template <typename ParseContext>
     constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
 
     template <typename FormatContext>
-    constexpr auto format(const std::vector<klex::StateId>& v, FormatContext &ctx) {
+    constexpr auto format(const klex::StateIdVec& v, FormatContext &ctx) {
       return format_to(ctx.begin(), "{}", klex::to_string(v));
     }
   };
