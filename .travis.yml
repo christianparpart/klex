@@ -18,9 +18,9 @@ before_script:
   - git submodule update --init --recursive
   - mkdir build
   - cd build
-  - cmake -DCMAKE_BUILD_TYPE=Debug ..
+  - cmake -DCMAKE_BUILD_TYPE=Debug -DKLEX_COVERAGE=ON ..
 
 script:
   - cmake --build .
   - ./klex_test
-  - codecov --flags all
+  - codecov --flags all --build-root .
