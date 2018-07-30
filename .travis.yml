@@ -23,7 +23,7 @@ before_script:
 script:
   - cmake --build .
   - ./klex_test
-  - ./cmdlineTests.sh
+  - ../cmdlineTests.sh
 
 after_success:
   - codecov --flags all --gcov-glob '*/src/klex/util/*'
