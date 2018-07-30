@@ -10,6 +10,7 @@
 #include <klex/DFAMinimizer.h>
 #include <klex/DotWriter.h>
 #include <klex/Lexer.h>
+#include <klex/NFA.h>
 #include <klex/RegExpr.h>
 #include <klex/RegExprParser.h>
 #include <klex/Rule.h>
@@ -229,11 +230,12 @@ int main(int argc, const char* argv[]) {
   perfTimer.lap("NFA construction", builder.size(), "states");
 
   // TODO
-  // if (flags.getBool("debug-nfa")) {
-  //   klex::DotWriter writer{ std::cout };
-  //   builder.nfa().visit(writer);
-  //   return EXIT_SUCCESS;
-  // }
+  if (flags.getBool("debug-nfa")) {
+    klex::NFA nfa = klex::NFA::join(builder.automata());
+    klex::DotWriter writer{ std::cout, "n" };
+    nfa.visit(writer);
+    return EXIT_SUCCESS;
+  }
 
   klex::Compiler::OvershadowMap overshadows;
   klex::MultiDFA multiDFA = builder.compileMultiDFA(&overshadows);

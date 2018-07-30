@@ -84,6 +84,8 @@ class NFA {
     states_[from][s].push_back(to);
   }
 
+  static NFA join(const std::map<std::string, NFA>& mappings);
+
   /**
    * Traverses all states and edges in this NFA and calls @p visitor for each state & edge.
    *

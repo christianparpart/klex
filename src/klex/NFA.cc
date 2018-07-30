@@ -146,6 +146,34 @@ void NFA::prepareStateIds(StateId baseId) {
   backtrackStates_ = std::move(backtracking);
 }
 
+NFA NFA::join(const std::map<std::string, NFA>& mappings) {
+  if (mappings.size() == 1)
+    return mappings.begin()->second;
+
+  NFA multi;
+
+  for (size_t i = 0; i <= mappings.size(); ++i)
+    multi.createState();
+
+  Symbol transitionSymbol = 0;
+  for (const auto& mapping : mappings) {
+    transitionSymbol++;
+
+    NFA rhs = mapping.second.clone();
+    rhs.prepareStateIds(multi.size());
+
+    multi.states_.reserve(multi.size() + rhs.size());
+    multi.states_.insert(multi.states_.end(), rhs.states_.begin(), rhs.states_.end());
+    multi.acceptTags_.insert(rhs.acceptTags_.begin(), rhs.acceptTags_.end());
+
+    multi.addTransition(multi.initialState_, transitionSymbol, rhs.initialState_);
+    multi.backtrackStates_[rhs.acceptState_] = multi.acceptState_;
+    multi.acceptState_ = rhs.acceptState_;
+  }
+
+  return std::move(multi);
+}
+
 NFA& NFA::lookahead(NFA rhs) {
   if (empty()) {
     *this = std::move(rhs);
@@ -266,34 +294,33 @@ NFA& NFA::repeat(unsigned minimum, unsigned maximum) {
 void NFA::visit(DotVisitor& v) const {
   v.start(initialState_);
 
-  for (StateId i = 0, e = size(); i != e; ++i) {
-    const bool isInitialState = i == initialState_;
-    const bool isAcceptState = acceptTags_.find(i) != acceptTags_.end();
-    v.visitNode(i, isInitialState, isAcceptState);
-  }
+  // initial state
+  v.visitNode(initialState_, true, acceptTags_.find(initialState_) != acceptTags_.end());
 
-  for (StateId i = 0, e = size(); i != e; ++i) {
-    const TransitionMap& transitions = states_[i];
+  // accepting states
+  for (std::pair<StateId, Tag> acceptTag : acceptTags_)
+    if (acceptTag.first != initialState_)
+      v.visitNode(acceptTag.first, false, true);
 
-    // for each vector of target-state-id per transition-symbol
-    for (auto t = transitions.cbegin(), tE = transitions.cend(); t != tE; ++t) {
-      const Symbol symbol = t->first;
-      const StateIdVec& transition = t->second;
+  // other states
+  for (StateId i = 0, e = size(); i != e; ++i)
+    if (i != initialState_ && acceptTags_.find(i) == acceptTags_.end())
+      v.visitNode(i, false, false);
 
-      // for each target state ID
-      for (StateId k = 0, kE = transition.size(); k != kE; ++k) {
-        const StateId targetState = transition[k];
+  // transitions
+  for (StateId sourceState = 0, sE = size(); sourceState != sE; ++sourceState) {
+    std::map<StateId, std::vector<Symbol>> reversed;
+    for (const std::pair<Symbol, StateIdVec>& transitions : states_[sourceState])
+      for (StateId targetState : transitions.second)
+        reversed[targetState].push_back(transitions.first /* symbol */);
 
-        v.visitEdge(i, targetState, symbol);
-      }
-
-      for (StateId k = 0, kE = transition.size(); k != kE; ++k) {
-        const StateId targetState = transition[k];
-        v.endVisitEdge(i, targetState);
-      }
+    for (const std::pair<StateId, std::vector<Symbol>>& tr : reversed) {
+      StateId targetState = tr.first;
+      const std::vector<Symbol>& T = tr.second;
+      std::for_each(T.begin(), T.end(), [&](const Symbol t) { v.visitEdge(sourceState, targetState, t); });
+      v.endVisitEdge(sourceState, targetState);
     }
   }
-
   v.end();
 }
 

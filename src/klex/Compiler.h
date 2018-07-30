@@ -81,6 +81,8 @@ class Compiler {
   static LexerDef generateTables(const DFA& dfa, const TagNameMap& names);
   static LexerDef generateTables(const MultiDFA& dfa, const TagNameMap& names);
 
+  const std::map<std::string, NFA>& automata() const { return fa_; }
+
  private:
   RuleList rules_;
   std::map<std::string, NFA> fa_;
