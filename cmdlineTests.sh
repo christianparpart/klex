@@ -82,6 +82,17 @@ test_debug_dfa() {
   test -f "${WORKDIR}/dfa.dot"
 }
 
+test_debug_dfa_stdout() {
+  einfo "test_debug_dfa_stdout"
+  $MKLEX -f "${TESTDIR}/good.klex" \
+         --output-table="${WORKDIR}/table.cc" \
+         --output-token="${WORKDIR}/token.h" \
+         --table-name="myns::lexerDef" \
+         --token-name="myns::Token" \
+         --debug-dfa=- >"${WORKDIR}/dfa.dot"
+  test -f "${WORKDIR}/dfa.dot"
+}
+
 test_overshadowed() {
   einfo "test_overshadowed"
   $MKLEX -f "${TESTDIR}/overshadowed.klex" \
@@ -106,6 +117,7 @@ main() {
   test_cxx_with_namespaces
   test_debug_nfa
   test_debug_dfa
+  test_debug_dfa_stdout
   test_overshadowed
 }
 
