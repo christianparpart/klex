@@ -49,9 +49,15 @@ inline std::string LexerDef::to_string() const {
   sstr << fmt::format("totalStates: {}\n", transitions.states().size());
 
   sstr << "transitions:\n";
-  for (StateId inputState : transitions.states())
-    for (const std::pair<Symbol, StateId>& p : transitions.map(inputState))
-      sstr << fmt::format("- n{} --({})--> n{}\n", inputState, prettySymbol(p.first), p.second);
+  for (StateId inputState : transitions.states()) {
+    std::map<StateId, std::vector<Symbol>> T;
+    for (const std::pair<Symbol, StateId>& p : transitions.map(inputState)) {
+      T[p.second].push_back(p.first);
+    }
+    for (auto& t : T) {
+      sstr << fmt::format("- n{} --({})--> n{}\n", inputState, groupCharacterClassRanges(std::move(t.second)), t.first);
+    }
+  }
 
   sstr << "accepts:\n";
   for (const std::pair<StateId, Tag> a : acceptStates)
