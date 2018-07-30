@@ -79,6 +79,15 @@ TEST(Lexer, lookahead) {
   ASSERT_EQ(LookaheadToken::Eof, lexer.recognize());
 }
 
+TEST(Lexer, LexerError) {
+  klex::Compiler cc;
+  cc.parse(std::make_unique<std::stringstream>(RULES));
+
+  Lexer<LookaheadToken> lexer { cc.compile(), std::make_unique<std::stringstream>("invalid") };
+
+  EXPECT_THROW(lexer.recognize(), Lexer<LookaheadToken>::LexerError);
+}
+
 TEST(Lexer, evaluateDotToken) {
   klex::Compiler cc;
   cc.parse(std::make_unique<std::stringstream>(RULES));

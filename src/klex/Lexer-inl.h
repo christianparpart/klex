@@ -162,12 +162,9 @@ inline Token Lexer<Token, Machine, Debug>::recognizeOne() {
   if (!isAcceptState(state))
     throw LexerError{offset_, line_, column_};
 
-  if (auto i = acceptStates_.find(state); i != acceptStates_.end())
-    return token_ = static_cast<Token>(i->second);
-
-  // should never happen
-  fprintf(stderr, "Internal bug. Accept state hit, but no tag assigned.\n");
-  abort();
+  auto i = acceptStates_.find(state);
+  assert(i != acceptStates_.end() && "Accept state hit, but no tag assigned.");
+  return token_ = static_cast<Token>(i->second);
 }
 
 template<typename Token, typename Machine, const bool Debug>
