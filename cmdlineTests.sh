@@ -26,7 +26,7 @@ test_invalid_arguments() {
   if $MKLEX --invalid &>output; then
     fail "Invalid argument test failed"
   fi
-  grep -q "Invalid Option" output || fail
+  grep -q "Unknown Option" output || fail
 }
 
 test_help() {
