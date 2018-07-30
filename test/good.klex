@@ -1,0 +1,4 @@
+# vim:syntax=klex
+
+A ::= a
+B ::= b

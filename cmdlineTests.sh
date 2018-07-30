@@ -83,6 +83,18 @@ test_debug_dfa() {
   test -f dfa.dot
 }
 
+test_overshadowed() {
+  einfo "test_overshadowed"
+  rm -f *
+  $MKLEX -f "${TESTDIR}/overshadowed.klex" \
+         --output-table="table.cc" \
+         --output-token="token.h" \
+         --table-name="lexerDef" \
+         --token-name="Token" \
+         &>output
+  grep -q "[4:11] Rule If cannot be matched as rule [3:11] Ident takes precedence." || fail
+}
+
 main() {
   einfo "WORKDIR: ${WORKDIR}"
   einfo "TESTDIR: ${TESTDIR}"
@@ -98,6 +110,7 @@ main() {
   test_cxx_with_namespaces
   test_debug_nfa
   test_debug_dfa
+  test_overshadowed
 }
 
 main

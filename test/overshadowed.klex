@@ -1,0 +1,4 @@
+# vim:syntax=klex
+
+Ident ::= [a-z]+
+If    ::= aa
