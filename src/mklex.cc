@@ -202,7 +202,13 @@ std::optional<int> prepareAndParseCLI(klex::util::Flags& flags, int argc, const 
   flags.defineBool("debug-nfa", 'd', "Writes dot graph of non-deterministic finite automaton to stdout and exits.");
   flags.defineBool("no-dfa-minimize", 0, "Do not minimize the DFA");
   flags.defineBool("perf", 'p', "Print performance counters to stderr.");
-  flags.parse(argc, argv);
+
+  try {
+    flags.parse(argc, argv);
+  } catch (const klex::util::Flags::Error& e) {
+    std::cerr << "Failed to parse command line parameters. " << e.what() << "\n";
+    return EXIT_FAILURE;
+  }
 
   if (flags.getBool("help")) {
     std::cout << "mklex - klex lexer generator\n"
@@ -229,7 +235,6 @@ int main(int argc, const char* argv[]) {
   const klex::RuleList& rules = builder.rules();
   perfTimer.lap("NFA construction", builder.size(), "states");
 
-  // TODO
   if (flags.getBool("debug-nfa")) {
     klex::NFA nfa = klex::NFA::join(builder.automata());
     klex::DotWriter writer{ std::cout, "n" };
