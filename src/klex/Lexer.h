@@ -9,6 +9,7 @@
 #include <klex/LexerDef.h>
 #include <fmt/format.h>
 
+#include <cassert>
 #include <deque>
 #include <functional>
 #include <iostream>
@@ -88,10 +89,9 @@ class Lexer {
 
   //! @returns the name of the token represented by Token @p t.
   const std::string& name(Token t) const {
-    if (auto i = tagNames_.find(static_cast<Tag>(t)); i != tagNames_.end())
-      return i->second;
-
-    throw std::invalid_argument{"tag"};
+    auto i = tagNames_.find(static_cast<Tag>(t));
+    assert(i != tagNames_.end());
+    return i->second;
   }
 
   /**
@@ -117,12 +117,9 @@ class Lexer {
    * Retrieves the default DFA machine that is used to recognize words.
    */
   Machine defaultMachine() const {
-    if (auto i = initialStates_.find("INITIAL"); i != initialStates_.end()) {
-      return static_cast<Machine>(i->second);
-    } else {
-      // internal error
-      abort();
-    }
+    auto i = initialStates_.find("INITIAL");
+    assert(i != initialStates_.end());
+    return static_cast<Machine>(i->second);
   }
 
   /**
@@ -149,10 +146,9 @@ class Lexer {
   std::string toString(const std::deque<StateId>& stack);
 
   Token token(StateId s) const {
-    if (auto i = acceptStates_.find(s); i != acceptStates_.end())
-      return static_cast<Token>(i->second);
-
-    throw std::invalid_argument{"tag"};
+    auto i = acceptStates_.find(s);
+    assert(i != acceptStates_.end());
+    return static_cast<Token>(i->second);
   }
 
  private:

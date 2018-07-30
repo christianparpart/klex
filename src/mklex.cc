@@ -241,8 +241,10 @@ int main(int argc, const char* argv[]) {
 
   // check for unmatchable rules
   for (const std::pair<klex::Tag, klex::Tag>& overshadow : overshadows) {
-    const klex::Rule& shadowee = **klex::findRuleByTag(rules, overshadow.first);
-    const klex::Rule& shadower = **klex::findRuleByTag(rules, overshadow.second);
+    const klex::Rule& shadowee = *std::find_if(rules.begin(), rules.end(),
+                                      [&](const klex::Rule& rule) { return rule.tag == overshadow.first; });
+    const klex::Rule& shadower = *std::find_if(rules.begin(), rules.end(),
+                                      [&](const klex::Rule& rule) { return rule.tag == overshadow.second; });
     std::cerr << fmt::format("[{}:{}] Rule {} cannot be matched as rule [{}:{}] {} takes precedence.\n",
                              shadowee.line, shadowee.column, shadowee.name,
                              shadower.line, shadower.column, shadower.name);
