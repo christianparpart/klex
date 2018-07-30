@@ -10,6 +10,7 @@
 #include <klex/MultiDFA.h>
 #include <klex/State.h>
 
+#include <cassert>
 #include <cstdlib>
 #include <optional>
 #include <unordered_map>
@@ -43,10 +44,9 @@ class DFAMinimizer {
   static void dumpGroups(const PartitionVec& T);
 
   StateId targetStateId(StateId oldId) const {
-    if (auto i = targetStateIdMap_.find(oldId); i != targetStateIdMap_.end())
-      return i->second;
-
-    abort();
+    auto i = targetStateIdMap_.find(oldId);
+    assert(i != targetStateIdMap_.end());
+    return i->second;
   }
 
  private:

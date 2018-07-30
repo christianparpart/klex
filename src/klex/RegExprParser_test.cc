@@ -235,3 +235,11 @@ TEST(RegExprParser, closure_range) {
   EXPECT_EQ(4, e->maximumOccurrences());
   EXPECT_EQ("a{2,4}", re->to_string());
 }
+
+TEST(RegExprParser, UnexpectedToken_grouping) {
+  EXPECT_THROW(RegExprParser{}.parse("(a"), RegExprParser::UnexpectedToken);
+}
+
+TEST(RegExprParser, UnexpectedToken_literal) {
+  EXPECT_THROW(RegExprParser{}.parse("\"a"), RegExprParser::UnexpectedToken);
+}
