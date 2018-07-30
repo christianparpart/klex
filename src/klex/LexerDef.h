@@ -33,10 +33,9 @@ struct LexerDef {
   std::string to_string() const;
 
   std::string tagName(Tag t) const {
-    if (auto i = tagNames.find(t); i != tagNames.end())
-      return i->second;
-
-    return std::string();
+    auto i = tagNames.find(t);
+    assert(i != tagNames.end());
+    return i->second;
   }
 };
 
