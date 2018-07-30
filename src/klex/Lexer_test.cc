@@ -35,12 +35,13 @@ const std::string RULES = R"(
   Eof           ::= <<EOF>>
   ABBA          ::= abba
   AB_CD         ::= ab/cd
+  CD            ::= cd
   CDEF          ::= cdef
   EOL_LF        ::= eol$
   XAnyLine      ::= x.*
 )";
 
-enum class LookaheadToken { Eof = 1, ABBA, AB_CD, CDEF, EOL_LF, XAnyLine };
+enum class LookaheadToken { Eof = 1, ABBA, AB_CD, CD, CDEF, EOL_LF, XAnyLine };
 namespace fmt { // it sucks that I've to specify that here
   template<>
   struct formatter<LookaheadToken> {
@@ -53,6 +54,7 @@ namespace fmt { // it sucks that I've to specify that here
         case LookaheadToken::Eof: return format_to(ctx.begin(), "Eof");
         case LookaheadToken::ABBA: return format_to(ctx.begin(), "abba");
         case LookaheadToken::AB_CD: return format_to(ctx.begin(), "ab/cd");
+        case LookaheadToken::CD: return format_to(ctx.begin(), "cd");
         case LookaheadToken::CDEF: return format_to(ctx.begin(), "cdef");
         case LookaheadToken::EOL_LF: return format_to(ctx.begin(), "eol$");
         case LookaheadToken::XAnyLine: return format_to(ctx.begin(), "<XAnyLine>");
@@ -66,12 +68,12 @@ TEST(Lexer, lookahead) {
   klex::Compiler cc;
   cc.parse(std::make_unique<std::stringstream>(RULES));
 
-  Lexer<LookaheadToken> lexer { cc.compile(), std::make_unique<std::stringstream>("abba abcd cdef") };
-  // LexerDef lexerDef = cc.compile();
-  // logf("LexerDef:\n{}", lexerDef.to_string());
-  // Lexer<LookaheadToken, StateId, true> lexer { lexerDef,
-  //                                              std::make_unique<std::stringstream>("abba abcd cdef"),
-  //                                              [this](const std::string& msg) { log(msg); } };
+  // Lexer<LookaheadToken> lexer { cc.compile(), std::make_unique<std::stringstream>("abba abcd cdef") };
+  LexerDef lexerDef = cc.compile();
+  logf("LexerDef:\n{}", lexerDef.to_string());
+  Lexer<LookaheadToken, StateId, true> lexer { lexerDef,
+                                               std::make_unique<std::stringstream>("abba abcdef"),
+                                               [this](const std::string& msg) { log(msg); } };
 
   ASSERT_EQ(LookaheadToken::ABBA, lexer.recognize());
   ASSERT_EQ(LookaheadToken::AB_CD, lexer.recognize());
@@ -116,7 +118,7 @@ TEST(Lexer, match_eol) {
 
   ASSERT_EQ(LookaheadToken::EOL_LF, lexer.recognize());
   ASSERT_EQ(5, lexer.offset().first);
-  ASSERT_EQ(9, lexer.offset().second);
+  ASSERT_EQ(8, lexer.offset().second);
 
   ASSERT_EQ(LookaheadToken::ABBA, lexer.recognize());
   ASSERT_EQ(12, lexer.offset().second);

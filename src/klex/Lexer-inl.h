@@ -9,15 +9,23 @@
 #include <algorithm>
 #include <deque>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 
 namespace klex {
+
+static inline std::string quotedString(const std::string& s) {
+  std::stringstream sstr;
+  sstr << std::quoted(s);
+  return sstr.str();
+}
 
 template<typename Token, typename Machine, const bool Debug>
 inline Lexer<Token, Machine, Debug>::Lexer(LexerDef info, DebugLogger logger)
     : transitions_{std::move(info.transitions)},
       initialStates_{info.initialStates},
       acceptStates_{std::move(info.acceptStates)},
+      backtracking_{std::move(info.backtrackingStates)},
       tagNames_{std::move(info.tagNames)},
       debug_{logger},
       initialStateId_{defaultMachine()},
@@ -108,8 +116,8 @@ inline Token Lexer<Token, Machine, Debug>::recognizeOne() {
     Symbol ch = nextChar(); // one of: input character, ERROR or EOF
     word_.push_back(ch);
 
-    if (isAcceptState(state))
-      stack.clear();
+    // we do not stack.clear() stack if isAcceptState(state) as we need this information iff
+    // lookahead is required. Otherwise we could clear here (for space savings)
 
     stack.push_back(state);
     savedLine = line_;
@@ -142,10 +150,12 @@ inline Token Lexer<Token, Machine, Debug>::recognizeOne() {
   if (auto i = backtracking_.find(state); i != backtracking_.end()) {
     const StateId tmp = state;
     const StateId backtrackState = i->second;
-    if constexpr(Debug) debugf("recognize: backtracking from {} to {}", stateName(state), stateName(backtrackState));
+    if constexpr(Debug) debugf("recognize: backtracking from {} to {}; stack: {}",
+        stateName(state), stateName(backtrackState), toString(stack));
     while (!stack.empty() && state != backtrackState) {
       state = stack.back();
       stack.pop_back();
+      if constexpr(Debug) debugf("recognize: backtrack: state {}", stateName(state));
       if (!word_.empty()) {
         rollback();
         word_.resize(word_.size() - 1);
@@ -154,10 +164,12 @@ inline Token Lexer<Token, Machine, Debug>::recognizeOne() {
     state = tmp;
   }
 
-  if constexpr(Debug) debugf("recognize: final state {} {} {}",
+  if constexpr(Debug) debugf("recognize: final state {} {} {} {}-{} {}",
                              stateName(state),
                              isAcceptState(state) ? "accepting" : "non-accepting",
-                             isAcceptState(state) ? name(token(state)) : std::string());
+                             isAcceptState(state) ? name(token(state)) : std::string(),
+                             oldOffset_, offset_,
+                             quotedString(word_));
 
   if (!isAcceptState(state))
     throw LexerError{offset_, line_, column_};
