@@ -24,7 +24,6 @@ class Alphabet {
   size_t size() const noexcept { return alphabet_.size(); }
 
   void insert(Symbol ch);
-  void merge(const set_type& syms);
 
   std::string to_string() const;
 

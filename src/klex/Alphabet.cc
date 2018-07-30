@@ -26,12 +26,6 @@ void Alphabet::insert(Symbol ch) {
   }
 }
 
-void Alphabet::merge(const set_type& syms) {
-  for (Symbol s : syms) {
-    insert(s);
-  }
-}
-
 std::string Alphabet::to_string() const {
   std::stringstream sstr;
 
