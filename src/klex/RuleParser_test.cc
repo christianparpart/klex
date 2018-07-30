@@ -194,3 +194,35 @@ TEST(RuleParser, grouped_conditions) {
   ASSERT_EQ(1, rules[1].conditions.size());
   EXPECT_EQ("blah", rules[1].conditions[0]);
 }
+
+TEST(RuleParser, InvalidRefRuleWithConditions) {
+  ASSERT_THROW(
+      klex::RuleParser{std::make_unique<std::stringstream>("<cond>main(ref) ::= blah\n")}.parseRules(),
+      RuleParser::InvalidRefRuleWithConditions);
+}
+
+TEST(RuleParser, InvalidRuleOption) {
+  ASSERT_THROW(
+      klex::RuleParser{std::make_unique<std::stringstream>("A(invalid) ::= a\n")}.parseRules(),
+      RuleParser::InvalidRuleOption);
+}
+
+TEST(RuleParser, DuplicateRule) {
+  klex::RuleParser rp{std::make_unique<std::stringstream>(R"(
+    foo ::= abc
+    foo ::= def
+  )")};
+  ASSERT_THROW(rp.parseRules(), RuleParser::DuplicateRule);
+}
+
+TEST(RuleParser, UnexpectedChar) {
+  ASSERT_THROW(klex::RuleParser{std::make_unique<std::stringstream>("A :=")}.parseRules(), RuleParser::UnexpectedChar);
+  ASSERT_THROW(klex::RuleParser{std::make_unique<std::stringstream>("<x A ::= a")}.parseRules(), RuleParser::UnexpectedChar);
+  ASSERT_THROW(klex::RuleParser{std::make_unique<std::stringstream>("A ::= a")}.parseRules(), RuleParser::UnexpectedChar);
+}
+
+TEST(RuleParser, UnexpectedToken) {
+  ASSERT_THROW(klex::RuleParser{std::make_unique<std::stringstream>("<x,y,> A ::= a")}.parseRules(), RuleParser::UnexpectedToken);
+  ASSERT_THROW(klex::RuleParser{std::make_unique<std::stringstream>("<> A ::= a")}.parseRules(), RuleParser::UnexpectedToken);
+  ASSERT_THROW(klex::RuleParser{std::make_unique<std::stringstream>(" ::= a")}.parseRules(), RuleParser::UnexpectedToken);
+}
