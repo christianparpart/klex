@@ -100,8 +100,8 @@ test_overshadowed() {
          --output-token="${WORKDIR}/token.h" \
          --table-name="lexerDef" \
          --token-name="Token" \
-         &>${OUTFILE}
-  grep -q "[4:11] Rule If cannot be matched as rule [3:11] Ident takes precedence." ${OUTFILE} || fail
+         &>${OUTFILE} && fail "Failure expected."
+  grep -q "Rule If cannot be matched as rule" ${OUTFILE} || fail "missing error string"
 }
 
 main() {
