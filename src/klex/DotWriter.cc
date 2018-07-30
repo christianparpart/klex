@@ -19,24 +19,13 @@ template<typename StringType>
 static std::string escapeString(const StringType& str) {
   std::stringstream stream_;
   for (char ch : str) {
+    // \t\n\r is already converted to escape sequence
     switch (ch) {
       case '\\':
         stream_ << "\\\\";
         break;
-      case '\r':
-        stream_ << "\\r";
-        break;
-      case '\n':
-        stream_ << "\\n";
-        break;
-      case '\t':
-        stream_ << "\\t";
-        break;
       case '"':
         stream_ << "\\\"";
-        break;
-      case ' ':
-        stream_ << ' ';
         break;
       default:
         stream_ << ch;

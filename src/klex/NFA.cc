@@ -49,12 +49,6 @@ StateId NFA::createState() {
   return states_.size() - 1;
 }
 
-StateId NFA::createState(Tag acceptTag) {
-  StateId id = createState();
-  acceptTags_[id] = acceptTag;
-  return id;
-}
-
 StateIdVec NFA::delta(const StateIdVec& S, Symbol c) const {
   StateIdVec result;
   delta(S, c, &result);

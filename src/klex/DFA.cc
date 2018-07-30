@@ -45,11 +45,6 @@ void DFA::createStates(size_t count) {
   states_.resize(states_.size() + count);
 }
 
-StateId DFA::createState() {
-  states_.emplace_back();
-  return states_.size() - 1;
-}
-
 void DFA::setInitialState(StateId s) {
   // TODO: assert (s is having no predecessors)
   initialState_ = s;
@@ -57,12 +52,7 @@ void DFA::setInitialState(StateId s) {
 
 void DFA::setTransition(StateId from, Symbol symbol, StateId to) {
   const State& s = states_[from];
-  if (auto i = s.transitions.find(symbol); i != s.transitions.end()) {
-    std::cerr << fmt::format("n{} --({})--> n{} attempted to overwrite with (n{})\n",
-        from, symbol, i->second, to);
-    abort();
-  }
-
+  assert(s.transitions.find(symbol) == s.transitions.end());
   states_[from].transitions[symbol] = to;
 }
 

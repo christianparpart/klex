@@ -79,7 +79,6 @@ class DFA {
   void visit(DotVisitor& visitor) const;
 
   void createStates(size_t count);
-  StateId createState();
 
   void setInitialState(StateId state);
 

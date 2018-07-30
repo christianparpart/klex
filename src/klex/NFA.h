@@ -214,7 +214,6 @@ class NFA {
 
  private:
   StateId createState();
-  StateId createState(Tag acceptTag);
   void visit(DotVisitor& v, StateId s, std::unordered_map<StateId, size_t>& registry) const;
   void prepareStateIds(StateId baseId);
 

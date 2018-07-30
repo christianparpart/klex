@@ -98,6 +98,7 @@ endif()
 if(KLEX_TESTS)
   add_executable(klex_test
       src/klex/DFABuilder_test.cc
+      src/klex/DotWriter_test.cc
       src/klex/Lexer_test.cc
       src/klex/NFA_test.cc
       src/klex/RegExprParser_test.cc
