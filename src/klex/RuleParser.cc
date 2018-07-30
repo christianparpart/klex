@@ -201,7 +201,7 @@ std::string RuleParser::parseExpression() {
 
   size_t i = 0;
   size_t lastGraph = 0;
-  while (currentChar_  != '\n') {
+  while (!eof() && currentChar_  != '\n') {
     if (std::isgraph(currentChar_))
       lastGraph = i + 1;
     i++;
