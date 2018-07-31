@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <sstream>
 
@@ -26,7 +27,7 @@ namespace klex::util::literals {
  *
  * This prints three lines: @c "line one\nline two\nline three\n"
  */
-inline std::string operator ""_multiline(const char* text, unsigned long size) {
+inline std::string operator ""_multiline(const char* text, size_t size) {
   if (!*text)
     return {};
 
