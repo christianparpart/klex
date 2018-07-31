@@ -128,15 +128,10 @@ DFA DFABuilder::constructDFA(const std::vector<StateIdVec>& Q,
 
     // if q contains an accepting state, then d is an accepting state in the DFA
     if (nfa_.isAnyAccepting(q)) {
-      if (std::optional<Tag> tag = determineTag(q, &overshadowing); tag.has_value()) {
-        //DEBUG("determineTag: q{} tag {} from {}.", q_i, *tag, q);
-        dfa.setAccept(d_i, *tag);
-      } else {
-        std::cerr << fmt::format(
-            "FIXME?: DFA accepting state {} merged from input states with different tags {}.\n",
-            q_i, to_string(q));
-        abort();
-      }
+      std::optional<Tag> tag = determineTag(q, &overshadowing);
+      assert(tag.has_value() && "DFA accept state merged from input states with different tags.");
+      //DEBUG("determineTag: q{} tag {} from {}.", q_i, *tag, q);
+      dfa.setAccept(d_i, *tag);
     }
 
     if (std::optional<StateId> bt = nfa_.containsBacktrackState(q); bt.has_value()) {
