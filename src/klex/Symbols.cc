@@ -146,14 +146,6 @@ SymbolSet::SymbolSet(DotMode) : set_(256, true), size_{255}, hash_{2166136261} {
   }
 }
 
-void SymbolSet::clear(Symbol s) {
-  if (contains(s)) {
-    set_[(size_t) s] = false;
-    size_--;
-    recalculateHash();
-  }
-}
-
 bool SymbolSet::isDot() const noexcept {
   static SymbolSet dot(SymbolSet::Dot);
   return *this == dot;

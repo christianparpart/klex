@@ -56,6 +56,7 @@ void Compiler::declare(Rule rule) {
   }
 
   if (auto i = names_.find(rule.tag); i != names_.end() && i->first != rule.tag)
+    // Can actually only happen on "ignore" attributed rule count > 1.
     names_[rule.tag] = fmt::format("{}, {}", i->second, rule.name);
   else
     names_[rule.tag] = rule.name;
@@ -63,16 +64,16 @@ void Compiler::declare(Rule rule) {
   rules_.emplace_back(std::move(rule));
 }
 
+// const std::map<std::string, NFA>& Compiler::automata() const {
+//   return fa_;
+// }
+
 MultiDFA Compiler::compileMultiDFA(OvershadowMap* overshadows) {
   std::map<std::string, DFA> dfaMap;
   for (const auto& fa : fa_)
     dfaMap[fa.first] = DFABuilder{fa.second.clone()}.construct(overshadows);
 
   return constructMultiDFA(std::move(dfaMap));
-}
-
-MultiDFA Compiler::compileMinimalMultiDFA() {
-  return klex::DFAMinimizer{compileMultiDFA()}.constructMultiDFA();
 }
 
 DFA Compiler::compileDFA(OvershadowMap* overshadows) {
@@ -86,10 +87,6 @@ DFA Compiler::compileMinimalDFA() {
 
 LexerDef Compiler::compile() {
   return generateTables(compileMinimalDFA(), std::move(names_));
-}
-
-LexerDef Compiler::compileMulti() {
-  return generateTables(compileMinimalMultiDFA(), std::move(names_));
 }
 
 LexerDef Compiler::generateTables(const DFA& dfa, const std::map<Tag, std::string>& names) {

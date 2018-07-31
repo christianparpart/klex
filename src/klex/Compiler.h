@@ -63,7 +63,6 @@ class Compiler {
    * Compiles all previousely parsed rules into a minimal DFA.
    */
   DFA compileMinimalDFA();
-  MultiDFA compileMinimalMultiDFA();
 
   /**
    * Compiles all previousely parsed rules into a suitable data structure for Lexer.
@@ -71,7 +70,6 @@ class Compiler {
    * @see Lexer
    */
   LexerDef compile();
-  LexerDef compileMulti();
 
   /**
    * Translates the given DFA @p dfa with a given TagNameMap @p names into trivial table mappings.

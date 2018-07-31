@@ -6,6 +6,7 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/util/testing.h>
+#include <klex/util/literals.h>
 #include <klex/Compiler.h>
 #include <klex/DFA.h>
 #include <klex/DotWriter.h>
@@ -13,6 +14,7 @@
 #include <klex/MultiDFA.h>
 
 using namespace klex;
+using namespace klex::util::literals;
 
 /* FEATURE UNITTEST CHECKLIST:
  *
@@ -97,7 +99,6 @@ TEST(Lexer, evaluateDotToken) {
   Lexer<LookaheadToken> lexer { cc.compile(), std::make_unique<std::stringstream>("xanything") };
 
   ASSERT_EQ(LookaheadToken::XAnyLine, lexer.recognize());
-  EXPECT_EQ("<XAnyLine>", fmt::format("{}", lexer.token()));
   ASSERT_EQ(LookaheadToken::Eof, lexer.recognize());
 }
 
@@ -105,12 +106,11 @@ TEST(Lexer, match_eol) {
   klex::Compiler cc;
   cc.parse(std::make_unique<std::stringstream>(RULES));
 
-  Lexer<LookaheadToken> lexer { cc.compile(), std::make_unique<std::stringstream>("abba eol\nabba") };
-  // LexerDef lexerDef = cc.compile();
-  // logf("LexerDef:\n{}", lexerDef.to_string());
-  // Lexer<LookaheadToken, StateId, true> lexer { lexerDef,
-  //                                              std::make_unique<std::stringstream>("abba eol\nabba"),
-  //                                              [this](const std::string& msg) { log(msg); } };
+  LexerDef lexerDef = cc.compile();
+  logf("LexerDef:\n{}", lexerDef.to_string());
+  Lexer<LookaheadToken, StateId, true> lexer { lexerDef,
+                                               std::make_unique<std::stringstream>("abba eol\nabba"),
+                                               [this](const std::string& msg) { log(msg); } };
 
   ASSERT_EQ(LookaheadToken::ABBA, lexer.recognize());
   ASSERT_EQ(0, lexer.offset().first);
@@ -128,11 +128,11 @@ TEST(Lexer, match_eol) {
 
 TEST(Lexer, empty_alt) {
   Compiler cc;
-  cc.parse(std::make_unique<std::stringstream>(R"(
-      Spacing(ignore) ::= [\s\t\n]+
-      Test            ::= aa(bb|)
-      Eof             ::= <<EOF>>
-  )"));
+  cc.parse(std::make_unique<std::stringstream>(R"(|
+      |Spacing(ignore) ::= [\s\t\n]+
+      |Test            ::= aa(bb|)
+      |Eof             ::= <<EOF>>
+  )"_multiline));
 
   Lexer<Tag> lexer { cc.compile(),
                      std::make_unique<std::stringstream>("aabb aa aabb") };
@@ -143,15 +143,47 @@ TEST(Lexer, empty_alt) {
   ASSERT_EQ(2, lexer.recognize());
 }
 
+TEST(Lexer, ignore_many) {
+  Compiler cc;
+  cc.parse(std::make_unique<std::stringstream>(R"(|
+      |Spacing(ignore)  ::= [\s\t\n]+
+      |Comment(ignore)  ::= #.*
+      |Eof              ::= <<EOF>>
+      |Foo              ::= foo
+      |Bar              ::= bar
+  )"_multiline));
+
+  LexerDef lexerDef = cc.compile();
+  logf("LexerDef:\n{}", lexerDef.to_string());
+  Lexer<int, StateId, true> lexer { lexerDef,
+                                    std::make_unique<std::stringstream>(
+                                        R"(|# some foo
+                                           |foo
+                                           |
+                                           |# some bar
+                                           |bar
+                                           |)"_multiline),
+                                    [this](const std::string& msg) { log(msg); } };
+
+  ASSERT_EQ(2, lexer.recognize());
+  ASSERT_EQ("foo", lexer.word());
+
+  ASSERT_EQ(3, lexer.recognize());
+  ASSERT_EQ("bar", lexer.word());
+
+  ASSERT_EQ(1, lexer.recognize()); // EOF
+
+}
+
 TEST(Lexer, realworld_ipv4) {
   Compiler cc;
-  cc.parse(std::make_unique<std::stringstream>(R"(
-      Spacing(ignore)   ::= [\s\t\n]+
-      Eof               ::= <<EOF>>
-      IPv4Octet(ref)    ::= [0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]
-      IPv4(ref)         ::= {IPv4Octet}(\.{IPv4Octet}){3}
-      IPv4Literal       ::= {IPv4}
-  )"));
+  cc.parse(std::make_unique<std::stringstream>(R"(|
+      |Spacing(ignore)   ::= [\s\t\n]+
+      |Eof               ::= <<EOF>>
+      |IPv4Octet(ref)    ::= [0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]
+      |IPv4(ref)         ::= {IPv4Octet}(\.{IPv4Octet}){3}
+      |IPv4Literal       ::= {IPv4}
+  )"_multiline));
 
   Lexer<int> lexer { cc.compile(),
                      std::make_unique<std::stringstream>(
@@ -194,54 +226,50 @@ namespace fmt { // it sucks that I've to specify that here
 
 TEST(Lexer, realworld_ipv6) {
   Compiler cc;
-  cc.parse(std::make_unique<std::stringstream>(R"(
-      Spacing(ignore)   ::= [\s\t\n]+
-      Eof               ::= <<EOF>>
+  cc.parse(std::make_unique<std::stringstream>(R"(|
+      |Spacing(ignore)   ::= [\s\t\n]+
+      |Eof               ::= <<EOF>>
+      |
+      |IPv4Octet(ref)    ::= [0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]
+      |IPv4(ref)         ::= {IPv4Octet}(\.{IPv4Octet}){3}
+      |IPv4Literal       ::= {IPv4}
+      |
+      |ipv6Part(ref)     ::= [[:xdigit:]]{1,4}
+      |IPv6              ::= {ipv6Part}(:{ipv6Part}){7,7}
+      |                    | ({ipv6Part}:){1,7}:
+      |                    | :(:{ipv6Part}){1,7}
+      |                    | ::
+      |                    | ({ipv6Part}:){1}(:{ipv6Part}){0,6}
+      |                    | ({ipv6Part}:){2}(:{ipv6Part}){0,5}
+      |                    | ({ipv6Part}:){3}(:{ipv6Part}){0,4}
+      |                    | ({ipv6Part}:){4}(:{ipv6Part}){0,3}
+      |                    | ({ipv6Part}:){5}(:{ipv6Part}){0,2}
+      |                    | ({ipv6Part}:){6}(:{ipv6Part}){0,1}
+      |                    | ::[fF]{4}:{IPv4}
+  )"_multiline));
 
-      IPv4Octet(ref)    ::= [0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5]
-      IPv4(ref)         ::= {IPv4Octet}(\.{IPv4Octet}){3}
-      IPv4Literal       ::= {IPv4}
-
-      ipv6Part(ref)     ::= [[:xdigit:]]{1,4}
-      IPv6              ::= {ipv6Part}(:{ipv6Part}){7,7}
-                          | ({ipv6Part}:){1,7}:
-                          | :(:{ipv6Part}){1,7}
-                          | ::
-                          | ({ipv6Part}:){1}(:{ipv6Part}){0,6}
-                          | ({ipv6Part}:){2}(:{ipv6Part}){0,5}
-                          | ({ipv6Part}:){3}(:{ipv6Part}){0,4}
-                          | ({ipv6Part}:){4}(:{ipv6Part}){0,3}
-                          | ({ipv6Part}:){5}(:{ipv6Part}){0,2}
-                          | ({ipv6Part}:){6}(:{ipv6Part}){0,1}
-                          | ::[fF]{4}:{IPv4}
-  )"));
-
-  static const std::string TEXT = R"(0:0:0:0:0:0:0:0
-                                     1234:5678:90ab:cdef:aaaa:bbbb:cccc:dddd
-                                     2001:0db8:85a3:0000:0000:8a2e:0370:7334
-                                     1234:5678::
-                                     0::
-                                     ::0
-                                     ::
-                                     1::3:4:5:6:7:8
-                                     1::4:5:6:7:8
-                                     1::5:6:7:8
-                                     1::8
-                                     1:2::4:5:6:7:8
-                                     1:2::5:6:7:8
-                                     1:2::8
-                                     ::ffff:127.0.0.1
-                                     ::ffff:c000:0280
-                                     )";
+  static const std::string TEXT = R"(|0:0:0:0:0:0:0:0
+                                     |1234:5678:90ab:cdef:aaaa:bbbb:cccc:dddd
+                                     |2001:0db8:85a3:0000:0000:8a2e:0370:7334
+                                     |1234:5678::
+                                     |0::
+                                     |::0
+                                     |::
+                                     |1::3:4:5:6:7:8
+                                     |1::4:5:6:7:8
+                                     |1::5:6:7:8
+                                     |1::8
+                                     |1:2::4:5:6:7:8
+                                     |1:2::5:6:7:8
+                                     |1:2::8
+                                     |::ffff:127.0.0.1
+                                     |::ffff:c000:0280
+                                     |)"_multiline;
 
   LexerDef lexerDef = cc.compile();
-#if 1
   Lexer<RealWorld, StateId, true> lexer { lexerDef,
                                           std::make_unique<std::stringstream>(TEXT),
                                           [this](const std::string& msg) { log(msg); } };
-#else
-  Lexer<RealWorld> lexer { cc.compile(), std::make_unique<std::stringstream>(TEXT), [](auto) {} };
-#endif
 
   ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
   ASSERT_EQ("0:0:0:0:0:0:0:0", lexer.word());
@@ -292,4 +320,20 @@ TEST(Lexer, realworld_ipv6) {
   ASSERT_EQ("::ffff:c000:0280", lexer.word());
 
   ASSERT_EQ(RealWorld::Eof, lexer.recognize());
+}
+
+TEST(Lexer, internal) {
+  ASSERT_EQ("Eof", fmt::format("{}", LookaheadToken::Eof));
+  ASSERT_EQ("abba", fmt::format("{}", LookaheadToken::ABBA));
+  ASSERT_EQ("ab/cd", fmt::format("{}", LookaheadToken::AB_CD));
+  ASSERT_EQ("cd", fmt::format("{}", LookaheadToken::CD));
+  ASSERT_EQ("cdef", fmt::format("{}", LookaheadToken::CDEF));
+  ASSERT_EQ("eol$", fmt::format("{}", LookaheadToken::EOL_LF));
+  ASSERT_EQ("<XAnyLine>", fmt::format("{}", LookaheadToken::XAnyLine));
+  ASSERT_EQ("<724>", fmt::format("{}", static_cast<LookaheadToken>(724)));
+
+  ASSERT_EQ("Eof", fmt::format("{}", RealWorld::Eof));
+  ASSERT_EQ("IPv4", fmt::format("{}", RealWorld::IPv4));
+  ASSERT_EQ("IPv6", fmt::format("{}", RealWorld::IPv6));
+  ASSERT_EQ("<724>", fmt::format("{}", static_cast<RealWorld>(724)));
 }

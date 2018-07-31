@@ -87,9 +87,6 @@ class SymbolSet {
     }
   }
 
-  //! Removes given Symbol @p s from this set.
-  void clear(Symbol s);
-
   //! @returns whether or not given Symbol @p s is in this set.
   bool contains(Symbol s) const {
     assert(s >= 0 && s <= 255 && "Only ASCII allowed.");

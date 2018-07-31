@@ -71,6 +71,17 @@ test_debug_nfa() {
   test -f "${WORKDIR}/nfa.dot"
 }
 
+test_debug_nfa_multi() {
+  einfo "test_debug_nfa_multi"
+  $MKLEX -f "${TESTDIR}/multiple_conditions.klex" \
+         --output-table="${WORKDIR}/table.cc" \
+         --output-token="${WORKDIR}/token.h" \
+         --table-name="lexerDef" \
+         --token-name="Token" \
+         --debug-nfa > "${WORKDIR}/nfa.dot"
+  test -f "${WORKDIR}/nfa.dot"
+}
+
 test_debug_dfa() {
   einfo "test_debug_dfa"
   $MKLEX -f "${TESTDIR}/good.klex" \
@@ -116,6 +127,7 @@ main() {
   test_cxx_without_namespaces
   test_cxx_with_namespaces
   test_debug_nfa
+  test_debug_nfa_multi
   test_debug_dfa
   test_debug_dfa_stdout
   test_overshadowed

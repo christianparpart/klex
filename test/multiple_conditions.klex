@@ -1,0 +1,5 @@
+# vim:syntax=klex
+
+Main               ::= main
+<Cond>Cond         ::= cond
+<*>Spacing(ignore) ::= [\t\n\s]+

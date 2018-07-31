@@ -113,4 +113,4 @@ RegExpGroup       ::= \$[0-9]+
 # specials
 Comment(ignore)   ::= "#.*"
 Spacing(ignore)   ::= [\s\t\n]+
-<INITIAL,RE>Eof   ::= <<EOF>>
+<*>Eof            ::= <<EOF>>
