@@ -12,6 +12,13 @@
 
 using namespace klex;
 
+TEST(RegExprParser, namedCharacterClass_graph) {
+  std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:graph:]]");
+  auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
+  ASSERT_TRUE(e != nullptr);
+  EXPECT_EQ("!-~", e->value().to_string());
+}
+
 TEST(RegExprParser, namedCharacterClass_digit) {
   std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:digit:]]");
   auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -111,11 +118,22 @@ TEST(RegExprParser, escapeSequences_abfnrstv) {
   EXPECT_EQ("\\v", RegExprParser{}.parse("[\\v]")->to_string());
 }
 
+TEST(RegExprParser, newline) {
+  std::unique_ptr<RegExpr> re = RegExprParser{}.parse("\n");
+  auto e = dynamic_cast<const CharacterExpr*>(re.get());
+  ASSERT_TRUE(e != nullptr);
+  EXPECT_EQ('\n', e->value());
+}
+
 TEST(RegExprParser, escapeSequences_hex) {
   std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[\\x20]");
   auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
   ASSERT_TRUE(e != nullptr);
   EXPECT_EQ("\\s", e->value().to_string());
+
+  EXPECT_THROW(RegExprParser{}.parse("[\\xZZ]"), RegExprParser::UnexpectedToken);
+  EXPECT_THROW(RegExprParser{}.parse("[\\xAZ]"), RegExprParser::UnexpectedToken);
+  EXPECT_THROW(RegExprParser{}.parse("[\\xZA]"), RegExprParser::UnexpectedToken);
 }
 
 TEST(RegExprParser, escapeSequences_nul) {
