@@ -54,15 +54,11 @@ DFAMinimizer::PartitionVec::iterator DFAMinimizer::findGroup(StateId s) {
   return T.end();
 }
 
-std::optional<int> DFAMinimizer::partitionId(StateId s) const {
-  int i = 0;
-  for (const StateIdVec& p : P) {
-    if (std::find(p.begin(), p.end(), s) != p.end())
-      return i; // P[i] contains s
-    else
-      i++;
-  }
-  return std::nullopt;
+int DFAMinimizer::partitionId(StateId s) const {
+  auto i = std::find_if(P.begin(), P.end(),
+      [s](const auto& p) { return std::find(p.begin(), p.end(), s) != p.end(); });
+  assert(i != P.end() && "State ID must be present in any of the partition sets.");
+  return static_cast<int>(std::distance(P.begin(), i));
 }
 
 DFAMinimizer::PartitionVec DFAMinimizer::split(const StateIdVec& S) const {
@@ -75,11 +71,7 @@ DFAMinimizer::PartitionVec DFAMinimizer::split(const StateIdVec& S) const {
     std::map<int /*target partition set*/ , StateIdVec /*source states*/> t_i;
     for (StateId s : S) {
       if (const std::optional<StateId> t = dfa_.delta(s, c); t.has_value()) {
-        if (std::optional<int> p_i = partitionId(*t); p_i.has_value()) {
-          t_i[*p_i].push_back(s);
-        } else {
-          t_i[-1].push_back(s);
-        }
+        t_i[partitionId(*t)].push_back(s);
       } else {
         t_i[-1].push_back(s);
       }
@@ -204,10 +196,9 @@ DFA DFAMinimizer::constructFromPartitions(const PartitionVec& P) const {
   for (const StateIdVec& p : P) {
     const StateId s = *p.begin();
     for (const std::pair<Symbol, StateId>& transition : dfa_.stateTransitions(s)) {
-      if (std::optional<int> t_i = partitionId(transition.second); t_i.has_value()) {
-        DEBUG("map p{} --({})--> p{}", p_i, prettySymbol(transition.first), *t_i);
-        dfamin.setTransition(p_i, transition.first, *t_i);
-      }
+      const int t_i = partitionId(transition.second);
+      DEBUG("map p{} --({})--> p{}", p_i, prettySymbol(transition.first), t_i);
+      dfamin.setTransition(p_i, transition.first, t_i);
     }
     p_i++;
   }

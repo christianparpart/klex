@@ -36,7 +36,7 @@ class DFAMinimizer {
   StateIdVec nonAcceptStates() const;
   bool containsInitialState(const StateIdVec& S) const;
   PartitionVec::iterator findGroup(StateId s);
-  std::optional<int> partitionId(StateId s) const;
+  int partitionId(StateId s) const;
   PartitionVec split(const StateIdVec& S) const;
   DFA constructFromPartitions(const PartitionVec& P) const;
   std::optional<StateId> containsBacktrackState(const StateIdVec& Q) const;
