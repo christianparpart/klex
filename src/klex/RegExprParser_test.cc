@@ -137,6 +137,13 @@ TEST(RegExprParser, escapeSequences_octal) {
   e = dynamic_cast<const CharacterClassExpr*>(re.get());
   ASSERT_TRUE(e != nullptr);
   EXPECT_EQ("z", e->value().to_string());
+
+  // invalids
+  EXPECT_THROW(RegExprParser{}.parse("[\\822]"), RegExprParser::UnexpectedToken);
+  EXPECT_THROW(RegExprParser{}.parse("[\\282]"), RegExprParser::UnexpectedToken);
+  EXPECT_THROW(RegExprParser{}.parse("[\\228]"), RegExprParser::UnexpectedToken);
+  EXPECT_THROW(RegExprParser{}.parse("[\\082]"), RegExprParser::UnexpectedToken);
+  EXPECT_THROW(RegExprParser{}.parse("[\\028]"), RegExprParser::UnexpectedToken);
 }
 
 TEST(RegExprParser, doubleQuote) {

@@ -362,7 +362,7 @@ Symbol RegExprParser::parseSingleCharacter() {
     }
     case '0': {
       const Symbol x0 = consume();
-      if (!(currentChar() >= '1' && currentChar() <= '7'))
+      if (!isdigit(currentChar()))
         return '\0';
 
       // octal value (\DDD)
@@ -388,8 +388,6 @@ Symbol RegExprParser::parseSingleCharacter() {
       // octal value (\DDD)
       char buf[4];
       buf[0] = consume();
-      if (!(buf[0] >= '0' && buf[0] <= '7'))
-        throw UnexpectedToken{line_, column_, std::string(1, buf[0]), "[0-7]"};
       buf[1] = consume();
       if (!(buf[1] >= '0' && buf[1] <= '7'))
         throw UnexpectedToken{line_, column_, std::string(1, buf[1]), "[0-7]"};
