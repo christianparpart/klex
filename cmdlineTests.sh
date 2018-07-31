@@ -60,6 +60,18 @@ test_cxx_with_namespaces() {
          --token-name="myns::Token"
 }
 
+test_cxx_output_stderr() {
+  einfo "test_cxx_with_namespaces"
+  $MKLEX -f "${TESTDIR}/good.klex" \
+         --output-table=- \
+         --output-token=- \
+         --table-name="lexerDef" \
+         --token-name="Token" \
+         2>"${WORKDIR}/output.inc"
+
+  test -f "${WORKDIR}/output.inc"
+}
+
 test_debug_nfa() {
   einfo "test_debug_nfa"
   $MKLEX -f "${TESTDIR}/good.klex" \
@@ -126,6 +138,7 @@ main() {
   test_help
   test_cxx_without_namespaces
   test_cxx_with_namespaces
+  test_cxx_output_stderr
   test_debug_nfa
   test_debug_nfa_multi
   test_debug_dfa
