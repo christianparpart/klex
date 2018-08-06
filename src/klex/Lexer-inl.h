@@ -11,6 +11,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <stdexcept>
 
 namespace klex {
 
@@ -20,10 +21,11 @@ static inline std::string quotedString(const std::string& s) {
   return sstr.str();
 }
 
-template<typename Token, typename Machine, const bool Debug>
-inline Lexer<Token, Machine, Debug>::Lexer(LexerDef info, DebugLogger logger)
+template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info, DebugLogger logger)
     : transitions_{std::move(info.transitions)},
       initialStates_{info.initialStates},
+      containsBeginOfLineStates_{info.containsBeginOfLineStates},
       acceptStates_{std::move(info.acceptStates)},
       backtracking_{std::move(info.backtrackingStates)},
       tagNames_{std::move(info.tagNames)},
@@ -34,35 +36,42 @@ inline Lexer<Token, Machine, Debug>::Lexer(LexerDef info, DebugLogger logger)
       stream_{nullptr},
       oldOffset_{0},
       offset_{0},
-      line_{1},
+      line_{0},
       column_{0},
+      isBeginOfLine_{true},
       token_{0} {
+  if constexpr (!RequiresBeginOfLine) {
+    if (containsBeginOfLineStates_) {
+      throw std::invalid_argument{"LexerDef contains a grammar that requires begin-of-line handling, but this Lexer has begin-of-line support disabled."};
+    }
+  }
 }
 
-template<typename Token, typename Machine, const bool Debug>
-inline Lexer<Token, Machine, Debug>::Lexer(LexerDef info, std::unique_ptr<std::istream> stream, DebugLogger logger)
+template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info, std::unique_ptr<std::istream> stream, DebugLogger logger)
     : Lexer{std::move(info), std::move(logger)} {
   open(std::move(stream));
 }
 
-template<typename Token, typename Machine, const bool Debug>
-inline Lexer<Token, Machine, Debug>::Lexer(LexerDef info, std::istream& stream, DebugLogger logger)
+template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info, std::istream& stream, DebugLogger logger)
     : Lexer{std::move(info), std::move(logger)} {
   stream_ = &stream;
 }
 
-template<typename Token, typename Machine, const bool Debug>
-inline void Lexer<Token, Machine, Debug>::open(std::unique_ptr<std::istream> stream) {
+template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline void Lexer<Token, Machine, RequiresBeginOfLine, Debug>::open(std::unique_ptr<std::istream> stream) {
   ownedStream_ = std::move(stream);
   stream_ = ownedStream_.get();
   oldOffset_ = 0;
   offset_ = 0;
-  line_ = 1;
+  line_ = 0;
   column_ = 0;
+  isBeginOfLine_ = true;
 }
 
-template<typename Token, typename Machine, const bool Debug>
-inline std::string Lexer<Token, Machine, Debug>::stateName(StateId s, const std::string_view& n) {
+template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline std::string Lexer<Token, Machine, RequiresBeginOfLine, Debug>::stateName(StateId s, const std::string_view& n) {
   switch (s) {
     case BadState:
       return "Bad";
@@ -73,8 +82,8 @@ inline std::string Lexer<Token, Machine, Debug>::stateName(StateId s, const std:
   }
 }
 
-template<typename Token, typename Machine, const bool Debug>
-inline std::string Lexer<Token, Machine, Debug>::toString(const std::deque<StateId>& stack) {
+template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline std::string Lexer<Token, Machine, RequiresBeginOfLine, Debug>::toString(const std::deque<StateId>& stack) {
   std::stringstream sstr;
   sstr << "{";
   int i = 0;
@@ -88,8 +97,8 @@ inline std::string Lexer<Token, Machine, Debug>::toString(const std::deque<State
   return sstr.str();
 }
 
-template<typename Token, typename Machine, const bool Debug>
-inline Token Lexer<Token, Machine, Debug>::recognize() {
+template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline Token Lexer<Token, Machine, RequiresBeginOfLine, Debug>::recognize() {
   for (;;) {
     if (Token tag = recognizeOne(); static_cast<Tag>(tag) != IgnoreTag) {
       return tag;
@@ -97,17 +106,29 @@ inline Token Lexer<Token, Machine, Debug>::recognize() {
   }
 }
 
-template<typename Token, typename Machine, const bool Debug>
-inline Token Lexer<Token, Machine, Debug>::recognizeOne() {
+template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline StateId Lexer<Token, Machine, RequiresBeginOfLine, Debug>::getInitialState() const noexcept {
+  if constexpr (RequiresBeginOfLine) {
+    if (isBeginOfLine_ && containsBeginOfLineStates_) {
+      return static_cast<StateId>(initialStateId_) + 1;
+    }
+  }
+
+  return static_cast<StateId>(initialStateId_);
+}
+
+template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline Token Lexer<Token, Machine, RequiresBeginOfLine, Debug>::recognizeOne() {
   // init
   oldOffset_ = offset_;
+  isBeginOfLine_ = offset_ == 0 || currentChar() == '\n';
   word_.clear();
-  StateId state = static_cast<StateId>(initialStateId_);
+  StateId state = getInitialState();
   std::deque<StateId> stack;
   stack.push_back(BadState);
 
-  if constexpr (Debug) debugf("recognize: startState {}, offset {} [{}:{}]",
-                              stateName(state), offset_, line_, column_);
+  if constexpr (Debug) debugf("recognize: startState {}, offset {} [{}:{}] {}",
+                              stateName(state), offset_, line_, column_, isBeginOfLine_ ? "BOL" : "no-BOL");
 
   // advance
   unsigned int savedLine = line_;
@@ -179,52 +200,68 @@ inline Token Lexer<Token, Machine, Debug>::recognizeOne() {
   return token_ = static_cast<Token>(i->second);
 }
 
-template<typename Token, typename Machine, const bool Debug>
-inline StateId Lexer<Token, Machine, Debug>::delta(StateId currentState, Symbol inputSymbol) const {
+template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline StateId Lexer<Token, Machine, RequiresBeginOfLine, Debug>::delta(StateId currentState, Symbol inputSymbol) const {
   const StateId nextState = transitions_.apply(currentState, inputSymbol);
-  if constexpr(Debug) debugf("recognize: state {:>4} --{:-^7}--> {:<6} {}",
-                             stateName(currentState),
-                             prettySymbol(inputSymbol),
-                             stateName(nextState),
-                             isAcceptState(nextState) ? "(accepting)" : "");
+  if constexpr(Debug) {
+    if (isAcceptState(nextState)) {
+      debugf("recognize: state {:>4} --{:-^7}--> {:<6} (accepting: {})",
+             stateName(currentState),
+             prettySymbol(inputSymbol),
+             stateName(nextState),
+             name(token(nextState)));
+    } else {
+      debugf("recognize: state {:>4} --{:-^7}--> {:<6}",
+             stateName(currentState),
+             prettySymbol(inputSymbol),
+             stateName(nextState));
+    }
+  }
 
   return nextState;
 }
 
-template<typename Token, typename Machine, const bool Debug>
-inline bool Lexer<Token, Machine, Debug>::isAcceptState(StateId id) const {
+template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline bool Lexer<Token, Machine, RequiresBeginOfLine, Debug>::isAcceptState(StateId id) const {
   return acceptStates_.find(id) != acceptStates_.end();
 }
 
-template<typename Token, typename Machine, const bool Debug>
-inline Symbol Lexer<Token, Machine, Debug>::nextChar() {
+template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline Symbol Lexer<Token, Machine, RequiresBeginOfLine, Debug>::nextChar() {
   if (!buffered_.empty()) {
-    offset_++;
     int ch = buffered_.back();
+    currentChar_ = ch;
     buffered_.resize(buffered_.size() - 1);
-    // if constexpr(Debug) debugf("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
+    offset_++;
+    if constexpr(Debug) debugf("Lexer:{}: advance '{}' [{}:{}]", offset_, prettySymbol(ch), line_, column_);
     return ch;
   }
 
   if (!stream_->good()) { // EOF or I/O error
-    // if constexpr(Debug) debugf("Lexer:{}: advance '{}'", offset_, "EOF");
+    if constexpr(Debug) debugf("Lexer:{}: advance '{}' [{}:{}]", offset_, "EOF", line_, column_);
     return Symbols::EndOfFile;
   }
 
   int ch = stream_->get();
-  if (ch < 0)
-    return Symbols::EndOfFile;
+  if (ch < 0) {
+    currentChar_ = Symbols::EndOfFile;
+    if constexpr(Debug) debugf("Lexer:{}: advance '{}' [{}:{}]", offset_, prettySymbol(ch), line_, column_);
+    return currentChar_;
+  }
 
+  currentChar_ = ch;
   offset_++;
-  // if constexpr(Debug) debugf("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
+  if constexpr(Debug) debugf("Lexer:{}: advance '{}' [{}:{}]", offset_, prettySymbol(ch), line_, column_);
   return ch;
 }
 
-template<typename Token, typename Machine, const bool Debug>
-inline void Lexer<Token, Machine, Debug>::rollback() {
+template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline void Lexer<Token, Machine, RequiresBeginOfLine, Debug>::rollback() {
   if (word_.back() != -1) {
     offset_--;
     // TODO: rollback (line, column)
+    column_--;
+    // XXX potentially crack line/column when passing \n
     buffered_.push_back(word_.back());
   }
 }

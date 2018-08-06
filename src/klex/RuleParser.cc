@@ -101,6 +101,11 @@ void RuleParser::parseRule(RuleList& rules) {
   }
 }
 
+struct TestRuleForName {
+  std::string name;
+  bool operator()(const Rule& r) const { return r.name == name; }
+};
+
 void RuleParser::parseBasicRule(RuleList& rules, std::vector<std::string>&& conditions) {
   const unsigned int beginLine = line_;
   const unsigned int beginColumn = column_;
@@ -132,8 +137,7 @@ void RuleParser::parseBasicRule(RuleList& rules, std::vector<std::string>&& cond
   const Tag tag = [&] {
     if (ignore || ref)
       return IgnoreTag;
-    else if (auto i = std::find_if(rules.begin(), rules.end(),
-                                   [&](const auto& r) { return r.name == token; }); i != rules.end())
+    else if (auto i = std::find_if(rules.begin(), rules.end(), TestRuleForName{token}); i != rules.end())
       return i->tag;
     else
       return nextTag_++;
@@ -149,8 +153,7 @@ void RuleParser::parseBasicRule(RuleList& rules, std::vector<std::string>&& cond
   std::sort(conditions.begin(), conditions.end());
 
   if (!ref) {
-    if (auto i = std::find_if(rules.begin(), rules.end(),
-                              [&](const Rule& r) { return r.name == token; }); i != rules.end()) {
+    if (auto i = std::find_if(rules.begin(), rules.end(), TestRuleForName{token}); i != rules.end()) {
       throw DuplicateRule{Rule{line, column, tag, std::move(conditions), token, pattern}, *i};
     } else {
       rules.emplace_back(Rule{line, column, tag, conditions, token, pattern});

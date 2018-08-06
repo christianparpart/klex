@@ -24,7 +24,10 @@ namespace klex {
 /**
  * Lexer API for recognizing words.
  */
-template<typename Token = Tag, typename Machine = StateId, const bool Debug = false>
+template<typename Token = Tag,
+         typename Machine = StateId,
+         const bool RequiresBeginOfLine = true,
+         const bool Debug = false>
 class Lexer {
  private:
   using DebugLogger = std::function<void(const std::string&)>;
@@ -140,10 +143,13 @@ class Lexer {
  private:
   Symbol nextChar();
   void rollback();
+  StateId getInitialState() const noexcept;
   bool isAcceptState(StateId state) const;
   static std::string stateName(StateId s, const std::string_view& n = "n");
   static constexpr StateId BadState = 101010;
   std::string toString(const std::deque<StateId>& stack);
+
+  int currentChar() const noexcept { return currentChar_; }
 
   Token token(StateId s) const {
     auto i = acceptStates_.find(s);
@@ -154,6 +160,7 @@ class Lexer {
  private:
   const TransitionMap transitions_;
   const std::map<std::string, StateId> initialStates_;
+  const bool containsBeginOfLineStates_;
   const std::map<StateId, Tag> acceptStates_;
   const BacktrackingMap backtracking_;
   const std::map<Tag, std::string> tagNames_;
@@ -167,6 +174,8 @@ class Lexer {
   unsigned offset_;
   unsigned line_;
   unsigned column_;
+  bool isBeginOfLine_;
+  int currentChar_;
   Token token_;
 };
 

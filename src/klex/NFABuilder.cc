@@ -78,7 +78,7 @@ void NFABuilder::visit(ClosureExpr& closureExpr) {
 }
 
 void NFABuilder::visit(BeginOfLineExpr& bolExpr) {
-  fa_ = NFA{Symbols::BeginOfLine}; // TODO
+  fa_ = NFA{Symbols::Epsilon};
 }
 
 void NFABuilder::visit(EndOfLineExpr& eolExpr) {

@@ -198,17 +198,19 @@ class RegExprVisitor {
  public:
   virtual ~RegExprVisitor() {}
 
-  virtual void visit(LookAheadExpr& lookaheadExpr) = 0;
-  virtual void visit(ConcatenationExpr& concatenationExpr) = 0;
-  virtual void visit(AlternationExpr& alternationExpr) = 0;
-  virtual void visit(CharacterExpr& characterExpr) = 0;
-  virtual void visit(CharacterClassExpr& characterClassExpr) = 0;
-  virtual void visit(ClosureExpr& closureExpr) = 0;
-  virtual void visit(BeginOfLineExpr& eolExpr) = 0;
-  virtual void visit(EndOfLineExpr& eolExpr) = 0;
-  virtual void visit(EndOfFileExpr& eofExpr) = 0;
-  virtual void visit(DotExpr& dotExpr) = 0;
-  virtual void visit(EmptyExpr& emptyExpr) = 0;
+  virtual void visit(LookAheadExpr& lookaheadExpr) {}
+  virtual void visit(ConcatenationExpr& concatenationExpr) {}
+  virtual void visit(AlternationExpr& alternationExpr) {}
+  virtual void visit(CharacterExpr& characterExpr) {}
+  virtual void visit(CharacterClassExpr& characterClassExpr) {}
+  virtual void visit(ClosureExpr& closureExpr) {}
+  virtual void visit(BeginOfLineExpr& eolExpr) {}
+  virtual void visit(EndOfLineExpr& eolExpr) {}
+  virtual void visit(EndOfFileExpr& eofExpr) {}
+  virtual void visit(DotExpr& dotExpr) {}
+  virtual void visit(EmptyExpr& emptyExpr) {}
 };
+
+bool containsBeginOfLine(const RegExpr* re);
 
 } // namespace klex

@@ -179,4 +179,42 @@ std::string EmptyExpr::to_string() const {
   return {};
 }
 
+// {{{ BeginOfLineTester
+class BeginOfLineTester : public RegExprVisitor {
+ public:
+  bool test(const RegExpr* re) {
+    const_cast<RegExpr*>(re)->accept(*this);
+    return result_;
+  }
+
+ private:
+  void set(bool r) {
+    result_ = r;
+  }
+
+  void visit(LookAheadExpr& lookaheadExpr) override {
+    test(lookaheadExpr.leftExpr());
+  }
+
+  void visit(ConcatenationExpr& concatenationExpr) override {
+    set(test(concatenationExpr.leftExpr()) || test(concatenationExpr.rightExpr()));
+  }
+
+  void visit(AlternationExpr& alternationExpr) override {
+    set(test(alternationExpr.leftExpr()) || test(alternationExpr.rightExpr()));
+  }
+
+  void visit(BeginOfLineExpr& bolExpr) override {
+    set(true);
+  }
+
+ private:
+  bool result_ = false;
+};
+
+bool containsBeginOfLine(const RegExpr* re) {
+  return BeginOfLineTester{}.test(re);
+}
+// }}}
+
 } // namespace klex

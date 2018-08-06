@@ -9,9 +9,11 @@
 #include <klex/DFAMinimizer.h>
 #include <klex/State.h>
 
+#include <algorithm>
+#include <cassert>
+#include <functional>
 #include <map>
 #include <sstream>
-#include <iostream>
 #include <vector>
 
 namespace klex {
@@ -36,12 +38,19 @@ DFAMinimizer::DFAMinimizer(const MultiDFA& multiDFA)
       targetStateIdMap_{} {
 }
 
-bool DFAMinimizer::containsInitialState(const StateIdVec& S) const {
-  for (StateId s : S)
-    if (s == dfa_.initialState())
-      return true;
+/**
+ * Tests whether or not StateId @p s is an initial state in any of the DFAs of the MultiDFA.
+ */
+bool DFAMinimizer::isMultiInitialState(StateId s) const {
+  return std::any_of(initialStates_.begin(), initialStates_.end(),
+                     [s](const auto& p) { return p.second == s; });
+}
 
-  return false;
+/**
+ * Tests whether any s in S is the initial state in the DFA that is to be minimized.
+ */
+bool DFAMinimizer::containsInitialState(const StateIdVec& S) const {
+  return std::any_of(S.begin(), S.end(), [this](StateId s) { return s == dfa_.initialState(); });
 }
 
 DFAMinimizer::PartitionVec::iterator DFAMinimizer::findGroup(StateId s) {
@@ -62,7 +71,6 @@ int DFAMinimizer::partitionId(StateId s) const {
 }
 
 DFAMinimizer::PartitionVec DFAMinimizer::split(const StateIdVec& S) const {
-  PartitionVec result;
   for (Symbol c : alphabet_) {
     // if c splits S into s_1 and s_2
     //      that is, phi(s_1, c) and phi(s_2, c) reside in two different p_i's (partitions)
@@ -78,13 +86,33 @@ DFAMinimizer::PartitionVec DFAMinimizer::split(const StateIdVec& S) const {
     }
     if (t_i.size() > 1) {
       DEBUG("split: {} on character '{}' into {} sets", to_string(S), (char)c, t_i.size());
+      PartitionVec result;
       for (const std::pair<int, StateIdVec>& t : t_i) {
         result.emplace_back(std::move(t.second));
         DEBUG(" partition {}: {}", t.first, t.second);
       }
       return std::move(result);
     }
+
+    assert(t_i.size() == 1);
+
+    // t_i's only element thus is a reconstruction of S.
+    assert(t_i.begin()->second == S);
+
+    // N.B. Either all states in S belong to a multi-initial-state or none.
+    assert(std::all_of(S.begin(), S.end(), std::bind(&DFAMinimizer::isMultiInitialState, this, std::placeholders::_1))
+        || std::none_of(S.begin(), S.end(), std::bind(&DFAMinimizer::isMultiInitialState, this, std::placeholders::_1)));
+
+    if (isMultiInitialState(S.front())) {
+      // Split them all.
+      PartitionVec result;
+      for (StateId s : S) {
+        result.emplace_back(StateIdVec{s});
+      }
+      return std::move(result);
+    }
   }
+
   DEBUG("split: no split needed for {}", to_string(S));
   return {S};
 }
