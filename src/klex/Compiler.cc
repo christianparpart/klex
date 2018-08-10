@@ -23,6 +23,10 @@
 
 namespace klex {
 
+void Compiler::parse(std::string text) {
+  parse(std::make_unique<std::stringstream>(std::move(text)));
+}
+
 void Compiler::parse(std::unique_ptr<std::istream> stream) {
   declareAll(RuleParser{std::move(stream)}.parseRules());
 }

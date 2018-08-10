@@ -39,6 +39,7 @@ class Compiler {
    * Parses a @p stream of textual rule definitions to construct their internal data structures.
    */
   void parse(std::unique_ptr<std::istream> stream);
+  void parse(std::string text);
 
   /**
    * Parses a list of @p rules to construct their internal data structures.

@@ -58,6 +58,11 @@ class Lexer {
   Lexer(LexerDef info, std::istream& input, DebugLogger logger = DebugLogger{});
 
   /**
+   * Constructs the Lexer with the given information table and input stream.
+   */
+  Lexer(LexerDef info, std::string input, DebugLogger logger = DebugLogger{});
+
+  /**
    * Open given input stream.
    */
   void open(std::unique_ptr<std::istream> input);

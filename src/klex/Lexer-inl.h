@@ -60,6 +60,12 @@ inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info, s
 }
 
 template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info, std::string input, DebugLogger logger)
+    : Lexer{std::move(info), std::move(logger)} {
+  open(std::make_unique<std::stringstream>(std::move(input)));
+}
+
+template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
 inline void Lexer<Token, Machine, RequiresBeginOfLine, Debug>::open(std::unique_ptr<std::istream> stream) {
   ownedStream_ = std::move(stream);
   stream_ = ownedStream_.get();
