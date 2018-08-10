@@ -81,20 +81,11 @@ void LookAheadExpr::accept(RegExprVisitor& visitor) {
 }
 
 std::string LookAheadExpr::to_string() const {
+  assert(precedence() < left_->precedence());
+  assert(precedence() < right_->precedence());
+
   std::stringstream sstr;
-
-  if (precedence() > left_->precedence()) {
-    sstr << '(' << left_->to_string() << ')';
-  } else
-    sstr << left_->to_string();
-
-  sstr << "/";
-
-  if (precedence() > right_->precedence()) {
-    sstr << '(' << right_->to_string() << ')';
-  } else
-    sstr << right_->to_string();
-
+  sstr << left_->to_string() << '/' << right_->to_string();
   return sstr.str();
 }
 
