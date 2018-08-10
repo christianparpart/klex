@@ -31,8 +31,9 @@ class Compiler {
  public:
   using TagNameMap = std::map<Tag, std::string>;
   using OvershadowMap = DFABuilder::OvershadowMap;
+  using AutomataMap = std::map<std::string, NFA>;
 
-  Compiler() : fa_{} {}
+  Compiler() : rules_{}, containsBeginOfLine_{false}, fa_{}, names_{} {}
 
   /**
    * Parses a @p stream of textual rule definitions to construct their internal data structures.
@@ -43,11 +44,6 @@ class Compiler {
    * Parses a list of @p rules to construct their internal data structures.
    */
   void declareAll(RuleList rules);
-
-  /**
-   * Parses a single @p rule to construct their internal data structures.
-   */
-  void declare(Rule rule);
 
   const RuleList& rules() const noexcept { return rules_; }
   const TagNameMap& names() const noexcept { return names_; }
@@ -72,18 +68,33 @@ class Compiler {
   LexerDef compile();
 
   /**
+   * Compiles all previousely parsed rules into a suitable data structure for Lexer, taking care of
+   * multiple conditions as well as begin-of-line.
+   */
+  LexerDef compileMulti();
+
+  /**
    * Translates the given DFA @p dfa with a given TagNameMap @p names into trivial table mappings.
    *
    * @see Lexer
    */
-  static LexerDef generateTables(const DFA& dfa, const TagNameMap& names);
-  static LexerDef generateTables(const MultiDFA& dfa, const TagNameMap& names);
+  static LexerDef generateTables(const DFA& dfa, bool requiresBeginOfLine, const TagNameMap& names);
+  static LexerDef generateTables(const MultiDFA& dfa, bool requiresBeginOfLine, const TagNameMap& names);
 
   const std::map<std::string, NFA>& automata() const { return fa_; }
 
+  bool containsBeginOfLine() const noexcept { return containsBeginOfLine_; }
+
+ private:
+  /**
+   * Parses a single @p rule to construct their internal data structures.
+   */
+  void declare(const Rule& rule, const std::string& conditionSuffix = "");
+
  private:
   RuleList rules_;
-  std::map<std::string, NFA> fa_;
+  bool containsBeginOfLine_;
+  AutomataMap fa_;
   TagNameMap names_;
 };
 

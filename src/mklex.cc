@@ -98,6 +98,8 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
   for (const std::pair<const std::string, klex::StateId>& s0 : lexerDef.initialStates)
     os << fmt::format("    {{ \"{}\", {} }},\n", s0.first, s0.second);
   os << "  },\n";
+  os << "  // containsBeginOfLineStates\n";
+  os << "  " << (lexerDef.containsBeginOfLineStates ? "true" : "false") << ",\n";
   os << "  // state transition table \n";
   os << "  klex::TransitionMap::Container {\n";
   for (klex::StateId stateId : lexerDef.transitions.states()) {
@@ -274,7 +276,7 @@ int main(int argc, const char* argv[]) {
     }
   }
 
-  klex::LexerDef lexerDef = klex::Compiler::generateTables(multiDFA, builder.names());
+  klex::LexerDef lexerDef = klex::Compiler::generateTables(multiDFA, builder.containsBeginOfLine(), builder.names());
   if (std::string tableFile = flags.getString("output-table"); tableFile != "-") {
     if (auto p = fs::path{tableFile}.remove_filename(); p != "")
       fs::create_directories(p);

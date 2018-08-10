@@ -6,13 +6,18 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <klex/LexerDef.h>    // IgnoreTag
-#include <klex/State.h>       // Tag
+#include <klex/LexerDef.h>        // IgnoreTag
+#include <klex/RegExpr.h>
+#include <klex/RegExprParser.h>
+#include <klex/State.h>           // Tag
+#include <memory>
+#include <optional>
 #include <string>
 #include <vector>
-#include <optional>
 
 namespace klex {
+
+class RegExpr;
 
 struct Rule {
   unsigned int line;
@@ -21,6 +26,47 @@ struct Rule {
   std::vector<std::string> conditions;
   std::string name;
   std::string pattern;
+  std::unique_ptr<RegExpr> regexpr = nullptr;
+
+  Rule clone() const {
+    return regexpr
+        ? Rule{line, column, tag, conditions, name, pattern, RegExprParser{}.parse(pattern, line, column)}
+        : Rule{line, column, tag, conditions, name, pattern, nullptr};
+  }
+
+  Rule() = default;
+
+  Rule(unsigned _line, unsigned _column, Tag _tag, std::vector<std::string> _conditions, std::string _name,
+	  std::string _pattern, std::unique_ptr<RegExpr> _regexpr = nullptr) :
+	  line{ _line },
+	  column{ _column },
+	  tag{ _tag },
+	  conditions{ _conditions },
+	  name{ _name },
+	  pattern{ _pattern },
+	  regexpr{ std::move(_regexpr) }
+  {}
+
+  Rule(const Rule& v) :
+	  line{ v.line },
+	  column{ v.column },
+	  tag{ v.tag },
+	  conditions{ v.conditions },
+	  name{ v.name },
+	  pattern{ v.pattern },
+	  regexpr{ v.regexpr ? RegExprParser{}.parse(pattern, line, column) : nullptr }
+  {}
+
+  Rule& operator=(const Rule& v) {
+	  line = v.line;
+	  column = v.column;
+	  tag = v.tag;
+	  conditions = v.conditions;
+	  name = v.name;
+	  pattern = v.pattern;
+	  regexpr = v.regexpr ? RegExprParser{}.parse(pattern, line, column) : nullptr;
+	  return *this;
+  }
 
   bool operator<(const Rule& rhs) const noexcept { return tag < rhs.tag; }
   bool operator<=(const Rule& rhs) const noexcept { return tag <= rhs.tag; }
@@ -32,6 +78,8 @@ struct Rule {
 
 using RuleList = std::vector<Rule>;
 
+inline bool ruleContainsBeginOfLine(const Rule& r) { return containsBeginOfLine(r.regexpr.get()); }
+
 } // namespace klex
 
 namespace fmt {
@@ -42,6 +90,7 @@ namespace fmt {
 
     template <typename FormatContext>
     constexpr auto format(const klex::Rule& v, FormatContext &ctx) {
+      // TODO: inject conditions in the beginning, if present
       if (v.tag == klex::IgnoreTag)
         return format_to(ctx.begin(), "{}({}) ::= {}", v.name, "ignore", v.pattern);
       else

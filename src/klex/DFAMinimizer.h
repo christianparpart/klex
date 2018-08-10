@@ -35,6 +35,7 @@ class DFAMinimizer {
   void constructPartitions();
   StateIdVec nonAcceptStates() const;
   bool containsInitialState(const StateIdVec& S) const;
+  bool isMultiInitialState(StateId s) const;
   PartitionVec::iterator findGroup(StateId s);
   int partitionId(StateId s) const;
   PartitionVec split(const StateIdVec& S) const;

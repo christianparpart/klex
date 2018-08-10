@@ -73,9 +73,9 @@ TEST(Lexer, lookahead) {
   // Lexer<LookaheadToken> lexer { cc.compile(), std::make_unique<std::stringstream>("abba abcd cdef") };
   LexerDef lexerDef = cc.compile();
   logf("LexerDef:\n{}", lexerDef.to_string());
-  Lexer<LookaheadToken, StateId, true> lexer { lexerDef,
-                                               std::make_unique<std::stringstream>("abba abcdef"),
-                                               [this](const std::string& msg) { log(msg); } };
+  Lexer<LookaheadToken, StateId, false, true> lexer { lexerDef,
+                                                      std::make_unique<std::stringstream>("abba abcdef"),
+                                                      [this](const std::string& msg) { log(msg); } };
 
   ASSERT_EQ(LookaheadToken::ABBA, lexer.recognize());
   ASSERT_EQ(LookaheadToken::AB_CD, lexer.recognize());
@@ -87,16 +87,17 @@ TEST(Lexer, LexerError) {
   klex::Compiler cc;
   cc.parse(std::make_unique<std::stringstream>(RULES));
 
-  Lexer<LookaheadToken> lexer { cc.compile(), std::make_unique<std::stringstream>("invalid") };
+  using LookaheadLexer = Lexer<LookaheadToken, StateId, false, false>;
+  LookaheadLexer lexer { cc.compile(), std::make_unique<std::stringstream>("invalid") };
 
-  EXPECT_THROW(lexer.recognize(), Lexer<LookaheadToken>::LexerError);
+  EXPECT_THROW(lexer.recognize(), LookaheadLexer::LexerError);
 }
 
 TEST(Lexer, evaluateDotToken) {
   klex::Compiler cc;
   cc.parse(std::make_unique<std::stringstream>(RULES));
 
-  Lexer<LookaheadToken> lexer { cc.compile(), std::make_unique<std::stringstream>("xanything") };
+  Lexer<LookaheadToken, StateId, false, false> lexer { cc.compile(), std::make_unique<std::stringstream>("xanything") };
 
   ASSERT_EQ(LookaheadToken::XAnyLine, lexer.recognize());
   ASSERT_EQ(LookaheadToken::Eof, lexer.recognize());
@@ -108,9 +109,9 @@ TEST(Lexer, match_eol) {
 
   LexerDef lexerDef = cc.compile();
   logf("LexerDef:\n{}", lexerDef.to_string());
-  Lexer<LookaheadToken, StateId, true> lexer { lexerDef,
-                                               std::make_unique<std::stringstream>("abba eol\nabba"),
-                                               [this](const std::string& msg) { log(msg); } };
+  Lexer<LookaheadToken, StateId, false, true> lexer { lexerDef,
+                                                      std::make_unique<std::stringstream>("abba eol\nabba"),
+                                                      [this](const std::string& msg) { log(msg); } };
 
   ASSERT_EQ(LookaheadToken::ABBA, lexer.recognize());
   ASSERT_EQ(0, lexer.offset().first);
@@ -126,6 +127,83 @@ TEST(Lexer, match_eol) {
   ASSERT_EQ(LookaheadToken::Eof, lexer.recognize());
 }
 
+TEST(Lexer, bol) {
+  Compiler cc;
+  cc.parse(std::make_unique<std::stringstream>(R"(|
+      |Spacing(ignore)  ::= [\s\t\n]+
+      |Pragma           ::= ^pragma
+      |Test             ::= test
+      |Unknown          ::= .
+      |Eof              ::= <<EOF>>
+  )"_multiline));
+
+  klex::LexerDef ld = cc.compileMulti();
+  logf("LexerDef:\n{}", ld.to_string());
+  Lexer<Tag, StateId, true, true> lexer { ld,
+                                          std::make_unique<std::stringstream>("pragma test pragma test"),
+                                          [this](const std::string& msg) { log(msg); } };
+  ASSERT_EQ(1, lexer.recognize()); // ^pragma
+  ASSERT_EQ(2, lexer.recognize()); // test
+
+  // pragma (char-wise) - must not be recognized as ^pragma
+  ASSERT_EQ(3, lexer.recognize());
+  ASSERT_EQ(3, lexer.recognize());
+  ASSERT_EQ(3, lexer.recognize());
+  ASSERT_EQ(3, lexer.recognize());
+  ASSERT_EQ(3, lexer.recognize());
+  ASSERT_EQ(3, lexer.recognize());
+
+  ASSERT_EQ(2, lexer.recognize()); // test
+  ASSERT_EQ(4, lexer.recognize()); // EOS
+}
+
+TEST(Lexer, bol_rules_on_non_bol_lexer) {
+  Compiler cc;
+  cc.parse(std::make_unique<std::stringstream>(R"(|
+      |Spacing(ignore)  ::= [\s\t\n]+
+      |Eof              ::= <<EOF>>
+      |Test             ::= "test"
+      |Pragma           ::= ^"pragma"
+      |Unknown          ::= .
+      |)"_multiline));
+
+  LexerDef lexerDef = cc.compile();
+  using SimpleLexer = Lexer<Tag, StateId, false, false>;
+  ASSERT_THROW(SimpleLexer(lexerDef, std::make_unique<std::stringstream>("pragma")), std::invalid_argument);
+}
+
+TEST(Lexer, non_bol_rules_on_non_bol_lexer) {
+  Compiler cc;
+  cc.parse(std::make_unique<std::stringstream>(R"(|
+      |Spacing(ignore)  ::= [\s\t\n]+
+      |Eof              ::= <<EOF>>
+      |Test             ::= "test"
+      |Unknown          ::= .
+      |)"_multiline));
+
+  LexerDef lexerDef = cc.compile();
+  Lexer<Tag, StateId, false, false> lexer { lexerDef, std::make_unique<std::stringstream>(" test ") };
+
+  ASSERT_EQ(2, lexer.recognize()); // "test"
+  ASSERT_EQ(1, lexer.recognize()); // <<EOF>>
+}
+
+TEST(Lexer, non_bol_rules_on_bol_lexer) {
+  Compiler cc;
+  cc.parse(std::make_unique<std::stringstream>(R"(|
+      |Spacing(ignore)  ::= [\s\t\n]+
+      |Eof              ::= <<EOF>>
+      |Test             ::= "test"
+      |Unknown          ::= .
+      |)"_multiline));
+
+  LexerDef lexerDef = cc.compile();
+  Lexer<Tag, StateId, false, false> lexer { lexerDef, std::make_unique<std::stringstream>(" test ") };
+
+  ASSERT_EQ(2, lexer.recognize()); // "test"
+  ASSERT_EQ(1, lexer.recognize()); // <<EOF>>
+}
+
 TEST(Lexer, empty_alt) {
   Compiler cc;
   cc.parse(std::make_unique<std::stringstream>(R"(|
@@ -134,13 +212,16 @@ TEST(Lexer, empty_alt) {
       |Eof             ::= <<EOF>>
   )"_multiline));
 
-  Lexer<Tag> lexer { cc.compile(),
-                     std::make_unique<std::stringstream>("aabb aa aabb") };
+  LexerDef ld = cc.compileMulti();
+  logf("LexerDef:\n{}", ld.to_string());
+  Lexer<Tag, StateId, false, true> lexer { ld,
+                                           std::make_unique<std::stringstream>("aabb aa aabb"),
+                                           [this](const std::string& msg) { log(msg); } };
 
   ASSERT_EQ(1, lexer.recognize());
   ASSERT_EQ(1, lexer.recognize());
   ASSERT_EQ(1, lexer.recognize());
-  ASSERT_EQ(2, lexer.recognize());
+  ASSERT_EQ(2, lexer.recognize()); // EOF
 }
 
 TEST(Lexer, ignore_many) {
@@ -153,17 +234,17 @@ TEST(Lexer, ignore_many) {
       |Bar              ::= bar
   )"_multiline));
 
-  LexerDef lexerDef = cc.compile();
+  LexerDef lexerDef = cc.compileMulti();
   logf("LexerDef:\n{}", lexerDef.to_string());
-  Lexer<int, StateId, true> lexer { lexerDef,
-                                    std::make_unique<std::stringstream>(
-                                        R"(|# some foo
-                                           |foo
-                                           |
-                                           |# some bar
-                                           |bar
-                                           |)"_multiline),
-                                    [this](const std::string& msg) { log(msg); } };
+  Lexer<int, StateId, false, true> lexer { lexerDef,
+                                           std::make_unique<std::stringstream>(
+                                               R"(|# some foo
+                                                  |foo
+                                                  |
+                                                  |# some bar
+                                                  |bar
+                                                  |)"_multiline),
+                                           [this](const std::string& msg) { log(msg); } };
 
   ASSERT_EQ(2, lexer.recognize());
   ASSERT_EQ("foo", lexer.word());
@@ -185,7 +266,7 @@ TEST(Lexer, realworld_ipv4) {
       |IPv4Literal       ::= {IPv4}
   )"_multiline));
 
-  Lexer<int> lexer { cc.compile(),
+  Lexer<int, StateId, false, true> lexer { cc.compile(),
                      std::make_unique<std::stringstream>(
                        R"(0.0.0.0 4.2.2.1 10.10.40.199 255.255.255.255)"),
                      [this](const std::string& msg) { log(msg); } };
@@ -266,10 +347,10 @@ TEST(Lexer, realworld_ipv6) {
                                      |::ffff:c000:0280
                                      |)"_multiline;
 
-  LexerDef lexerDef = cc.compile();
-  Lexer<RealWorld, StateId, true> lexer { lexerDef,
-                                          std::make_unique<std::stringstream>(TEXT),
-                                          [this](const std::string& msg) { log(msg); } };
+  LexerDef lexerDef = cc.compileMulti();
+  Lexer<RealWorld, StateId, false, true> lexer { lexerDef,
+                                                 std::make_unique<std::stringstream>(TEXT),
+                                                 [this](const std::string& msg) { log(msg); } };
 
   ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
   ASSERT_EQ("0:0:0:0:0:0:0:0", lexer.word());

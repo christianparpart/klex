@@ -25,6 +25,7 @@ using BacktrackingMap = std::map<StateId, StateId>;
 
 struct LexerDef {
   std::map<std::string, StateId> initialStates;
+  bool containsBeginOfLineStates;
   TransitionMap transitions;
   AcceptStateMap acceptStates;
   BacktrackingMap backtrackingStates;

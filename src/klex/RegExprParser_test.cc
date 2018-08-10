@@ -261,6 +261,11 @@ TEST(RegExprParser, closure_range) {
   EXPECT_EQ("a{2,4}", re->to_string());
 }
 
+TEST(RegExprParser, empty) {
+  auto re = RegExprParser{}.parse("(a|)");
+  EXPECT_EQ("a|", re->to_string()); // grouping '(' & ')' is not preserved as node in the parse tree.
+}
+
 TEST(RegExprParser, UnexpectedToken_grouping) {
   EXPECT_THROW(RegExprParser{}.parse("(a"), RegExprParser::UnexpectedToken);
 }

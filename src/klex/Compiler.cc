@@ -30,8 +30,45 @@ void Compiler::parse(std::unique_ptr<std::istream> stream) {
 void Compiler::declareAll(RuleList rules) {
   rules_.reserve(rules_.size() + rules.size());
 
+  // populate RegExpr
   for (klex::Rule& rule : rules)
-    declare(rule);
+    rule.regexpr = RegExprParser{}.parse(rule.pattern, rule.line, rule.column);
+
+  containsBeginOfLine_ = std::any_of(rules.begin(), rules.end(), ruleContainsBeginOfLine);
+
+  if (containsBeginOfLine_) {
+    // We have at least one BOL-rule.
+    for (klex::Rule& rule : rules) {
+      if (!klex::containsBeginOfLine(rule.regexpr.get())) {
+        NFA nfa = NFABuilder{}.construct(rule.regexpr.get(), rule.tag);
+        for (const std::string& condition : rule.conditions) {
+          NFA& fa = fa_[condition];
+          if (fa.empty()) {
+            fa = nfa.clone();
+          } else {
+            fa.alternate(nfa.clone());
+          }
+        }
+        declare(rule);
+      }
+      declare(rule, "_0"); // BOL
+    }
+  } else {
+    // No BOL-rules present, just declare them then.
+    for (klex::Rule& rule : rules) {
+      declare(rule);
+    }
+  }
+
+  for (klex::Rule& rule : rules) {
+    if (auto i = names_.find(rule.tag); i != names_.end() && i->first != rule.tag)
+      // Can actually only happen on "ignore" attributed rule count > 1.
+      names_[rule.tag] = fmt::format("{}, {}", i->second, rule.name);
+    else
+      names_[rule.tag] = rule.name;
+
+    rules_.emplace_back(std::move(rule));
+  }
 }
 
 size_t Compiler::size() const {
@@ -41,12 +78,11 @@ size_t Compiler::size() const {
   return result;
 }
 
-void Compiler::declare(Rule rule) {
-  std::unique_ptr<RegExpr> re = RegExprParser{}.parse(rule.pattern, rule.line, rule.column);
-  NFA nfa = NFABuilder{}.construct(re.get(), rule.tag);
+void Compiler::declare(const Rule& rule, const std::string& conditionSuffix) {
+  NFA nfa = NFABuilder{}.construct(rule.regexpr.get(), rule.tag);
 
   for (const std::string& condition : rule.conditions) {
-    NFA& fa = fa_[condition];
+    NFA& fa = fa_[condition + conditionSuffix];
 
     if (fa.empty()) {
       fa = nfa.clone();
@@ -54,14 +90,6 @@ void Compiler::declare(Rule rule) {
       fa.alternate(nfa.clone());
     }
   }
-
-  if (auto i = names_.find(rule.tag); i != names_.end() && i->first != rule.tag)
-    // Can actually only happen on "ignore" attributed rule count > 1.
-    names_[rule.tag] = fmt::format("{}, {}", i->second, rule.name);
-  else
-    names_[rule.tag] = rule.name;
-
-  rules_.emplace_back(std::move(rule));
 }
 
 // const std::map<std::string, NFA>& Compiler::automata() const {
@@ -77,7 +105,7 @@ MultiDFA Compiler::compileMultiDFA(OvershadowMap* overshadows) {
 }
 
 DFA Compiler::compileDFA(OvershadowMap* overshadows) {
-  assert(fa_.size() == 1);
+  assert((!containsBeginOfLine_ && fa_.size() == 1) || (containsBeginOfLine_ && fa_.size() == 2));
   return DFABuilder{fa_.begin()->second.clone()}.construct(overshadows);
 }
 
@@ -86,10 +114,18 @@ DFA Compiler::compileMinimalDFA() {
 }
 
 LexerDef Compiler::compile() {
-  return generateTables(compileMinimalDFA(), std::move(names_));
+  return generateTables(compileMinimalDFA(), containsBeginOfLine_, std::move(names_));
 }
 
-LexerDef Compiler::generateTables(const DFA& dfa, const std::map<Tag, std::string>& names) {
+LexerDef Compiler::compileMulti() {
+  MultiDFA multiDFA = compileMultiDFA(nullptr);
+  multiDFA = std::move(DFAMinimizer{multiDFA}.constructMultiDFA());
+  return generateTables(multiDFA, containsBeginOfLine_, names());
+}
+
+LexerDef Compiler::generateTables(const DFA& dfa,
+                                  bool requiresBeginOfLine,
+                                  const std::map<Tag, std::string>& names) {
   const Alphabet alphabet = dfa.alphabet();
   TransitionMap transitionMap;
 
@@ -106,11 +142,16 @@ LexerDef Compiler::generateTables(const DFA& dfa, const std::map<Tag, std::strin
     acceptStates.emplace(s, *dfa.acceptTag(s));
 
   // TODO: many initial states !
-  return LexerDef{{{"INITIAL", dfa.initialState()}}, std::move(transitionMap), std::move(acceptStates), 
+  return LexerDef{{{"INITIAL", dfa.initialState()}},
+                  requiresBeginOfLine,
+                  std::move(transitionMap),
+                  std::move(acceptStates),
                   dfa.backtracking(), std::move(names)};
 }
 
-LexerDef Compiler::generateTables(const MultiDFA& multiDFA, const std::map<Tag, std::string>& names) {
+LexerDef Compiler::generateTables(const MultiDFA& multiDFA,
+                                  bool requiresBeginOfLine,
+                                  const std::map<Tag, std::string>& names) {
   const Alphabet alphabet = multiDFA.dfa.alphabet();
   TransitionMap transitionMap;
 
@@ -127,7 +168,8 @@ LexerDef Compiler::generateTables(const MultiDFA& multiDFA, const std::map<Tag, 
     acceptStates.emplace(s, *multiDFA.dfa.acceptTag(s));
 
   // TODO: many initial states !
-  return LexerDef{multiDFA.initialStates, std::move(transitionMap), std::move(acceptStates), 
+  return LexerDef{multiDFA.initialStates, requiresBeginOfLine,
+                  std::move(transitionMap), std::move(acceptStates),
                   multiDFA.dfa.backtracking(), std::move(names)};
 }
 
