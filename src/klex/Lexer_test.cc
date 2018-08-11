@@ -139,9 +139,26 @@ TEST(Lexer, bol) {
   klex::LexerDef ld = cc.compileMulti();
   logf("LexerDef:\n{}", ld.to_string());
   Lexer<Tag, StateId, true, true> lexer { ld,
-                                          "pragma test pragma test",
+                                          "pragma",
                                           [this](const std::string& msg) { log(msg); } };
   ASSERT_EQ(1, lexer.recognize()); // ^pragma
+  ASSERT_EQ(4, lexer.recognize()); // EOS
+}
+
+TEST(Lexer, bol_no_match) {
+  Compiler cc;
+  cc.parse(R"(|Spacing(ignore)  ::= [\s\t\n]+
+              |Pragma           ::= ^pragma
+              |Test             ::= test
+              |Unknown          ::= .
+              |Eof              ::= <<EOF>>
+              |)"_multiline);
+
+  klex::LexerDef ld = cc.compileMulti();
+  logf("LexerDef:\n{}", ld.to_string());
+  Lexer<Tag, StateId, true, true> lexer { ld,
+                                          "test pragma",
+                                          [this](const std::string& msg) { log(msg); } };
   ASSERT_EQ(2, lexer.recognize()); // test
 
   // pragma (char-wise) - must not be recognized as ^pragma
@@ -152,7 +169,24 @@ TEST(Lexer, bol) {
   ASSERT_EQ(3, lexer.recognize());
   ASSERT_EQ(3, lexer.recognize());
 
+  ASSERT_EQ(4, lexer.recognize()); // EOS
+}
+
+TEST(Lexer, bol_line2) {
+  Compiler cc;
+  cc.parse(R"(|Spacing(ignore)  ::= [\s\t\n]+
+              |Pragma           ::= ^pragma
+              |Test             ::= test
+              |Eof              ::= <<EOF>>
+              |)"_multiline);
+
+  klex::LexerDef ld = cc.compileMulti();
+  logf("LexerDef:\n{}", ld.to_string());
+  Lexer<Tag, StateId, true, true> lexer { ld,
+                                          "test\npragma",
+                                          [this](const std::string& msg) { log(msg); } };
   ASSERT_EQ(2, lexer.recognize()); // test
+  ASSERT_EQ(1, lexer.recognize()); // ^pragma
   ASSERT_EQ(4, lexer.recognize()); // EOS
 }
 
