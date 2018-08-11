@@ -13,104 +13,90 @@
 using namespace klex;
 
 TEST(RuleParser, simple) {
-  klex::RuleParser rp{std::make_unique<std::stringstream>(R"(
-    main ::= blah
-  )")};
+  klex::RuleParser rp{"main ::= blah\n"};
   klex::RuleList rules = rp.parseRules();
   ASSERT_EQ(1, rules.size());
   EXPECT_EQ("blah", rules[0].pattern);
 }
 
 TEST(RuleParser, rule_at_eof) {
-  klex::RuleParser rp{std::make_unique<std::stringstream>("main ::= blah")};
+  klex::RuleParser rp{"main ::= blah"};
   klex::RuleList rules = rp.parseRules();
   ASSERT_EQ(1, rules.size());
   EXPECT_EQ("blah", rules[0].pattern);
 }
 
 TEST(RuleParser, simple_trailing_spaces) {
-  klex::RuleParser rp{std::make_unique<std::stringstream>(R"(
-    main ::= blah  
-  )")};
+  klex::RuleParser rp{"main ::= blah\n   "};
   klex::RuleList rules = rp.parseRules();
   ASSERT_EQ(1, rules.size());
   EXPECT_EQ("blah", rules[0].pattern);
 }
 
 TEST(RuleParser, quotedPattern) {
-  klex::RuleParser rp{std::make_unique<std::stringstream>(R"(
-    main ::= "blah"
-  )")};
+  klex::RuleParser rp{"main ::= \"blah\""};
   klex::RuleList rules = rp.parseRules();
   ASSERT_EQ(1, rules.size());
   EXPECT_EQ("\"blah\"", rules[0].pattern);
 }
 
 TEST(RuleParser, multiQuotedPattern) {
-  klex::RuleParser rp{std::make_unique<std::stringstream>(R"(
-    rule ::= "b"la"h"
-  )")};
+  klex::RuleParser rp{R"(rule ::= "b"la"h")"};
   klex::RuleList rules = rp.parseRules();
   ASSERT_EQ(1, rules.size());
   EXPECT_EQ(R"("b"la"h")", rules[0].pattern);
 }
 
 TEST(RuleParser, doubleQuote) {
-  klex::RuleParser rp{std::make_unique<std::stringstream>(R"(
-    rule ::= \"
-  )")};
+  klex::RuleParser rp{R"(rule ::= \")"};
   klex::RuleList rules = rp.parseRules();
   ASSERT_EQ(1, rules.size());
   EXPECT_EQ(R"(\")", rules[0].pattern);
 }
 
 TEST(RuleParser, spaceRule) {
-  klex::RuleParser rp{std::make_unique<std::stringstream>(R"(
-    rule ::= [ \n\t]+
-  )")};
+  klex::RuleParser rp{R"(rule ::= [ \n\t]+)"};
   klex::RuleList rules = rp.parseRules();
   ASSERT_EQ(1, rules.size());
   EXPECT_EQ(R"([ \n\t]+)", rules[0].pattern);
 }
 
 TEST(RuleParser, stringRule) {
-  klex::RuleParser rp{std::make_unique<std::stringstream>(R"(
-    rule ::= \"[^\"]*\"
-  )")};
+  klex::RuleParser rp{R"(rule ::= \"[^\"]*\")"};
   klex::RuleList rules = rp.parseRules();
   ASSERT_EQ(1, rules.size());
   EXPECT_EQ(R"(\"[^\"]*\")", rules[0].pattern);
 }
 
 TEST(RuleParser, ref) {
-  RuleParser rp{std::make_unique<std::stringstream>(R"(
+  RuleParser rp{R"(
     Foo(ref) ::= foo
     Bar(ref) ::= bar
     FooBar   ::= {Foo}_{Bar}
-  )")};
+  )"};
   RuleList rules = rp.parseRules();
   ASSERT_EQ(1, rules.size());
   EXPECT_EQ("(foo)_(bar)", rules[0].pattern);
 }
 
 TEST(RuleParser, ref_duplicated) {
-  RuleParser rp{std::make_unique<std::stringstream>(R"(
+  RuleParser rp{R"(
     Foo(ref) ::= foo
     Foo(ref) ::= bar
     FooBar   ::= {Foo}
-  )")};
+  )"};
   EXPECT_THROW(rp.parseRules(), RuleParser::DuplicateRule);
 }
 
 TEST(RuleParser, multiline_alt) {
-  RuleParser rp{std::make_unique<std::stringstream>(R"(
+  RuleParser rp{R"(
     Rule1       ::= foo
                   | bar
     Rule2(ref)  ::= fnord
                   | hard
     Rule3       ::= {Rule2}
                   | {Rule2}
-  )")};
+  )"};
   RuleList rules = rp.parseRules();
   ASSERT_EQ(2, rules.size());
   EXPECT_EQ("foo|bar", rules[0].pattern);
@@ -118,10 +104,10 @@ TEST(RuleParser, multiline_alt) {
 }
 
 TEST(RuleParser, condition1) {
-  RuleParser rp{std::make_unique<std::stringstream>(R"(
+  RuleParser rp{R"(
     <foo>Rule1    ::= foo
     <bar>Rule2    ::= bar
-  )")};
+  )"};
   RuleList rules = rp.parseRules();
 
   ASSERT_EQ(2, rules.size());
@@ -136,10 +122,10 @@ TEST(RuleParser, condition1) {
 }
 
 TEST(RuleParser, condition2) {
-  RuleParser rp{std::make_unique<std::stringstream>(R"(
+  RuleParser rp{R"(
     <foo>Rule1      ::= foo
     <foo,bar>Rule2  ::= bar
-  )")};
+  )"};
   RuleList rules = rp.parseRules();
 
   ASSERT_EQ(2, rules.size());
@@ -156,12 +142,12 @@ TEST(RuleParser, condition2) {
 }
 
 TEST(RuleParser, conditional_star) {
-  RuleParser rp{std::make_unique<std::stringstream>(R"(
+  RuleParser rp{R"(
     Zero      ::= zero
     <one>One  ::= one
     <two>Two  ::= two
     <*>Tri    ::= tri
-  )")};
+  )"};
   RuleList rules = rp.parseRules();
 
   ASSERT_EQ(4, rules.size());
@@ -186,12 +172,12 @@ TEST(RuleParser, conditional_star) {
 }
 
 TEST(RuleParser, grouped_conditions) {
-  RuleParser rp{std::make_unique<std::stringstream>(R"(
+  RuleParser rp{R"(
     Rule1       ::= foo
     <blah> {
       Rule2     ::= bar
     }
-  )")};
+  )"};
   RuleList rules = rp.parseRules();
 
   ASSERT_EQ(2, rules.size());
@@ -204,31 +190,31 @@ TEST(RuleParser, grouped_conditions) {
 
 TEST(RuleParser, InvalidRefRuleWithConditions) {
   ASSERT_THROW(
-      klex::RuleParser{std::make_unique<std::stringstream>("<cond>main(ref) ::= blah\n")}.parseRules(),
+      klex::RuleParser{"<cond>main(ref) ::= blah\n"}.parseRules(),
       RuleParser::InvalidRefRuleWithConditions);
 }
 
 TEST(RuleParser, InvalidRuleOption) {
   ASSERT_THROW(
-      klex::RuleParser{std::make_unique<std::stringstream>("A(invalid) ::= a\n")}.parseRules(),
+      klex::RuleParser{"A(invalid) ::= a\n"}.parseRules(),
       RuleParser::InvalidRuleOption);
 }
 
 TEST(RuleParser, DuplicateRule) {
-  klex::RuleParser rp{std::make_unique<std::stringstream>(R"(
+  klex::RuleParser rp{R"(
     foo ::= abc
     foo ::= def
-  )")};
+  )"};
   ASSERT_THROW(rp.parseRules(), RuleParser::DuplicateRule);
 }
 
 TEST(RuleParser, UnexpectedChar) {
-  ASSERT_THROW(klex::RuleParser{std::make_unique<std::stringstream>("A :=")}.parseRules(), RuleParser::UnexpectedChar);
-  ASSERT_THROW(klex::RuleParser{std::make_unique<std::stringstream>("<x A ::= a")}.parseRules(), RuleParser::UnexpectedChar);
+  ASSERT_THROW(klex::RuleParser{"A :="}.parseRules(), RuleParser::UnexpectedChar);
+  ASSERT_THROW(klex::RuleParser{"<x A ::= a"}.parseRules(), RuleParser::UnexpectedChar);
 }
 
 TEST(RuleParser, UnexpectedToken) {
-  ASSERT_THROW(klex::RuleParser{std::make_unique<std::stringstream>("<x,y,> A ::= a")}.parseRules(), RuleParser::UnexpectedToken);
-  ASSERT_THROW(klex::RuleParser{std::make_unique<std::stringstream>("<> A ::= a")}.parseRules(), RuleParser::UnexpectedToken);
-  ASSERT_THROW(klex::RuleParser{std::make_unique<std::stringstream>(" ::= a")}.parseRules(), RuleParser::UnexpectedToken);
+  ASSERT_THROW(klex::RuleParser{"<x,y,> A ::= a"}.parseRules(), RuleParser::UnexpectedToken);
+  ASSERT_THROW(klex::RuleParser{"<> A ::= a"}.parseRules(), RuleParser::UnexpectedToken);
+  ASSERT_THROW(klex::RuleParser{" ::= a"}.parseRules(), RuleParser::UnexpectedToken);
 }

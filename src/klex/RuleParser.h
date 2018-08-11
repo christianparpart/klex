@@ -21,6 +21,7 @@ namespace klex {
 class RuleParser {
  public:
   explicit RuleParser(std::unique_ptr<std::istream> input);
+  explicit RuleParser(std::string input);
 
   RuleList parseRules();
 

@@ -30,6 +30,10 @@ RuleParser::RuleParser(std::unique_ptr<std::istream> input)
   consumeChar();
 }
 
+RuleParser::RuleParser(std::string input)
+    : RuleParser{std::make_unique<std::stringstream>(std::move(input))} {
+}
+
 RuleList RuleParser::parseRules() {
   RuleList rules;
 
