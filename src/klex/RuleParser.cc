@@ -66,8 +66,8 @@ RuleList RuleParser::parseRules() {
 
 void RuleParser::parseRule(RuleList& rules) {
   // Rule         ::= RuleConditionList? BasicRule
-  //                | RuleConditionList '{' BasicRule* '}' LF?
-  // BasicRule    ::= TOKEN RuleOptions? SP '::=' SP RegEx SP? LF
+  //                | RuleConditionList '{' BasicRule* '}' (LF | EOF)?
+  // BasicRule    ::= TOKEN RuleOptions? SP '::=' SP RegEx SP? (LF | EOF)
   // RuleOptions  ::= '(' RuleOption (',' RuleOption)*
   // RuleOption   ::= ignore
 
@@ -95,7 +95,10 @@ void RuleParser::parseRule(RuleList& rules) {
     }
     consumeChar('}');
     consumeSP();
-    consumeChar('\n');
+    if (currentChar() == '\n')
+      consumeChar();
+    else if (!eof())
+      throw UnexpectedChar{line_, column_, currentChar_, '\n'};
   } else {
     parseBasicRule(rules, std::move(conditions));
   }
@@ -132,7 +135,10 @@ void RuleParser::parseBasicRule(RuleList& rules, std::vector<std::string>&& cond
   const unsigned int line = line_;
   const unsigned int column = column_;
   const std::string pattern = parseExpression();
-  consumeChar('\n');
+  if (currentChar() == '\n')
+    consumeChar();
+  else if (!eof())
+    throw UnexpectedChar{line_, column_, currentChar_, '\n'};
 
   const Tag tag = [&] {
     if (ignore || ref)

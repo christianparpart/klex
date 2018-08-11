@@ -115,7 +115,7 @@ class RuleParser::UnexpectedChar : public std::runtime_error {
  public:
   UnexpectedChar(unsigned int line, unsigned int column, char actual, char expected)
       : std::runtime_error{fmt::format("[{}:{}] Unexpected char {}, expected {} instead.",
-          line, column, actual, expected)},
+          line, column, quoted(actual), quoted(expected))},
         line_{line},
         column_{column},
         actual_{actual},
@@ -125,6 +125,14 @@ class RuleParser::UnexpectedChar : public std::runtime_error {
   unsigned int column() const noexcept { return column_; }
   char actual() const noexcept { return actual_; }
   char expected() const noexcept { return expected_; }
+
+ private:
+  static std::string quoted(char ch) {
+    if (ch < 0)
+      return "<<EOF>>";
+    else
+      return fmt::format("'{}'", ch);
+  }
 
  private:
   unsigned int line_;

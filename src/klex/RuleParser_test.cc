@@ -21,6 +21,13 @@ TEST(RuleParser, simple) {
   EXPECT_EQ("blah", rules[0].pattern);
 }
 
+TEST(RuleParser, rule_at_eof) {
+  klex::RuleParser rp{std::make_unique<std::stringstream>("main ::= blah")};
+  klex::RuleList rules = rp.parseRules();
+  ASSERT_EQ(1, rules.size());
+  EXPECT_EQ("blah", rules[0].pattern);
+}
+
 TEST(RuleParser, simple_trailing_spaces) {
   klex::RuleParser rp{std::make_unique<std::stringstream>(R"(
     main ::= blah  
@@ -218,7 +225,6 @@ TEST(RuleParser, DuplicateRule) {
 TEST(RuleParser, UnexpectedChar) {
   ASSERT_THROW(klex::RuleParser{std::make_unique<std::stringstream>("A :=")}.parseRules(), RuleParser::UnexpectedChar);
   ASSERT_THROW(klex::RuleParser{std::make_unique<std::stringstream>("<x A ::= a")}.parseRules(), RuleParser::UnexpectedChar);
-  ASSERT_THROW(klex::RuleParser{std::make_unique<std::stringstream>("A ::= a")}.parseRules(), RuleParser::UnexpectedChar);
 }
 
 TEST(RuleParser, UnexpectedToken) {
