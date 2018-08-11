@@ -99,17 +99,17 @@ DFAMinimizer::PartitionVec DFAMinimizer::split(const StateIdVec& S) const {
     // t_i's only element thus is a reconstruction of S.
     assert(t_i.begin()->second == S);
 
-    // N.B. Either all states in S belong to a multi-initial-state or none.
-    assert(std::all_of(S.begin(), S.end(), std::bind(&DFAMinimizer::isMultiInitialState, this, std::placeholders::_1))
-        || std::none_of(S.begin(), S.end(), std::bind(&DFAMinimizer::isMultiInitialState, this, std::placeholders::_1)));
-
-    if (isMultiInitialState(S.front())) {
-      // Split them all.
+    for (StateId s : S) {
       PartitionVec result;
-      for (StateId s : S) {
+      StateIdVec main;
+      if (isMultiInitialState(s)) {
         result.emplace_back(StateIdVec{s});
+      } else {
+        main.emplace_back(s);
       }
-      return std::move(result);
+      if (!main.empty()) {
+        result.emplace_back(std::move(main));
+      }
     }
   }
 

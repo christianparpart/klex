@@ -156,6 +156,24 @@ TEST(Lexer, bol) {
   ASSERT_EQ(4, lexer.recognize()); // EOS
 }
 
+TEST(Lexer, bol_and_other_conditions) {
+  Compiler cc;
+  cc.parse(R"(|Spacing(ignore)  ::= [\s\t\n]+
+              |Pragma           ::= ^pragma
+              |Test             ::= test
+              |Eof              ::= <<EOF>>
+              |<Asm>Jump        ::= jmp)"_multiline);
+  LexerDef ld = cc.compileMulti();
+  logf("LexerDef:\n{}", ld.to_string());
+
+  Lexer<Tag, StateId, true, true> lexer { ld,
+                                          "pragma test",
+                                          [this](const std::string& msg) { log(msg); } };
+  ASSERT_EQ(1, lexer.recognize()); // ^pragma
+  ASSERT_EQ(2, lexer.recognize()); // test
+  ASSERT_EQ(3, lexer.recognize()); // <<EOF>>
+}
+
 TEST(Lexer, bol_rules_on_non_bol_lexer) {
   Compiler cc;
   cc.parse(R"(|Spacing(ignore)  ::= [\s\t\n]+
