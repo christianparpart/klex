@@ -29,6 +29,9 @@ template<typename Token = Tag,
          const bool RequiresBeginOfLine = true,
          const bool Debug = false>
 class Lexer {
+ public:
+  using value_type = Token;
+
  private:
   using DebugLogger = std::function<void(const std::string&)>;
 
@@ -95,6 +98,15 @@ class Lexer {
   //! @returns the name of the current token.
   const std::string& name() const { return name(token_); }
 
+  //! Tests whether given token is actually being recognized by this lexer.
+  bool isToken(Tag t) const noexcept {
+    for (const std::pair<StateId, Tag>& s_A : acceptStates_)
+      if (s_A.second == t)
+        return true;
+
+    return false;
+  }
+
   //! @returns the name of the token represented by Token @p t.
   const std::string& name(Token t) const {
     auto i = tagNames_.find(static_cast<Tag>(t));
@@ -144,6 +156,21 @@ class Lexer {
     unsigned int line_;
     unsigned int column_;
   };
+
+  struct iterator {
+    Lexer& lx;
+    Token token;
+
+    Token operator*() const { return token; }
+    iterator& operator++() { token = lx.recognize(); return *this; }
+    iterator& operator++(int) { token = lx.recognize(); return *this; }
+    bool operator==(const iterator& rhs) const noexcept { return token == rhs.token; }
+    bool operator!=(const iterator& rhs) const noexcept { return token != rhs.token; }
+  };
+  iterator begin() { return iterator{*this, recognize()}; }
+  iterator end() { return iterator{*this, /*TODO: Tag for EOF: */ Symbols::EndOfFile}; }
+
+  bool eof() const { return !stream_->good(); }
 
  private:
   Symbol nextChar();

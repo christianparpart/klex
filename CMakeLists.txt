@@ -48,6 +48,7 @@ add_library(klex STATIC
     src/klex/DFA.cc
     src/klex/DFABuilder.cc
     src/klex/DFAMinimizer.cc
+    src/klex/Report.cc
     src/klex/DotWriter.cc
     src/klex/MultiDFA.cc
     src/klex/NFA.cc
@@ -57,6 +58,10 @@ add_library(klex STATIC
     src/klex/RuleParser.cc
     src/klex/State.cc
     src/klex/Symbols.cc
+    src/klex/cfg/Grammar.cc
+    src/klex/cfg/GrammarLexer.cc
+    src/klex/cfg/GrammarParser.cc
+    src/klex/cfg/ll/Table.cc
     src/klex/util/Flags.cc
     )
 
@@ -106,6 +111,10 @@ if(KLEX_TESTS)
       src/klex/State_test.cc
       src/klex/Symbols_test.cc
       src/klex/klex_test.cc
+      src/klex/cfg/GrammarLexer_test.cc
+      src/klex/cfg/GrammarParser_test.cc
+      src/klex/cfg/Grammar_test.cc
+      src/klex/cfg/ll/Analyzer_test.cc
       src/klex/util/AnsiColor.cc
       src/klex/util/testing.cc
       )
@@ -134,4 +143,9 @@ if(KLEX_EXAMPLES)
   set_target_properties(example_mathexpr PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
   target_link_libraries(example_mathexpr klex)
   target_include_directories(example_mathexpr PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/examples)
+
+  add_executable(example_wordcount examples/wordcount.cc)
+  set_target_properties(example_wordcount PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+  target_link_libraries(example_wordcount klex)
+  target_include_directories(example_wordcount PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/examples)
 endif(KLEX_EXAMPLES)

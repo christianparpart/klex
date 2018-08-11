@@ -15,6 +15,16 @@
 
 namespace klex {
 
+static inline std::string quoted(char ch) {
+  if (ch < 0)
+    return "<<EOF>>";
+  if (ch == '\n')
+    return "\\n";
+  if (ch == ' ')
+    return "\\s";
+  return fmt::format("{}", ch);
+}
+
 static inline std::string quotedString(const std::string& s) {
   std::stringstream sstr;
   sstr << std::quoted(s);
@@ -127,7 +137,6 @@ template<typename Token, typename Machine, const bool RequiresBeginOfLine, const
 inline Token Lexer<Token, Machine, RequiresBeginOfLine, Debug>::recognizeOne() {
   // init
   oldOffset_ = offset_;
-  isBeginOfLine_ = offset_ == 0 || currentChar() == '\n';
   word_.clear();
   StateId state = getInitialState();
   std::deque<StateId> stack;
@@ -191,18 +200,20 @@ inline Token Lexer<Token, Machine, RequiresBeginOfLine, Debug>::recognizeOne() {
     state = tmp;
   }
 
-  if constexpr(Debug) debugf("recognize: final state {} {} {} {}-{} {}",
+  if constexpr(Debug) debugf("recognize: final state {} {} {} {}-{} {} [currentChar: {}]",
                              stateName(state),
                              isAcceptState(state) ? "accepting" : "non-accepting",
                              isAcceptState(state) ? name(token(state)) : std::string(),
                              oldOffset_, offset_,
-                             quotedString(word_));
+                             quotedString(word_),
+                             quoted(currentChar_));
 
   if (!isAcceptState(state))
     throw LexerError{offset_, line_, column_};
 
   auto i = acceptStates_.find(state);
   assert(i != acceptStates_.end() && "Accept state hit, but no tag assigned.");
+  isBeginOfLine_ = word_.back() == '\n';
   return token_ = static_cast<Token>(i->second);
 }
 
@@ -238,8 +249,8 @@ inline Symbol Lexer<Token, Machine, RequiresBeginOfLine, Debug>::nextChar() {
     int ch = buffered_.back();
     currentChar_ = ch;
     buffered_.resize(buffered_.size() - 1);
-    offset_++;
     if constexpr(Debug) debugf("Lexer:{}: advance '{}' [{}:{}]", offset_, prettySymbol(ch), line_, column_);
+    offset_++;
     return ch;
   }
 
@@ -256,13 +267,14 @@ inline Symbol Lexer<Token, Machine, RequiresBeginOfLine, Debug>::nextChar() {
   }
 
   currentChar_ = ch;
-  offset_++;
   if constexpr(Debug) debugf("Lexer:{}: advance '{}' [{}:{}]", offset_, prettySymbol(ch), line_, column_);
+  offset_++;
   return ch;
 }
 
 template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
 inline void Lexer<Token, Machine, RequiresBeginOfLine, Debug>::rollback() {
+  currentChar_ = word_.back();
   if (word_.back() != -1) {
     offset_--;
     // TODO: rollback (line, column)
