@@ -78,7 +78,7 @@ class Lexer {
   Token recognizeOne();
 
   //! the underlying word of the currently recognized token
-  std::string word() const { return word_; }
+  const std::string& word() const { return word_; }
 
   //! @returns the absolute offset of the file the lexer is currently reading from.
   std::pair<unsigned, unsigned> offset() const noexcept { return std::make_pair(oldOffset_, offset_); }
