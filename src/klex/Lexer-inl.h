@@ -137,7 +137,6 @@ template<typename Token, typename Machine, const bool RequiresBeginOfLine, const
 inline Token Lexer<Token, Machine, RequiresBeginOfLine, Debug>::recognizeOne() {
   // init
   oldOffset_ = offset_;
-  isBeginOfLine_ = offset_ == 0 || currentChar() == '\n';
   word_.clear();
   StateId state = getInitialState();
   std::deque<StateId> stack;
@@ -214,6 +213,7 @@ inline Token Lexer<Token, Machine, RequiresBeginOfLine, Debug>::recognizeOne() {
 
   auto i = acceptStates_.find(state);
   assert(i != acceptStates_.end() && "Accept state hit, but no tag assigned.");
+  isBeginOfLine_ = word_.back() == '\n';
   return token_ = static_cast<Token>(i->second);
 }
 

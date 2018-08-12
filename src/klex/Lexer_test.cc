@@ -187,7 +187,7 @@ TEST(Lexer, bol_line2) {
                                           [this](const std::string& msg) { log(msg); } };
   ASSERT_EQ(2, lexer.recognize()); // test
   ASSERT_EQ(1, lexer.recognize()); // ^pragma
-  ASSERT_EQ(4, lexer.recognize()); // EOS
+  ASSERT_EQ(3, lexer.recognize()); // EOS
 }
 
 TEST(Lexer, bol_and_other_conditions) {
