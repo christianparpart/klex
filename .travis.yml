@@ -18,7 +18,7 @@ before_script:
   - git submodule update --init --recursive
   - mkdir build
   - cd build
-  - cmake -DCMAKE_BUILD_TYPE=Debug -DKLEX_COVERAGE=ON ..
+  - cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DKLEX_COVERAGE=ON ..
 
 script:
   - cmake --build .
