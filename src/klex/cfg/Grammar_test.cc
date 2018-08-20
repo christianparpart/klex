@@ -39,10 +39,10 @@ TEST(cfg_Grammar, metadata_right_recursive) {
 	Grammar grammar = GrammarParser(GrammarLexer{
 		R"(`Start     ::= Expr "<<EOF>>";
 		   `Expr      ::= Term Expr_;
-		   `Expr_     ::= '+' Expr_
+		   `Expr_     ::= '+' Term Expr_
 		   `            | ;
-		   `Term      ::= Factor Term_ ;
-		   `Term_     ::= '*' Term_
+		   `Term      ::= Factor Term_;
+		   `Term_     ::= '*' Factor Term_
 		   `            | ;
 		   `Factor    ::= "NUMBER"
 		   `            | '(' Expr ')'

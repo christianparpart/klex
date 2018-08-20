@@ -50,7 +50,7 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 		}
 	}
 
-	// dump rules
+	// {{{ dump rules
 	printf("PRODUCTIONS:\n");
 	printf(" ID | NON-TERMINAL  | EXPRESSION           | FIRST                | FOLLOW\n");
 	printf("----+---------------+----------------------+----------------------+--------------------\n");
@@ -63,8 +63,10 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 				fmt::format("{{{}}}", metadata.follow[NonTerminal{grammar.productions[i].name}]).c_str()
 		);
 	printf("\n");
+	// }}}
 
-	// dump table-header
+	// {{{ dump syntax table
+	// table-header
 	printf("SYNTAX TABLE:\n");
 	printf("%16s |", "NT \\ T");
 	for (const Terminal& t : metadata.terminals)
@@ -75,7 +77,7 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 		printf("-----------+");;
 	printf("\n");
 
-	// dump table-body
+	// table-body
 	for (const NonTerminal& nt : metadata.nonterminals)
 	{
 		printf("%16s |", nt.name.c_str());
@@ -86,6 +88,7 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 				printf("           |");
 		printf("\n");
 	}
+	// }}}
 
 	return move(st);
 }
