@@ -59,6 +59,15 @@ vector<T> to_vector(set<T> S) {
 	return move(out);
 }
 
+template<typename T, typename V = int>
+inline map<T, V> createIdMap(const vector<T>& items)
+{
+	map<T, V> out;
+	for (auto i = items.begin(); i != items.end(); ++i)
+		out[*i] = distance(items.begin(), i);
+	return move(out);
+}
+
 GrammarMetadata Grammar::metadata() const {
 	std::vector<NonTerminal> nonterminals = [&]() {
 		set<NonTerminal> nonterminals;
@@ -87,6 +96,32 @@ GrammarMetadata Grammar::metadata() const {
 	const NonTerminal startSymbol { productions[0].name };
 
 	set<NonTerminal> epsilon; // contains set of non-terminals that contain epsilon symbols
+
+	vector<set<Terminal>> FIRST;
+	FIRST.resize(productions.size());
+
+	while (true) {
+		bool changed = false;
+		for (size_t p = 0; p < productions.size(); ++p)
+		{
+			const Production& production = productions[p];
+			const NonTerminal& nt { production.name };
+			const vector<Symbol>& expression = production.handle.symbols;
+
+			if (!expression.empty())
+			{
+				set<Terminal> rhs = FIRST[p];
+				for (size_t i = 1; i < expression.size() - 1 && containsEpsilon(expression[i + 1]); ++i)
+					changed |= merge(rhs, FIRST[i + 1]);
+				// TODO if (i == k && 
+				changed |= merge(FIRST[p], rhs);
+			}
+			else
+				changed |= merge(epsilon, set<NonTerminal>{nt});
+		}
+		if (!changed)
+			break;
+	}
 
 	while (true) {
 		bool changed = false;
@@ -136,7 +171,8 @@ GrammarMetadata Grammar::metadata() const {
 				move(first),
 				move(follow),
 				move(epsilon),
-				move(first1)
+				move(first1),
+				move(FIRST),
 			};
 	}
 }

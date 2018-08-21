@@ -73,12 +73,26 @@ struct GrammarMetadata {
 	std::map<NonTerminal, std::set<Terminal>> follow;
 	std::set<NonTerminal> epsilon;
 	std::map<Symbol, std::set<Terminal>> first1;
+
+	std::vector<std::set<Terminal>> FIRST;
 };
 
 struct Grammar {
 	std::vector<Production> productions;
 
 	std::vector<const Production*> getProductions(const NonTerminal& nt) const;
+
+	bool containsEpsilon(const Symbol& s) const {
+		return std::holds_alternative<NonTerminal>(s)
+			&& containsEpsilon(std::get<NonTerminal>(s));
+	}
+	bool containsEpsilon(const NonTerminal& nt) const {
+		for (const Production* p : getProductions(nt))
+			if (p->handle.symbols.empty())
+				return true;
+
+		return false;
+	}
 
 	GrammarMetadata metadata() const;
 };

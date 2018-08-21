@@ -20,7 +20,7 @@ using namespace klex::cfg;
 using namespace klex::cfg::ll;
 
 template<typename T, typename V = int>
-map<T, V> createIdMap(const vector<T>& items)
+inline map<T, V> createIdMap(const vector<T>& items)
 {
 	map<T, V> out;
 	for (auto i = items.begin(); i != items.end(); ++i)
@@ -59,7 +59,8 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 				i,
 				grammar.productions[i].name.c_str(),
 				fmt::format("{}", grammar.productions[i].handle).c_str(),
-				fmt::format("{{{}}}", metadata.first[NonTerminal{grammar.productions[i].name}]).c_str(),
+				fmt::format("{{{}}}", metadata.FIRST[i]).c_str(),
+				//fmt::format("{{{}}}", metadata.first[NonTerminal{grammar.productions[i].name}]).c_str(),
 				fmt::format("{{{}}}", metadata.follow[NonTerminal{grammar.productions[i].name}]).c_str()
 		);
 	printf("\n");
