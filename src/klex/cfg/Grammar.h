@@ -72,7 +72,7 @@ struct GrammarMetadata {
 	std::map<Symbol, std::set<Terminal>> first;
 	std::map<NonTerminal, std::set<Terminal>> follow;
 	std::set<NonTerminal> epsilon;
-	std::map<Symbol, std::set<Terminal>> first1;
+	std::vector<std::set<Terminal>> first1;
 
 	std::vector<std::set<Terminal>> FIRST;
 };
@@ -86,6 +86,7 @@ struct Grammar {
 		return std::holds_alternative<NonTerminal>(s)
 			&& containsEpsilon(std::get<NonTerminal>(s));
 	}
+
 	bool containsEpsilon(const NonTerminal& nt) const {
 		for (const Production* p : getProductions(nt))
 			if (p->handle.symbols.empty())
@@ -95,6 +96,20 @@ struct Grammar {
 	}
 
 	GrammarMetadata metadata() const;
+
+	std::set<Terminal> first(const Terminal& t) { return std::set<Terminal>({t}); }
+	std::set<Terminal> first(const NonTerminal& nt) {
+		std::set<Terminal> S;
+
+		for (size_t i = 0; i < productions.size(); ++i)
+			if (productions[i].name == nt.name)
+				for (const Terminal& t : FIRST[i])
+					S.insert(t);
+
+		return std::move(S);
+	}
+
+	std::vector<std::set<Terminal>> FIRST;
 };
 
 } // namespace klex::cfg

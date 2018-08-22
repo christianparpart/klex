@@ -18,10 +18,10 @@ using namespace klex::cfg;
 
 /// @returns true when @p target has changed after merge, false otherwise.
 template<typename T>
-inline bool merge(set<T>& target, std::set<T> source) {
-	const size_t n = target.size();
-	target.merge(std::move(source));
-	return target.size() > n;
+inline bool merge(set<T>* target, std::set<T> source) {
+	const size_t n = target->size();
+	target->merge(std::move(source));
+	return target->size() > n;
 }
 
 template<typename T>
@@ -51,11 +51,19 @@ std::vector<const Production*> Grammar::getProductions(const NonTerminal& nt) co
 }
 
 template<typename T>
-vector<T> to_vector(set<T> S) {
+inline vector<T> to_vector(set<T> S) {
 	vector<T> out;
 	out.reserve(S.size());
 	for (const T& v : S)
 		out.emplace_back(v);
+	return move(out);
+}
+
+template<typename T, typename U>
+inline U unwrapSet(set<T>&& values) {
+	set<U> out;
+	for (const auto& v : values)
+		out.insert(get<U>(v));
 	return move(out);
 }
 
@@ -80,9 +88,9 @@ GrammarMetadata Grammar::metadata() const {
 	vector<Terminal> terminals = [&]() {
 		set<Terminal> terminals;
 		for (const Production& production : productions)
-			for (const Symbol& symbol : production.handle.symbols)
-				if (holds_alternative<Terminal>(symbol))
-					terminals.insert(get<Terminal>(symbol));
+			for (const Symbol& b : production.handle.symbols)
+				if (holds_alternative<Terminal>(b))
+					terminals.insert(get<Terminal>(b));
 
 		return to_vector(move(terminals));
 	}();
@@ -100,81 +108,73 @@ GrammarMetadata Grammar::metadata() const {
 	vector<set<Terminal>> FIRST;
 	FIRST.resize(productions.size());
 
-	while (true) {
-		bool changed = false;
-		for (size_t p = 0; p < productions.size(); ++p)
+	while (true)
+	{
+		bool updated = false;
+
+		for (const Production& production : productions)
 		{
-			const Production& production = productions[p];
-			const NonTerminal& nt { production.name };
-			const vector<Symbol>& expression = production.handle.symbols;
-
-			if (!expression.empty())
-			{
-				set<Terminal> rhs = FIRST[p];
-				for (size_t i = 1; i < expression.size() - 1 && containsEpsilon(expression[i + 1]); ++i)
-					changed |= merge(rhs, FIRST[i + 1]);
-				// TODO if (i == k && 
-				changed |= merge(FIRST[p], rhs);
-			}
-			else
-				changed |= merge(epsilon, set<NonTerminal>{nt});
-		}
-		if (!changed)
-			break;
-	}
-
-	while (true) {
-		bool changed = false;
-
-		for (const Production& production : productions) {
 			NonTerminal nt { production.name };
 			const vector<Symbol>& expression = production.handle.symbols;
 
 			// FIRST-set
-			if (expression.empty())
-				changed |= merge(epsilon, set<NonTerminal>{nt});
-			else
-				for (const Symbol& symbol : expression) {
-					changed |= merge(first[nt], first[symbol]);
-					if (holds_alternative<NonTerminal>(symbol))
-						if (epsilon.count(get<NonTerminal>(symbol)) == 0)
-							break;
+			bool found = false;
+			for (const Symbol& b : expression)
+			{
+				updated |= merge(&first[nt], first[b]);
+				if (holds_alternative<Terminal>(b) || !epsilon.count(get<NonTerminal>(b)))
+				{
+					found = true;
+					break;
 				}
+			}
+			if (!found)
+				updated |= merge(&epsilon, set<NonTerminal>{nt});
 
 			// FOLLOW-set
 			set<Terminal> trailer = follow[nt];
-			for (const Symbol& symbol : reversed(expression)) {
-				if (holds_alternative<Terminal>(symbol))
-					trailer = first[symbol];
+			for (const Symbol& b : reversed(expression)) {
+				if (holds_alternative<Terminal>(b))
+					trailer = first[b];
 				else {
-					changed |= merge(follow[get<NonTerminal>(symbol)], trailer);
+					updated |= merge(&follow[get<NonTerminal>(b)], trailer);
 
-					if (epsilon.count(get<NonTerminal>(symbol)) == 0)
-						trailer = first[symbol];
+					if (epsilon.count(get<NonTerminal>(b)) == 0)
+						trailer = first[b];
 					else
-						trailer.merge(copy(first[symbol]));
+						trailer.merge(copy(first[b]));
 				}
 			}
 		}
 
-		map<Symbol, set<Terminal>> first1;
-		first1 = first;
-		for (auto && [nt, follows] : follow)
-			if (epsilon.find(nt) != epsilon.end())
-				for (auto && f : follows)
-					first1[nt].insert(f);
-
-		if (!changed)
-			return GrammarMetadata {
-				move(nonterminals),
-				move(terminals),
-				move(first),
-				move(follow),
-				move(epsilon),
-				move(first1),
-				move(FIRST),
-			};
+		if (!updated)
+			break;
 	}
+
+	vector<set<Terminal>> first1;
+	first1.reserve(productions.size());
+	for (const Production& production : productions)
+	{
+		NonTerminal nt { production.name };
+		const vector<Symbol>& expression = production.handle.symbols;
+		set<Terminal> S;
+		for (const Terminal& t : first[Symbol{nt}])
+			S.insert(t);
+		if (epsilon.count(nt))
+			for (const Terminal& t : follow[nt])
+				S.insert(t);
+		first1.emplace_back(move(S));
+	}
+
+	return GrammarMetadata {
+		move(nonterminals),
+		move(terminals),
+		move(first),
+		move(follow),
+		move(epsilon),
+		move(first1),
+		move(FIRST),
+	};
 }
 
 // vim:ts=4:sw=4:noet
