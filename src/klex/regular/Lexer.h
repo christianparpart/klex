@@ -145,16 +145,14 @@ class Lexer {
   /**
    * Runtime exception that is getting thrown when a word could not be recognized.
    */
-  class LexerError : public std::runtime_error {
-   public:
-    LexerError(unsigned int offset, unsigned int line, unsigned int column)
-        : std::runtime_error{fmt::format("[{}:{}] Failed to lexically recognize a word.", line, column)},
-          offset_{offset}, line_{line}, column_{column} {}
+  struct LexerError : public std::runtime_error {
+    LexerError(unsigned int _offset, unsigned int _line, unsigned int _column)
+        : std::runtime_error{fmt::format("[{}:{}] Failed to lexically recognize a word.", _line, _column)},
+          offset{_offset}, line{_line}, column{_column} {}
 
-   private:
-    unsigned int offset_;
-    unsigned int line_;
-    unsigned int column_;
+    unsigned int offset;
+    unsigned int line;
+    unsigned int column;
   };
 
   struct iterator {
