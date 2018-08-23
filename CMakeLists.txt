@@ -48,7 +48,6 @@ add_library(klex STATIC
     src/klex/cfg/GrammarLexer.cc
     src/klex/cfg/GrammarParser.cc
     src/klex/cfg/ll/SyntaxTable.cc
-    src/klex/cfg/ll/Builder.cc
     src/klex/regular/Alphabet.cc
     src/klex/regular/Compiler.cc
     src/klex/regular/DFA.cc
