@@ -29,6 +29,18 @@ inline map<T, V> createIdMap(const vector<T>& items)
 	return move(out);
 }
 
+std::optional<int> SyntaxTable::lookup(int nonterminal, int lookahead) const {
+	auto i = table.find(nonterminal);
+	if (i == table.end())
+		return std::nullopt;
+
+	auto k = i->second.find(lookahead);
+	if (k == i->second.end())
+		return std::nullopt;
+
+	return k->second;
+}
+
 SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 {
 	map<NonTerminal, int> idNonTerminals = createIdMap(grammar.nonterminals);

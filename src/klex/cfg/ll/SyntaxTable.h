@@ -33,28 +33,16 @@ struct TokenTraits {
 /** LL(1)-compatible syntax table.
  */
 struct SyntaxTable {
-	// non-terminals ::= { x | x in keys of table }
-	// terminals ::= { x | x in table and not in non-terminal }
 	using LookAheadMap = std::unordered_map<int /*lookahead*/, int /*production*/>;
 	using NonTerminalMap = std::unordered_map<int /*nonterminals*/, LookAheadMap>;
 
 	NonTerminalMap table;
 
-	std::optional<int> lookup(int nonterminal, int lookahead) const {
-		auto i = table.find(nonterminal);
-		if (i == table.end())
-			return std::nullopt;
-
-		auto k = i->second.find(lookahead);
-		if (k == i->second.end())
-			return std::nullopt;
-
-		return k->second;
-	}
-
-	static SyntaxTable construct(const Grammar& grammar);
+	std::optional<int> lookup(int nonterminal, int lookahead) const;
 
 	std::string dump(const Grammar& grammar) const;
+
+	static SyntaxTable construct(const Grammar& grammar);
 };
 
 } // namespace klex::cfg::ll

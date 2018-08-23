@@ -51,11 +51,13 @@ Analyzer<Lexer, SemanticValue>::Analyzer(SyntaxTable grammar, Lexer lexer, Repor
 
 template<typename Lexer, typename SemanticValue>
 void Analyzer<Lexer, SemanticValue>::analyze() {
+	const auto eof = lexer_.end();
 	auto currentToken = lexer_.begin();
-	for (;;) {
-		auto X = stack_.top();
 
-		if (X == currentToken && Traits::isEof(*currentToken))
+	for (;;) {
+		const auto X = stack_.top();
+
+		if (X == currentToken && currentToken == eof)
 			return; // fully parsed program, and success
 
 		if (X == currentToken && Traits::isTerminal(*currentToken)) {
