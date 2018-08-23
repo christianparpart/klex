@@ -5,10 +5,10 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/Compiler.h>
-#include <klex/DFA.h>
-#include <klex/DotWriter.h>
-#include <klex/Lexer.h>
+#include <klex/regular/Compiler.h>
+#include <klex/regular/DFA.h>
+#include <klex/regular/DotWriter.h>
+#include <klex/regular/Lexer.h>
 #include <klex/util/Flags.h>
 
 #include <algorithm>
@@ -33,7 +33,7 @@ std::string RULES = R"(
     INVALID       ::= .
 )";
 
-using Lexer = klex::Lexer<Token>;
+using Lexer = klex::regular::Lexer<Token>;
 using Number = long long int;
 
 std::string to_string(Token t) {
@@ -143,12 +143,12 @@ int main(int argc, const char* argv[]) {
   flags.enableParameters("EXPRESSION", "Mathematical expression to calculate");
   flags.parse(argc, argv);
 
-  klex::Compiler cc;
+  klex::regular::Compiler cc;
   cc.parse(std::make_unique<std::stringstream>(RULES));
 
   if (flags.getBool("dfa")) {
-    klex::DotWriter writer { std::cout, "n" };
-    klex::DFA dfa = cc.compileMinimalDFA();
+    klex::regular::DotWriter writer { std::cout, "n" };
+    klex::regular::DFA dfa = cc.compileMinimalDFA();
     dfa.visit(writer);
     return EXIT_SUCCESS;
   }

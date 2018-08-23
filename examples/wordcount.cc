@@ -5,8 +5,8 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/Compiler.h>
-#include <klex/Lexer.h>
+#include <klex/regular/Compiler.h>
+#include <klex/regular/Lexer.h>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
@@ -14,7 +14,7 @@
 #include <string>
 
 int main(int argc, const char* argv[]) {
-  klex::Compiler cc;
+  klex::regular::Compiler cc;
   cc.parse(R"(
       Word  ::= [a-zA-Z]+
       LF    ::= \n
@@ -26,7 +26,7 @@ int main(int argc, const char* argv[]) {
   int chars = 0;
   int lines = 0;
 
-  klex::Lexer<int, int, false, false> lexer { cc.compile(), std::cin };
+  klex::regular::Lexer<int, int, false, false> lexer { cc.compile(), std::cin };
   for (bool eof = false; !eof; ) {
     switch (lexer.recognize()) {
       case 4: // EOF

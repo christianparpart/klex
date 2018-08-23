@@ -8,14 +8,14 @@
 #include <fmt/format.h>
 #include <fstream>
 #include <iostream>
-#include <klex/Lexer.h>
+#include <klex/regular/Lexer.h>
 
 #include "token.h" // generated via mklex
 
-extern klex::LexerDef lexerDef; // generated via mklex
+extern klex::regular::LexerDef lexerDef; // generated via mklex
 
 int main(int argc, const char* argv[]) {
-  klex::Lexer<Token, Machine> lexer {lexerDef, std::cin};
+  klex::regular::Lexer<Token, Machine> lexer {lexerDef, std::cin};
   if (argc == 2)
     lexer.open(std::make_unique<std::ifstream>(argv[1]));
 

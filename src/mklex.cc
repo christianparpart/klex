@@ -5,16 +5,16 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/Compiler.h>
-#include <klex/DFA.h>
-#include <klex/DFAMinimizer.h>
-#include <klex/DotWriter.h>
-#include <klex/Lexer.h>
-#include <klex/NFA.h>
-#include <klex/RegExpr.h>
-#include <klex/RegExprParser.h>
-#include <klex/Rule.h>
-#include <klex/RuleParser.h>
+#include <klex/regular/Compiler.h>
+#include <klex/regular/DFA.h>
+#include <klex/regular/DFAMinimizer.h>
+#include <klex/regular/DotWriter.h>
+#include <klex/regular/Lexer.h>
+#include <klex/regular/NFA.h>
+#include <klex/regular/RegExpr.h>
+#include <klex/regular/RegExprParser.h>
+#include <klex/regular/Rule.h>
+#include <klex/regular/RuleParser.h>
 #include <klex/util/Flags.h>
 
 #include <chrono>
@@ -27,10 +27,14 @@
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 
-std::string charLiteral(klex::Symbol ch) {
+using namespace std;
+using namespace klex::regular;
+using namespace klex::util;
+
+std::string charLiteral(Symbol ch) {
   switch (ch) {
-    case klex::Symbols::EndOfFile:
-    case klex::Symbols::Error:
+    case Symbols::EndOfFile:
+    case Symbols::Error:
       return fmt::format("{}", (int)ch);
     case ' ':
       return std::string{"' '"};
@@ -82,30 +86,30 @@ std::pair<std::string, std::string> splitNamespace(const std::string& fullyQuali
     return std::make_pair(std::string(), fullyQualifiedName);
 }
 
-void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const klex::RuleList& rules,
+void generateTableDefCxx(std::ostream& os, const LexerDef& lexerDef, const RuleList& rules,
                          const std::string& fullyQualifiedSymbolName) {
   auto [ns, tableName] = splitNamespace(fullyQualifiedSymbolName);
 
-  os << "#include <klex/LexerDef.h>\n";
+  os << "#include <klex/regular/LexerDef.h>\n";
   os << "\n";
 
   if (!ns.empty())
     os << "namespace " << ns << " {\n\n";
 
-  os << "klex::LexerDef " << tableName << " {\n";
+  os << "klex::regular::LexerDef " << tableName << " {\n";
   os << "  // initial states\n";
-  os << "  std::map<std::string, klex::StateId> {\n";
-  for (const std::pair<const std::string, klex::StateId>& s0 : lexerDef.initialStates)
+  os << "  std::map<std::string, klex::regular::StateId> {\n";
+  for (const std::pair<const string, StateId>& s0 : lexerDef.initialStates)
     os << fmt::format("    {{ \"{}\", {} }},\n", s0.first, s0.second);
   os << "  },\n";
   os << "  // containsBeginOfLineStates\n";
   os << "  " << (lexerDef.containsBeginOfLineStates ? "true" : "false") << ",\n";
   os << "  // state transition table \n";
-  os << "  klex::TransitionMap::Container {\n";
-  for (klex::StateId stateId : lexerDef.transitions.states()) {
+  os << "  klex::regular::TransitionMap::Container {\n";
+  for (StateId stateId : lexerDef.transitions.states()) {
     os << "    { " << fmt::format("{:>3}", stateId) << ", {";
     int c = 0;
-    for (std::pair<klex::Symbol, klex::StateId> t : lexerDef.transitions.map(stateId)) {
+    for (std::pair<Symbol, StateId> t : lexerDef.transitions.map(stateId)) {
       if (c) os << ", ";
       os << "{" << charLiteral(t.first) << ", " << t.second << "}";
       c++;
@@ -114,8 +118,8 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
   }
   os << "  },\n";
   os << "  // accept state to action label mappings\n";
-  os << "  klex::AcceptStateMap {\n";
-  for (const std::pair<klex::StateId, klex::Tag>& accept : lexerDef.acceptStates) {
+  os << "  klex::regular::AcceptStateMap {\n";
+  for (const std::pair<StateId, Tag>& accept : lexerDef.acceptStates) {
     os << fmt::format("    {{ {:>3}, {:>3} }}, //", accept.first, accept.second);
     std::set<std::string> names;
     std::for_each(rules.begin(), rules.end(), [&](const auto& rule) {
@@ -127,15 +131,15 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
   }
   os << "  },\n";
   os << "  // backtracking map\n";
-  os << "  klex::BacktrackingMap {\n";
-  for (const std::pair<klex::StateId, klex::StateId>& backtrack : lexerDef.backtrackingStates) {
+  os << "  klex::regular::BacktrackingMap {\n";
+  for (const std::pair<StateId, StateId>& backtrack : lexerDef.backtrackingStates) {
     os << fmt::format("    {{ {:>3}, {:>3} }},\n", backtrack.first, backtrack.second);
   }
   os << "  },\n";
   os << "  // tag-to-name mappings\n";
-  os << "  std::map<klex::Tag, std::string> {\n";
-  for (const std::pair<klex::Tag, std::string>& tagName : lexerDef.tagNames) {
-    if (tagName.first != klex::IgnoreTag)
+  os << "  std::map<klex::regular::Tag, std::string> {\n";
+  for (const std::pair<Tag, std::string>& tagName : lexerDef.tagNames) {
+    if (tagName.first != IgnoreTag)
       os << fmt::format("    {{ {}, \"{}\" }},\n", tagName.first, tagName.second);
   }
   os << "  }\n";
@@ -145,9 +149,9 @@ void generateTableDefCxx(std::ostream& os, const klex::LexerDef& lexerDef, const
     os << "\n} // namespace " << ns << "\n";
 }
 
-void generateTokenDefCxx(std::ostream& os, const klex::RuleList& rules, const std::string& tokenTypeName,
+void generateTokenDefCxx(std::ostream& os, const RuleList& rules, const std::string& tokenTypeName,
     const std::string& machineTypeName,
-    const std::map<std::string, klex::StateId>& initialStates) {
+    const std::map<std::string, StateId>& initialStates) {
   auto [ns, typeName] = splitNamespace(tokenTypeName);
 
   os << "#pragma once\n\n";
@@ -161,8 +165,8 @@ void generateTokenDefCxx(std::ostream& os, const klex::RuleList& rules, const st
   const size_t tokenSize = std::max_element(rules.begin(), rules.end(),
       [](const auto& a, const auto& b) { return a.name.size() < b.name.size(); })->name.size();
   const std::string tokenFmt = fmt::format("  {{:<{}}} = {{:<5}} // {{}} \n", tokenSize);
-  for (const klex::Rule& rule : rules) {
-    if (rule.tag != klex::IgnoreTag)
+  for (const Rule& rule : rules) {
+    if (rule.tag != IgnoreTag)
       os << fmt::format(tokenFmt, rule.name, fmt::format("{},", rule.tag), rule.pattern);
   }
   os << "};\n\n";
@@ -173,15 +177,15 @@ void generateTokenDefCxx(std::ostream& os, const klex::RuleList& rules, const st
       [](const auto& a, const auto& b) { return a.first.size() < b.first.size(); })->first.size();
   const std::string machineFmt = fmt::format("  {{:<{}}} = {{:}},\n", machineSize);
 
-  for (const std::pair<const std::string, klex::StateId>& s0 : initialStates)
+  for (const std::pair<const std::string, StateId>& s0 : initialStates)
     os << fmt::format(machineFmt, s0.first, s0.second);
   os << "};\n\n";
 
   // -------------------------------------------------------------------------------------------------
   os << "inline constexpr std::string_view to_string(" << typeName << " t) {\n";
   os << "  switch (t) { \n";
-  for (const klex::Rule& rule : rules)
-    if (rule.tag != klex::IgnoreTag)
+  for (const Rule& rule : rules)
+    if (rule.tag != IgnoreTag)
       os << "    case " << typeName << "::" << rule.name << ": return \"" << rule.name << "\";\n";
   os << "    default: abort();\n";
   os << "  }\n";
@@ -191,7 +195,7 @@ void generateTokenDefCxx(std::ostream& os, const klex::RuleList& rules, const st
     os << "\n} // namespace " << ns << "\n";
 }
 
-std::optional<int> prepareAndParseCLI(klex::util::Flags& flags, int argc, const char* argv[]) {
+std::optional<int> prepareAndParseCLI(Flags& flags, int argc, const char* argv[]) {
   flags.defineBool("verbose", 'v', "Prints some more verbose output");
   flags.defineBool("help", 'h', "Prints this help and exits");
   flags.defineString("file", 'f', "PATTERN_FILE", "Input file with lexer rules");
@@ -207,7 +211,7 @@ std::optional<int> prepareAndParseCLI(klex::util::Flags& flags, int argc, const 
 
   try {
     flags.parse(argc, argv);
-  } catch (const klex::util::Flags::Error& e) {
+  } catch (const Flags::Error& e) {
     std::cerr << "Failed to parse command line parameters. " << e.what() << "\n";
     return EXIT_FAILURE;
   }
@@ -225,35 +229,35 @@ std::optional<int> prepareAndParseCLI(klex::util::Flags& flags, int argc, const 
 }
 
 int main(int argc, const char* argv[]) {
-  klex::util::Flags flags;
+  Flags flags;
   if (std::optional<int> rc = prepareAndParseCLI(flags, argc, argv); rc)
     return rc.value();
 
   fs::path klexFileName = flags.getString("file");
 
   PerfTimer perfTimer { flags.getBool("perf") };
-  klex::Compiler builder;
+  Compiler builder;
   builder.parse(std::make_unique<std::ifstream>(klexFileName.string()));
-  const klex::RuleList& rules = builder.rules();
+  const RuleList& rules = builder.rules();
   perfTimer.lap("NFA construction", builder.size(), "states");
 
   if (flags.getBool("debug-nfa")) {
-    klex::NFA nfa = klex::NFA::join(builder.automata());
-    klex::DotWriter writer{ std::cout, "n" };
+    NFA nfa = NFA::join(builder.automata());
+    DotWriter writer{ std::cout, "n" };
     nfa.visit(writer);
     return EXIT_SUCCESS;
   }
 
-  klex::Compiler::OvershadowMap overshadows;
-  klex::MultiDFA multiDFA = builder.compileMultiDFA(&overshadows);
+  Compiler::OvershadowMap overshadows;
+  MultiDFA multiDFA = builder.compileMultiDFA(&overshadows);
   perfTimer.lap("DFA construction", multiDFA.dfa.size(), "states");
 
   // check for unmatchable rules
-  for (const std::pair<klex::Tag, klex::Tag>& overshadow : overshadows) {
-    const klex::Rule& shadowee = *std::find_if(rules.begin(), rules.end(),
-                                      [&](const klex::Rule& rule) { return rule.tag == overshadow.first; });
-    const klex::Rule& shadower = *std::find_if(rules.begin(), rules.end(),
-                                      [&](const klex::Rule& rule) { return rule.tag == overshadow.second; });
+  for (const std::pair<Tag, Tag>& overshadow : overshadows) {
+    const Rule& shadowee = *std::find_if(rules.begin(), rules.end(),
+                                      [&](const Rule& rule) { return rule.tag == overshadow.first; });
+    const Rule& shadower = *std::find_if(rules.begin(), rules.end(),
+                                      [&](const Rule& rule) { return rule.tag == overshadow.second; });
     std::cerr << fmt::format("[{}:{}] Rule {} cannot be matched as rule [{}:{}] {} takes precedence.\n",
                              shadowee.line, shadowee.column, shadowee.name,
                              shadower.line, shadower.column, shadower.name);
@@ -262,21 +266,21 @@ int main(int argc, const char* argv[]) {
     return EXIT_FAILURE;
 
   if (!flags.getBool("no-dfa-minimize")) {
-    multiDFA = std::move(klex::DFAMinimizer{multiDFA}.constructMultiDFA());
+    multiDFA = std::move(DFAMinimizer{multiDFA}.constructMultiDFA());
     perfTimer.lap("DFA minimization", multiDFA.dfa.size(), "states");
   }
 
   if (std::string dotfile = flags.getString("debug-dfa"); !dotfile.empty()) {
     if (dotfile == "-") {
-      klex::DotWriter writer{ std::cout, "n", multiDFA.initialStates };
+      DotWriter writer{ std::cout, "n", multiDFA.initialStates };
       multiDFA.dfa.visit(writer);
     } else {
-      klex::DotWriter writer{ dotfile, "n", multiDFA.initialStates };
+      DotWriter writer{ dotfile, "n", multiDFA.initialStates };
       multiDFA.dfa.visit(writer);
     }
   }
 
-  klex::LexerDef lexerDef = klex::Compiler::generateTables(multiDFA, builder.containsBeginOfLine(), builder.names());
+  LexerDef lexerDef = Compiler::generateTables(multiDFA, builder.containsBeginOfLine(), builder.names());
   if (std::string tableFile = flags.getString("output-table"); tableFile != "-") {
     if (auto p = fs::path{tableFile}.remove_filename(); p != "")
       fs::create_directories(p);

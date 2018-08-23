@@ -8,6 +8,8 @@
 #pragma once
 
 #include <klex/cfg/ll/Table.h>
+#include <klex/Report.h>
+
 #include <algorithm>
 #include <optional>
 #include <stack>
@@ -23,7 +25,7 @@ public:
 	using Token = typename Lexer::value_type;
 	using Traits = TokenTraits<Token>;
 
-	Analyzer(SyntaxTable table, Lexer lexer /*, TODO: DiagnosticsReport*/);
+	Analyzer(SyntaxTable table, Lexer lexer, Report* report);
 
 	void analyze();
 
@@ -33,16 +35,18 @@ private:
 private:
 	const SyntaxTable grammar_;
 	Lexer lexer_;
+	Report* report_;
 	std::stack<int> stack_;
 };
 
 // ---------------------------------------------------------------------------------------------------------
 
 template<typename Lexer, typename SemanticValue>
-Analyzer<Lexer, SemanticValue>::Analyzer(SyntaxTable grammar, Lexer lexer)
-		: grammar_{std::move(grammar)},
-			lexer_{std::move(lexer)},
-			stack_{} {
+Analyzer<Lexer, SemanticValue>::Analyzer(SyntaxTable grammar, Lexer lexer, Report* report)
+	: grammar_{std::move(grammar)},
+	  lexer_{std::move(lexer)},
+	  report_{report},
+	  stack_{} {
 }
 
 template<typename Lexer, typename SemanticValue>
