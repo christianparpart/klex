@@ -114,15 +114,16 @@ TEST(Lexer, match_eol) {
                                                       [this](const std::string& msg) { log(msg); } };
 
   ASSERT_EQ(LookaheadToken::ABBA, lexer.recognize());
-  ASSERT_EQ(0, lexer.offset().first);
+  EXPECT_EQ(0, lexer.offset().first);
   ASSERT_EQ(4, lexer.offset().second);
 
   ASSERT_EQ(LookaheadToken::EOL_LF, lexer.recognize());
-  ASSERT_EQ(5, lexer.offset().first);
+  EXPECT_EQ(5, lexer.offset().first);
   ASSERT_EQ(8, lexer.offset().second);
 
   ASSERT_EQ(LookaheadToken::ABBA, lexer.recognize());
-  ASSERT_EQ(12, lexer.offset().second);
+  EXPECT_EQ(9, lexer.offset().first); // EOF
+  ASSERT_EQ(13, lexer.offset().second); // EOF
 
   ASSERT_EQ(LookaheadToken::Eof, lexer.recognize());
 }
@@ -268,31 +269,31 @@ TEST(Lexer, iterator) {
   Lexer<Tag>::iterator e = lexer.end();
 
   // a
-  logf("i: {}", *i);
   ASSERT_EQ(1, *i);
   ASSERT_TRUE(i != e);
 
   // b
   i++;
-  logf("i: {}", *i);
   ASSERT_EQ(2, *i);
   ASSERT_TRUE(i != e);
 
   // b
   i++;
-  logf("i: {}", *i);
   ASSERT_EQ(2, *i);
   ASSERT_TRUE(i != e);
 
   // a
   i++;
-  logf("i: {}", *i);
   ASSERT_EQ(1, *i);
   ASSERT_TRUE(i != e);
 
   // <<EOF>>
   i++;
-  logf("i: {}", *i);
+  ASSERT_EQ(3, *i);
+  ASSERT_TRUE(i != e);
+
+  i++;
+  ASSERT_EQ(3, *i); // still EOF
   ASSERT_TRUE(i == e);
 }
 

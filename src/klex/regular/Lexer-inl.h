@@ -48,6 +48,7 @@ inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info, D
       offset_{0},
       line_{0},
       column_{0},
+      fileSize_{0},
       isBeginOfLine_{true},
       token_{0} {
   if constexpr (!RequiresBeginOfLine) {
@@ -67,6 +68,7 @@ template<typename Token, typename Machine, const bool RequiresBeginOfLine, const
 inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info, std::istream& stream, DebugLogger logger)
     : Lexer{std::move(info), std::move(logger)} {
   stream_ = &stream;
+  fileSize_ = getFileSize();
 }
 
 template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
@@ -84,6 +86,18 @@ inline void Lexer<Token, Machine, RequiresBeginOfLine, Debug>::open(std::unique_
   line_ = 0;
   column_ = 0;
   isBeginOfLine_ = true;
+  fileSize_ = getFileSize();
+}
+
+template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline size_t Lexer<Token, Machine, RequiresBeginOfLine, Debug>::getFileSize() {
+  int oldpos = stream_->tellg();
+  stream_->seekg(0, stream_->end);
+
+  int theSize = stream_->tellg();
+  stream_->seekg(oldpos, stream_->beg);
+
+  return static_cast<size_t>(theSize);
 }
 
 template<typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
@@ -262,6 +276,7 @@ inline Symbol Lexer<Token, Machine, RequiresBeginOfLine, Debug>::nextChar() {
   int ch = stream_->get();
   if (ch < 0) {
     currentChar_ = Symbols::EndOfFile;
+    offset_++;
     if constexpr(Debug) debugf("Lexer:{}: advance '{}' [{}:{}]", offset_, prettySymbol(ch), line_, column_);
     return currentChar_;
   }

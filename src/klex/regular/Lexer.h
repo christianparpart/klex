@@ -160,17 +160,28 @@ class Lexer {
   struct iterator {
     Lexer& lx;
     Token token;
+    int end;
 
     Token operator*() const { return token; }
-    iterator& operator++() { token = lx.recognize(); return *this; }
-    iterator& operator++(int) { token = lx.recognize(); return *this; }
-    bool operator==(const iterator& rhs) const noexcept { return token == rhs.token; }
-    bool operator!=(const iterator& rhs) const noexcept { return token != rhs.token; }
+
+    iterator& operator++() {
+      if (lx.eof())
+        ++end;
+      token = lx.recognize();
+      return *this;
+    }
+
+    iterator& operator++(int) { return ++*this; }
+    bool operator==(const iterator& rhs) const noexcept { return end == rhs.end; }
+    bool operator!=(const iterator& rhs) const noexcept { return !(*this == rhs); }
   };
-  iterator begin() { return iterator{*this, recognize()}; }
-  iterator end() { return iterator{*this, /*TODO: Tag for EOF: */ Symbols::EndOfFile}; }
+
+  iterator begin() { const Token t = recognize(); return iterator{*this, t, 0}; }
+  iterator end() { return iterator{*this, 0, 2}; }
 
   bool eof() const { return !stream_->good(); }
+
+  size_t fileSize() const noexcept { return fileSize_; }
 
  private:
   Symbol nextChar();
@@ -189,6 +200,8 @@ class Lexer {
     return static_cast<Token>(i->second);
   }
 
+  size_t getFileSize();
+
  private:
   const TransitionMap transitions_;
   const std::map<std::string, StateId> initialStates_;
@@ -206,6 +219,7 @@ class Lexer {
   unsigned offset_;
   unsigned line_;
   unsigned column_;
+  size_t fileSize_;     // cache
   bool isBeginOfLine_;
   int currentChar_;
   Token token_;
