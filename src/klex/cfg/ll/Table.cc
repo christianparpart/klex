@@ -28,83 +28,19 @@ inline map<T, V> createIdMap(const vector<T>& items)
 	return move(out);
 }
 
-SyntaxTable SyntaxTable::construct(const Grammar& grammar)
+void SyntaxTable::dump(const Grammar& grammar) const
 {
-	GrammarMetadata metadata = grammar.metadata();
-	map<NonTerminal, int> idNonTerminals = createIdMap(metadata.nonterminals);
-	map<Terminal, int> idTerminals = createIdMap(metadata.terminals);
-	map<Production, int> idProductions = createIdMap(grammar.productions);
-	map<NonTerminal, int> idProductionsByName;
-	for (auto i = grammar.productions.begin(); i != grammar.productions.end(); ++i)
-		idProductionsByName[NonTerminal{i->name}] = distance(grammar.productions.begin(), i);
+	map<NonTerminal, int> idNonTerminals = createIdMap(grammar.nonterminals);
+	map<Terminal, int> idTerminals = createIdMap(grammar.terminals);
 
-	// {{{ dump rules
-	printf("PRODUCTIONS:\n");
-	printf(" ID | NON-TERMINAL  | EXPRESSION           | FIRST                | FOLLOW\n");
-	printf("----+---------------+----------------------+----------------------+--------------------\n");
-	for (size_t i = 0; i < grammar.productions.size(); ++i)
-		printf("%3zu | %13s | %-20s | %-20s | %s\n",
-				i,
-				grammar.productions[i].name.c_str(),
-				fmt::format("{}", grammar.productions[i].handle).c_str(),
-				//fmt::format("{{{}}}", metadata.FIRST[i]).c_str(),
-				fmt::format("{{{}}}", metadata.first[NonTerminal{grammar.productions[i].name}]).c_str(),
-				fmt::format("{{{}}}", metadata.follow[NonTerminal{grammar.productions[i].name}]).c_str()
-		);
-	printf("\n");
-	// }}}
-
-	SyntaxTable st;
-
-#if 0
-	for (size_t p_i = 0; p_i < grammar.productions.size(); ++p_i)
-	{
-		const Production& p = grammar.productions[p_i];
-		const NonTerminal nt { p.name };
-		if (!metadata.epsilon.count(NonTerminal{p.name}))
-		{
-			printf("%s FIRST: %zu\n", p.name.c_str(), metadata.first1[p_i].size());
-			for (const Terminal& w : metadata.first1[p_i])
-				st.table[idNonTerminals[nt]][idTerminals[w]] = p_i;
-		}
-		else
-		{
-			printf("%s FOLLOW: %zu\n", p.name.c_str(), metadata.first1[p_i].size());
-			for (const Terminal& w : metadata.first1[p_i])
-				st.table[idNonTerminals[nt]][idTerminals[w]] = p_i;
-		}
-	}
-#else
-	for (const NonTerminal& nt : metadata.nonterminals)
-	{
-		const int nt_ = idNonTerminals[nt];
-		for (const Production* p : grammar.getProductions(nt))
-		{
-			for (const Terminal& w : metadata.first1[idProductionsByName[nt]])
-			{
-				// assert(st.table[nt_].find(idTerminals[w]) == st.table[nt_].end());
-				if (!(st.table[nt_].find(idTerminals[w]) == st.table[nt_].end()))
-					printf("!!!! Table[%d][%s] = %d\n", nt_, w.literal.c_str(), idProductions[*p]);
-				else
-					printf("Table[%d][%s] = %d\n", nt_, w.literal.c_str(), idProductions[*p]);
-				st.table[nt_][idTerminals[w]] = idProductions[*p];
-			}
-
-			// if (metadata.first1[nt].contains(eof))
-			// 	st.table[nt_][eof_] = p_;
-		}
-	}
-#endif
-
-	// {{{ dump syntax table
 	// table-header
 	printf("SYNTAX TABLE:\n");
 	printf("%16s |", "NT \\ T");
-	for (const Terminal& t : metadata.terminals)
+	for (const Terminal& t : grammar.terminals)
 		printf("%10s |", fmt::format("{}", t).c_str());
 	printf("\n");
 	printf("-----------------+");;
-	for (size_t i = 0; i < metadata.terminals.size(); ++i)
+	for (size_t i = 0; i < grammar.terminals.size(); ++i)
 		printf("-----------+");;
 	printf("\n");
 
@@ -116,14 +52,41 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 		if (check.count(nt)) continue;
 		check.insert(nt);
 		printf("%16s |", nt.name.c_str());
-		for (const Terminal& t : metadata.terminals)
-			if (optional<int> p = st.lookup(idNonTerminals[nt], idTerminals[t]); p.has_value())
+		for (const Terminal& t : grammar.terminals)
+			if (optional<int> p = lookup(idNonTerminals[nt], idTerminals[t]); p.has_value())
 				printf("%10d |", *p);
 			else
 				printf("           |");
 		printf("\n");
 	}
-	// }}}
+}
+
+SyntaxTable SyntaxTable::construct(const Grammar& grammar)
+{
+	map<NonTerminal, int> idNonTerminals = createIdMap(grammar.nonterminals);
+	map<Terminal, int> idTerminals = createIdMap(grammar.terminals);
+	map<NonTerminal, int> idProductionsByName;
+	for (auto i = grammar.productions.begin(); i != grammar.productions.end(); ++i)
+		idProductionsByName[NonTerminal{i->name}] = distance(grammar.productions.begin(), i);
+
+	SyntaxTable st;
+
+	for (const NonTerminal& nt : grammar.nonterminals)
+	{
+		const int nt_ = idNonTerminals[nt];
+		LookAheadMap& ntRow = st.table[nt_];
+		for (const Production* p : grammar.getProductions(nt))
+		{
+			for (const Terminal& w : p->first1())
+			{
+				assert(ntRow.find(idTerminals[w]) == ntRow.end());
+				ntRow[idTerminals[w]] = p->id;
+			}
+
+			// if (p->first1().contains(eof))
+			// 	st.table[nt_][eof_] = p_;
+		}
+	}
 
 	return move(st);
 }

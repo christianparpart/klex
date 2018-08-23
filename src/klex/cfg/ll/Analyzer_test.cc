@@ -137,25 +137,13 @@ TEST(cfg_ll_SyntaxAnalyzer, simple) {
 
 	ASSERT_FALSE(report.containsFailures());
 
-	// {{{ logMetadata
-	GrammarMetadata metadata = grammar.metadata();
-	klex::util::testing::UnitTest& t = *klex::util::testing::UnitTest::instance();
+	grammar.finalize();
+	grammar.dump();
 
-	for (auto && [sym, first] : metadata.first)
-		if (holds_alternative<Terminal>(sym))
-			t.logf("FIRST({}) := {{{}}}", sym, first);
+	ll::SyntaxTable st = ll::SyntaxTable::construct(grammar);
 
-	for (auto && [sym, first] : metadata.first)
-		if (holds_alternative<NonTerminal>(sym))
-			t.logf("FIRST({}) := {{{}}}", sym, first);
+	st.dump(grammar);
 
-	t.logf("EPSILON := {{{}}}", metadata.epsilon);
-
-	for (auto&& [nt, follow] : metadata.follow)
-		t.logf("FOLLOW({}) := {{{}}}", nt, follow);
-	// }}}
-
-	ll::SyntaxTable::construct(grammar);
 }
 
 // vim:ts=4:sw=4:noet

@@ -27,6 +27,8 @@ struct Terminal {
 
 struct NonTerminal {
 	std::string name;				// such as "IfStmt"
+
+	bool operator==(const std::string& other) const { return name == other; }
 };
 
 using Symbol = std::variant<NonTerminal, Terminal>;
@@ -62,25 +64,22 @@ struct Production {
 	std::string name;
 	Handle handle;
 
-	bool operator<(const Production& rhs) const noexcept { return name < rhs.name; }
-};
+	int id;
+	bool epsilon;
+	std::vector<Terminal> first;
+	std::vector<Terminal> follow;
 
-struct GrammarMetadata {
-	std::vector<NonTerminal> nonterminals;
-	std::vector<Terminal> terminals;
-
-	std::map<Symbol, std::set<Terminal>> first;
-	std::map<NonTerminal, std::set<Terminal>> follow;
-	std::set<NonTerminal> epsilon;
-	std::vector<std::set<Terminal>> first1;
-
-	std::vector<std::set<Terminal>> FIRST;
+	std::vector<Terminal> first1() const;
 };
 
 struct Grammar {
 	std::vector<Production> productions;
 
+	std::vector<NonTerminal> nonterminals;
+	std::vector<Terminal> terminals;
+
 	std::vector<const Production*> getProductions(const NonTerminal& nt) const;
+	std::vector<Production*> getProductions(const NonTerminal& nt);
 
 	bool containsEpsilon(const Symbol& s) const {
 		return std::holds_alternative<NonTerminal>(s)
@@ -89,27 +88,19 @@ struct Grammar {
 
 	bool containsEpsilon(const NonTerminal& nt) const {
 		for (const Production* p : getProductions(nt))
-			if (p->handle.symbols.empty())
+			if (p->epsilon)
 				return true;
 
 		return false;
 	}
 
-	GrammarMetadata metadata() const;
+	std::vector<Terminal> firstOf(const Symbol& b) const;
+	std::vector<Terminal> followOf(const NonTerminal& nt) const;
 
-	std::set<Terminal> first(const Terminal& t) { return std::set<Terminal>({t}); }
-	std::set<Terminal> first(const NonTerminal& nt) {
-		std::set<Terminal> S;
+	void clearMetadata();
+	void finalize();
 
-		for (size_t i = 0; i < productions.size(); ++i)
-			if (productions[i].name == nt.name)
-				for (const Terminal& t : FIRST[i])
-					S.insert(t);
-
-		return std::move(S);
-	}
-
-	std::vector<std::set<Terminal>> FIRST;
+	void dump() const;
 };
 
 } // namespace klex::cfg
@@ -174,6 +165,25 @@ namespace fmt {
 		template <typename FormatContext>
 		constexpr auto format(const klex::cfg::Production& v, FormatContext &ctx) {
 			return format_to(ctx.begin(), "{:} ::= {};", v.name, v.handle);
+		}
+	};
+
+	template<>
+	struct formatter<std::vector<klex::cfg::Terminal>> {
+		template <typename ParseContext>
+		constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+
+		template <typename FormatContext>
+		constexpr auto format(const std::vector<klex::cfg::Terminal>& terminals, FormatContext &ctx) {
+			std::stringstream sstr;
+			size_t i = 0;
+			for (const klex::cfg::Terminal& t : terminals)
+				if (i++)
+					sstr << ", " << fmt::format("{}", t);
+				else
+					sstr << fmt::format("{}", t);
+
+			return format_to(ctx.begin(), "{}", sstr.str());
 		}
 	};
 

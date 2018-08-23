@@ -17,23 +17,6 @@ using namespace klex;
 using namespace klex::cfg;
 using namespace klex::util::literals;
 
-void logMetadata(const GrammarMetadata& metadata) {
-	klex::util::testing::UnitTest& t = *klex::util::testing::UnitTest::instance();
-
-	for (auto && [sym, first] : metadata.first)
-		if (holds_alternative<Terminal>(sym))
-			t.logf("FIRST({}) := {{{}}}", sym, first);
-
-	for (auto && [sym, first] : metadata.first)
-		if (holds_alternative<NonTerminal>(sym))
-			t.logf("FIRST({}) := {{{}}}", sym, first);
-
-	t.logf("EPSILON := {{{}}}", metadata.epsilon);
-
-	for (auto&& [nt, follow] : metadata.follow)
-		t.logf("FOLLOW({}) := {{{}}}", nt, follow);
-}
-
 TEST(cfg_Grammar, metadata_right_recursive) {
 	ConsoleReport report;
 	Grammar grammar = GrammarParser(GrammarLexer{
@@ -50,26 +33,26 @@ TEST(cfg_Grammar, metadata_right_recursive) {
 		   `)"_multiline}, &report).parse();
 
 	ASSERT_FALSE(report.containsFailures());
+	grammar.finalize();
 
-	GrammarMetadata metadata = grammar.metadata();
-	logMetadata(metadata);
+	grammar.dump();
 
-	ASSERT_EQ("\"(\"", fmt::format("{}", metadata.first[Terminal{"("}]));
-	ASSERT_EQ("\")\"", fmt::format("{}", metadata.first[Terminal{")"}]));
-	ASSERT_EQ("\"+\"", fmt::format("{}", metadata.first[Terminal{"+"}]));
-	ASSERT_EQ("\"*\"", fmt::format("{}", metadata.first[Terminal{"*"}]));
-	ASSERT_EQ("\"<<EOF>>\"", fmt::format("{}", metadata.first[Terminal{"<<EOF>>"}]));
+	ASSERT_EQ("\"(\"", fmt::format("{}", grammar.firstOf(Terminal{"("})));
+	ASSERT_EQ("\")\"", fmt::format("{}", grammar.firstOf(Terminal{")"})));
+	ASSERT_EQ("\"+\"", fmt::format("{}", grammar.firstOf(Terminal{"+"})));
+	ASSERT_EQ("\"*\"", fmt::format("{}", grammar.firstOf(Terminal{"*"})));
+	ASSERT_EQ("\"<<EOF>>\"", fmt::format("{}", grammar.firstOf(Terminal{"<<EOF>>"})));
 
-	ASSERT_EQ(2, metadata.epsilon.size());
-	ASSERT_TRUE(metadata.epsilon.find(NonTerminal{"Expr_"}) != metadata.epsilon.end());
-	ASSERT_TRUE(metadata.epsilon.find(NonTerminal{"Term_"}) != metadata.epsilon.end());
+	// ASSERT_EQ(2, metadata.epsilon.size());
+	// ASSERT_TRUE(metadata.epsilon.find(NonTerminal{"Expr_"}) != metadata.epsilon.end());
+	// ASSERT_TRUE(metadata.epsilon.find(NonTerminal{"Term_"}) != metadata.epsilon.end());
 
-	ASSERT_EQ("", fmt::format("{}", metadata.follow[NonTerminal{"Start"}]));
-	ASSERT_EQ("\")\", \"<<EOF>>\"", fmt::format("{}", metadata.follow[NonTerminal{"Expr"}]));
-	ASSERT_EQ("\")\", \"<<EOF>>\"", fmt::format("{}", metadata.follow[NonTerminal{"Expr_"}]));
-	ASSERT_EQ("\")\", \"+\", \"<<EOF>>\"", fmt::format("{}", metadata.follow[NonTerminal{"Term"}]));
-	ASSERT_EQ("\")\", \"+\", \"<<EOF>>\"", fmt::format("{}", metadata.follow[NonTerminal{"Term_"}]));
-	ASSERT_EQ("\")\", \"*\", \"+\", \"<<EOF>>\"", fmt::format("{}", metadata.follow[NonTerminal{"Factor"}]));
+	ASSERT_EQ("", fmt::format("{}", grammar.followOf(NonTerminal{"Start"})));
+	ASSERT_EQ("\")\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Expr"})));
+	ASSERT_EQ("\")\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Expr_"})));
+	ASSERT_EQ("\")\", \"+\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Term"})));
+	ASSERT_EQ("\")\", \"+\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Term_"})));
+	ASSERT_EQ("\")\", \"*\", \"+\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Factor"})));
 }
 
 TEST(cfg_Grammar, metadata_left_recursive) {
@@ -86,22 +69,22 @@ TEST(cfg_Grammar, metadata_left_recursive) {
 		   `)"_multiline}, &report).parse();
 
 	ASSERT_FALSE(report.containsFailures());
+	grammar.finalize();
 
-	GrammarMetadata metadata = grammar.metadata();
-	logMetadata(metadata);
+	grammar.dump();
 
-	ASSERT_EQ("\"(\"", fmt::format("{}", metadata.first[Terminal{"("}]));
-	ASSERT_EQ("\")\"", fmt::format("{}", metadata.first[Terminal{")"}]));
-	ASSERT_EQ("\"+\"", fmt::format("{}", metadata.first[Terminal{"+"}]));
-	ASSERT_EQ("\"*\"", fmt::format("{}", metadata.first[Terminal{"*"}]));
-	ASSERT_EQ("\"<<EOF>>\"", fmt::format("{}", metadata.first[Terminal{"<<EOF>>"}]));
+	ASSERT_EQ("\"(\"", fmt::format("{}", grammar.firstOf(Terminal{"("})));
+	ASSERT_EQ("\")\"", fmt::format("{}", grammar.firstOf(Terminal{")"})));
+	ASSERT_EQ("\"+\"", fmt::format("{}", grammar.firstOf(Terminal{"+"})));
+	ASSERT_EQ("\"*\"", fmt::format("{}", grammar.firstOf(Terminal{"*"})));
+	ASSERT_EQ("\"<<EOF>>\"", fmt::format("{}", grammar.firstOf(Terminal{"<<EOF>>"})));
 
-	ASSERT_EQ(0, metadata.epsilon.size());
+	// TODO ASSERT_EQ(0, metadata.epsilon.size());
 
-	ASSERT_EQ("", fmt::format("{}", metadata.follow[NonTerminal{"Start"}]));
-	ASSERT_EQ("\")\", \"+\", \"<<EOF>>\"", fmt::format("{}", metadata.follow[NonTerminal{"Expr"}]));
-	ASSERT_EQ("\")\", \"*\", \"+\", \"<<EOF>>\"", fmt::format("{}", metadata.follow[NonTerminal{"Term"}]));
-	ASSERT_EQ("\")\", \"*\", \"+\", \"<<EOF>>\"", fmt::format("{}", metadata.follow[NonTerminal{"Factor"}]));
+	ASSERT_EQ("", fmt::format("{}", grammar.followOf(NonTerminal{"Start"})));
+	ASSERT_EQ("\")\", \"+\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Expr"})));
+	ASSERT_EQ("\")\", \"*\", \"+\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Term"})));
+	ASSERT_EQ("\")\", \"*\", \"+\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Factor"})));
 }
 
 // vim:ts=4:sw=4:noet
