@@ -8,7 +8,7 @@
 #include <klex/util/testing.h>
 #include <klex/util/literals.h>
 #include <klex/cfg/ll/Analyzer.h>
-#include <klex/cfg/ll/Table.h>
+#include <klex/cfg/ll/SyntaxTable.h>
 #include <klex/cfg/GrammarParser.h>
 #include <klex/cfg/GrammarLexer.h>
 #include <klex/cfg/Grammar.h>

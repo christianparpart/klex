@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <klex/cfg/ll/Table.h>
+#include <klex/cfg/ll/SyntaxTable.h>
 #include <klex/Report.h>
 
 #include <algorithm>

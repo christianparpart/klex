@@ -5,7 +5,7 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/cfg/ll/Table.h>
+#include <klex/cfg/ll/SyntaxTable.h>
 #include <klex/cfg/Grammar.h>
 
 #include <algorithm>
