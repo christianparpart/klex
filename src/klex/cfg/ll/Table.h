@@ -54,7 +54,7 @@ struct SyntaxTable {
 
 	static SyntaxTable construct(const Grammar& grammar);
 
-	void dump(const Grammar& grammar) const;
+	std::string dump(const Grammar& grammar) const;
 };
 
 } // namespace klex::cfg::ll

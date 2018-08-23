@@ -138,12 +138,15 @@ TEST(cfg_ll_SyntaxAnalyzer, simple) {
 	ASSERT_FALSE(report.containsFailures());
 
 	grammar.finalize();
-	grammar.dump();
+	log("Grammar:");
+	log(grammar.dump());
 
 	ll::SyntaxTable st = ll::SyntaxTable::construct(grammar);
 
-	st.dump(grammar);
+	log("Syntax Table:");
+	log(st.dump(grammar));
 
+	// TODO
 }
 
 // vim:ts=4:sw=4:noet

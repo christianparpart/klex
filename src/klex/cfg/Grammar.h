@@ -100,7 +100,7 @@ struct Grammar {
 	void clearMetadata();
 	void finalize();
 
-	void dump() const;
+	std::string dump() const;
 };
 
 } // namespace klex::cfg

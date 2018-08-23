@@ -9,9 +9,10 @@
 #include <klex/cfg/Grammar.h>
 
 #include <algorithm>
-#include <map>
-#include <iostream>
+#include <cstdarg>
 #include <iomanip>
+#include <iostream>
+#include <map>
 #include <sstream>
 
 using namespace std;
@@ -26,39 +27,6 @@ inline map<T, V> createIdMap(const vector<T>& items)
 	for (auto i = items.begin(); i != items.end(); ++i)
 		out[*i] = distance(items.begin(), i);
 	return move(out);
-}
-
-void SyntaxTable::dump(const Grammar& grammar) const
-{
-	map<NonTerminal, int> idNonTerminals = createIdMap(grammar.nonterminals);
-	map<Terminal, int> idTerminals = createIdMap(grammar.terminals);
-
-	// table-header
-	printf("SYNTAX TABLE:\n");
-	printf("%16s |", "NT \\ T");
-	for (const Terminal& t : grammar.terminals)
-		printf("%10s |", fmt::format("{}", t).c_str());
-	printf("\n");
-	printf("-----------------+");;
-	for (size_t i = 0; i < grammar.terminals.size(); ++i)
-		printf("-----------+");;
-	printf("\n");
-
-	// table-body
-	set<NonTerminal> check;
-	for (const Production& production : grammar.productions)
-	{
-		const NonTerminal nt { production.name };
-		if (check.count(nt)) continue;
-		check.insert(nt);
-		printf("%16s |", nt.name.c_str());
-		for (const Terminal& t : grammar.terminals)
-			if (optional<int> p = lookup(idNonTerminals[nt], idTerminals[t]); p.has_value())
-				printf("%10d |", *p);
-			else
-				printf("           |");
-		printf("\n");
-	}
 }
 
 SyntaxTable SyntaxTable::construct(const Grammar& grammar)
@@ -89,6 +57,50 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 	}
 
 	return move(st);
+}
+
+string SyntaxTable::dump(const Grammar& grammar) const
+{
+	map<NonTerminal, int> idNonTerminals = createIdMap(grammar.nonterminals);
+	map<Terminal, int> idTerminals = createIdMap(grammar.terminals);
+
+	stringstream os;
+
+	auto bprintf = [&](const char* fmt, ...) {
+		va_list va;
+		char buf[256];
+		va_start(va, fmt);
+		vsnprintf(buf, sizeof(buf), fmt, va);
+		va_end(va);
+		os << (char*) buf;
+	};
+	// table-header
+	bprintf("%16s |", "NT \\ T");
+	for (const Terminal& t : grammar.terminals)
+		bprintf("%10s |", fmt::format("{}", t).c_str());
+	bprintf("\n");
+	bprintf("-----------------+");;
+	for (size_t i = 0; i < grammar.terminals.size(); ++i)
+		bprintf("-----------+");;
+	bprintf("\n");
+
+	// table-body
+	set<NonTerminal> check;
+	for (const Production& production : grammar.productions)
+	{
+		const NonTerminal nt { production.name };
+		if (check.count(nt)) continue;
+		check.insert(nt);
+		bprintf("%16s |", nt.name.c_str());
+		for (const Terminal& t : grammar.terminals)
+			if (optional<int> p = lookup(idNonTerminals[nt], idTerminals[t]); p.has_value())
+				bprintf("%10d |", *p);
+			else
+				bprintf("           |");
+		bprintf("\n");
+	}
+
+	return os.str();
 }
 
 // vim:ts=4:sw=4:noet

@@ -35,7 +35,8 @@ TEST(cfg_Grammar, metadata_right_recursive) {
 	ASSERT_FALSE(report.containsFailures());
 	grammar.finalize();
 
-	grammar.dump();
+	log("Grammar:");
+	log(grammar.dump());
 
 	ASSERT_EQ("\"(\"", fmt::format("{}", grammar.firstOf(Terminal{"("})));
 	ASSERT_EQ("\")\"", fmt::format("{}", grammar.firstOf(Terminal{")"})));
@@ -71,7 +72,8 @@ TEST(cfg_Grammar, metadata_left_recursive) {
 	ASSERT_FALSE(report.containsFailures());
 	grammar.finalize();
 
-	grammar.dump();
+	log("Grammar:");
+	log(grammar.dump());
 
 	ASSERT_EQ("\"(\"", fmt::format("{}", grammar.firstOf(Terminal{"("})));
 	ASSERT_EQ("\")\"", fmt::format("{}", grammar.firstOf(Terminal{")"})));

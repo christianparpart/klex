@@ -6,6 +6,7 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/cfg/Grammar.h>
+#include <klex/util/iterator.h>
 
 #include <fmt/format.h>
 
@@ -53,17 +54,6 @@ inline bool merge(vector<T>* target, vector<T> source) {
 	*target = move(dest);
 	return target->size() > n;
 }
-
-template<typename Container>
-struct _reversed {
-	const Container& container;
-
-	auto begin() { return container.crbegin(); }
-	auto end() { return container.crend(); }
-};
-
-template<typename Container>
-inline auto reversed(const Container& c) { return _reversed<Container>{c}; }
 
 } // }}} helper
 
@@ -201,12 +191,18 @@ void Grammar::finalize()
 	}
 }
 
-void Grammar::dump() const
+string Grammar::dump() const
 {
-	printf(" ID | NON-TERMINAL  | EXPRESSION           | FIRST                      | FOLLOW                     | FIRST+\n");
-	printf("----+---------------+----------------------+----------------------------+----------------------------+-----------\n");
+	stringstream sstr;
+
+
+	sstr << " ID | NON-TERMINAL  | EXPRESSION           | FIRST                      | FOLLOW                     | FIRST+\n";
+	sstr << "----+---------------+----------------------+----------------------------+----------------------------+-----------\n";
 	for (auto p = productions.begin(); p != productions.end(); ++p)
-		printf("%3zu | %13s | %-20s | %6s%-20s | %-26s | %s\n",
+	{
+		char buf[255];
+		snprintf(buf, sizeof(buf),
+				"%3zu | %13s | %-20s | %6s%-20s | %-26s | %s",
 				distance(productions.begin(), p),
 				p->name.c_str(),
 				fmt::format("{}", p->handle).c_str(),
@@ -215,7 +211,11 @@ void Grammar::dump() const
 				fmt::format("{{{}}}", p->follow).c_str(),
 				fmt::format("{{{}}}", p->first1()).c_str()
 		);
-	printf("\n");
+		sstr << (char*) buf;
+		if (next(p) != productions.end())
+			sstr << '\n';
+	}
+	return move(sstr.str());
 }
 
 // vim:ts=4:sw=4:noet
