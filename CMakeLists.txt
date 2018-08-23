@@ -106,6 +106,7 @@ if(KLEX_TESTS)
       src/klex/cfg/GrammarParser_test.cc
       src/klex/cfg/Grammar_test.cc
       src/klex/cfg/ll/Analyzer_test.cc
+      src/klex/cfg/ll/SyntaxTable_test.cc
       src/klex/klex_test.cc
       src/klex/regular/DFABuilder_test.cc
       src/klex/regular/DotWriter_test.cc

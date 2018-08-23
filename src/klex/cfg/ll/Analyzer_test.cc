@@ -115,38 +115,4 @@ klex::cfg::ll::SyntaxTable expressionGrammar()
 	return std::move(st);
 }
 
-TEST(cfg_ll_SyntaxAnalyzer, simple) {
-	// ExprLexer lexer; // TODO
-	// DiagnosticsReport report;
-	// SyntaxAnalyzer<Symbol, ExprLexer> syntaxAnalyzer{expressionGrammar(), lexer /*, TODO: report*/ };
-	// syntaxAnalyzer.analyze();
-
-	ConsoleReport report;
-	Grammar grammar = GrammarParser(GrammarLexer{
-		R"(`Start     ::= Expr "<<EOF>>";
-		   `Expr      ::= Term Expr_;
-		   `Expr_     ::= '+' Term Expr_
-		   `            | ;
-		   `Term      ::= Factor Term_;
-		   `Term_     ::= '*' Factor Term_
-		   `            | ;
-		   `Factor    ::= "NUMBER"
-		   `            | '(' Expr ')'
-		   `            ;
-		   `)"_multiline}, &report).parse();
-
-	ASSERT_FALSE(report.containsFailures());
-
-	grammar.finalize();
-	log("Grammar:");
-	log(grammar.dump());
-
-	ll::SyntaxTable st = ll::SyntaxTable::construct(grammar);
-
-	log("Syntax Table:");
-	log(st.dump(grammar));
-
-	// TODO
-}
-
 // vim:ts=4:sw=4:noet
