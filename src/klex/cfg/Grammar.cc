@@ -20,6 +20,7 @@
 using namespace std;
 using namespace klex;
 using namespace klex::cfg;
+using klex::util::reversed;
 
 namespace { // {{{ helper
 
