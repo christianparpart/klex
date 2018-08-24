@@ -15,7 +15,7 @@
 #include <vector>
 
 namespace klex::cfg {
-	struct Grammar;
+struct Grammar;
 }
 
 namespace klex::cfg::ll {
@@ -23,7 +23,7 @@ namespace klex::cfg::ll {
 using Symbol = int;
 using Handle = std::vector<Symbol>;
 
-template<typename T>
+template <typename T>
 struct TokenTraits {
 	static bool isEof(T X);
 	static bool isTerminal(T X);
@@ -33,7 +33,7 @@ struct TokenTraits {
 /** LL(1)-compatible syntax table.
  */
 struct SyntaxTable {
-	using Expression = std::vector<int>; // non-terminals & terminals
+	using Expression = std::vector<int>;  // non-terminals & terminals
 	using LookAheadMap = std::unordered_map<int /*lookahead*/, int /*production*/>;
 	using NonTerminalMap = std::unordered_map<int /*nonterminals*/, LookAheadMap>;
 	using ProductionVec = std::vector<Expression>;
@@ -49,6 +49,6 @@ struct SyntaxTable {
 	static SyntaxTable construct(const Grammar& grammar);
 };
 
-} // namespace klex::cfg::ll
+}  // namespace klex::cfg::ll
 
 // vim:ts=4:sw=4:noet

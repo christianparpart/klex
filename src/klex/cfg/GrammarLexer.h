@@ -12,22 +12,23 @@
 
 namespace klex::cfg {
 
-class GrammarLexer {
-public:
+class GrammarLexer
+{
+  public:
 	explicit GrammarLexer(std::string content);
 
 	enum class Token {
 		Illegal,
-		Spacing,    // [\s\t\n]+
-		Identifier, // [a-z][a-z0-9]*
-		Token,      // 'token'
-		Literal,    // '[^']*'|"[^"]*"
-		Or,         // '|'
-		Semicolon,  // ';'
-		Assoc,      // '::='
-		SetOpen,    // '{'
-		SetClose,   // '}'
-		Eof,        // <<EOF>>
+		Spacing,     // [\s\t\n]+
+		Identifier,  // [a-z][a-z0-9]*
+		Token,       // 'token'
+		Literal,     // '[^']*'|"[^"]*"
+		Or,          // '|'
+		Semicolon,   // ';'
+		Assoc,       // '::='
+		SetOpen,     // '{'
+		SetClose,    // '}'
+		Eof,         // <<EOF>>
 	};
 
 	bool eof() const noexcept { return offset_ >= content_.size(); }
@@ -37,9 +38,9 @@ public:
 
 	Token recognize();
 
-	std::string consumeLiteralUntilLF(); // NB. only used for sub-language (klex)
+	std::string consumeLiteralUntilLF();  // NB. only used for sub-language (klex)
 
-private:
+  private:
 	Token recognizeOne();
 	Token consumeIdentifier();
 	Token consumeLiteral();
@@ -47,43 +48,60 @@ private:
 	int peekChar(size_t offset) const;
 	int consumeChar(size_t count = 1);
 
-private:
+  private:
 	std::string content_;
 	size_t offset_;
 	std::string currentLiteral_;
 	Token currentToken_;
 };
 
-inline std::string to_string(klex::cfg::GrammarLexer::Token v) {
-	switch (v) {
-		case klex::cfg::GrammarLexer::Token::Spacing: return "Spacing";
-		case klex::cfg::GrammarLexer::Token::Identifier: return "Identifier";
-		case klex::cfg::GrammarLexer::Token::Token: return "Token";
-		case klex::cfg::GrammarLexer::Token::Literal: return "Literal";
-		case klex::cfg::GrammarLexer::Token::Or: return "'|'";
-		case klex::cfg::GrammarLexer::Token::Semicolon: return "';'";
-		case klex::cfg::GrammarLexer::Token::Assoc: return "'::='";
-		case klex::cfg::GrammarLexer::Token::SetOpen: return "'{'";
-		case klex::cfg::GrammarLexer::Token::SetClose: return "'}'";
-		case klex::cfg::GrammarLexer::Token::Eof: return "<<EOF>>";
+inline std::string to_string(klex::cfg::GrammarLexer::Token v)
+{
+	switch (v)
+	{
+		case klex::cfg::GrammarLexer::Token::Spacing:
+			return "Spacing";
+		case klex::cfg::GrammarLexer::Token::Identifier:
+			return "Identifier";
+		case klex::cfg::GrammarLexer::Token::Token:
+			return "Token";
+		case klex::cfg::GrammarLexer::Token::Literal:
+			return "Literal";
+		case klex::cfg::GrammarLexer::Token::Or:
+			return "'|'";
+		case klex::cfg::GrammarLexer::Token::Semicolon:
+			return "';'";
+		case klex::cfg::GrammarLexer::Token::Assoc:
+			return "'::='";
+		case klex::cfg::GrammarLexer::Token::SetOpen:
+			return "'{'";
+		case klex::cfg::GrammarLexer::Token::SetClose:
+			return "'}'";
+		case klex::cfg::GrammarLexer::Token::Eof:
+			return "<<EOF>>";
 		// case klex::cfg::GrammarLexer::Illegal:
-		default: return "Illegal";
+		default:
+			return "Illegal";
 	}
 }
 
-} // namespace klex::cfg
+}  // namespace klex::cfg
 
 namespace fmt {
-	template<>
-	struct formatter<klex::cfg::GrammarLexer::Token> {
-		template <typename ParseContext>
-		constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+template <>
+struct formatter<klex::cfg::GrammarLexer::Token> {
+	template <typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
 
-		template <typename FormatContext>
-		constexpr auto format(const klex::cfg::GrammarLexer::Token& v, FormatContext &ctx) {
-			return format_to(ctx.begin(), "{}", to_string(v));
-		}
-	};
-}
+	template <typename FormatContext>
+	constexpr auto format(const klex::cfg::GrammarLexer::Token& v, FormatContext& ctx)
+	{
+		return format_to(ctx.begin(), "{}", to_string(v));
+	}
+};
+}  // namespace fmt
 
 // vim:ts=4:sw=4:noet

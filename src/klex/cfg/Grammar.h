@@ -22,16 +22,13 @@
 namespace klex::cfg {
 
 struct Terminal {
-	// pre-parsed rule (XXX: could be made `variant<Rule, string> literal` instead
-	std::variant<regular::Rule, std::string> literal;
+	std::variant<regular::Rule, std::string> literal; // such as [0-9]+ or "if"
 
-	std::string name;				// such as "KW_IF"
-
-	bool operator<(const Terminal& rhs) const noexcept { return literal < rhs.literal; }
+	std::string name;  // such as "KW_IF"
 };
 
 struct NonTerminal {
-	std::string name;				// such as "IfStmt"
+	std::string name;  // such as "IfStmt"
 
 	bool operator==(const std::string& other) const { return name == other; }
 };
@@ -85,12 +82,21 @@ struct Production {
 	std::vector<Terminal> first1() const;
 };
 
+/**
+ * Context-free grammar.
+ */
 struct Grammar {
-	std::vector<regular::Rule> explicitTerminals;     //!< List of terminals with explicit definitions.
-	std::vector<Production> productions;              //!< List of grammar productions rules.
+	//! List of terminals with explicit definitions.
+	std::vector<regular::Rule> explicitTerminals;
 
-	std::vector<NonTerminal> nonterminals;            //!< Accumulated list of non-terminals, filled by finalize().
-	std::vector<Terminal> terminals;                  //!< Accumulated list of terminals (including explicitely specified terminals), filled by finalize().
+	//! List of grammar productions rules.
+	std::vector<Production> productions;
+
+	//! Accumulated list of non-terminals, filled by finalize().
+	std::vector<NonTerminal> nonterminals;
+
+	//! Accumulated list of terminals (including explicitely specified terminals), filled by finalize().
+	std::vector<Terminal> terminals;
 
 	std::vector<const Production*> getProductions(const NonTerminal& nt) const;
 	std::vector<Production*> getProductions(const NonTerminal& nt);

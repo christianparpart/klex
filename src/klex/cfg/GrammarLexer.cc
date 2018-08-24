@@ -6,42 +6,46 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/cfg/GrammarLexer.h>
-#include <cctype>
-#include <cassert>
-#include <iostream>
 #include <fmt/format.h>
+#include <cassert>
+#include <cctype>
+#include <iostream>
 
 using namespace std;
 using namespace klex;
 using namespace klex::cfg;
 
-GrammarLexer::GrammarLexer(std::string content)
-		: content_{std::move(content)},
-			offset_{0},
-			currentLiteral_{},
-			currentToken_{Token::Illegal} {
+GrammarLexer::GrammarLexer(string content)
+	: content_{move(content)}, offset_{0}, currentLiteral_{}, currentToken_{Token::Illegal}
+{
 }
 
-GrammarLexer::Token GrammarLexer::recognize() {
-	for (;;) {
-		if (Token t = recognizeOne(); t != Token::Spacing) {
-			// std::cout << "recognize: " << fmt::format("{}", t) << "\n";
+GrammarLexer::Token GrammarLexer::recognize()
+{
+	for (;;)
+	{
+		if (Token t = recognizeOne(); t != Token::Spacing)
+		{
+			// cout << "recognize: " << fmt::format("{}", t) << "\n";
 			return currentToken_ = t;
 		}
 	}
 }
 
-GrammarLexer::Token GrammarLexer::recognizeOne() {
+GrammarLexer::Token GrammarLexer::recognizeOne()
+{
 	currentLiteral_.clear();
 
-	switch (currentChar()) {
+	switch (currentChar())
+	{
 		case -1:
 			return Token::Eof;
 		case ' ':
 		case '\t':
 		case '\n':
-			do consumeChar();
-			while (!eof() && std::isspace(currentChar()));
+			do
+				consumeChar();
+			while (!eof() && isspace(currentChar()));
 			return Token::Spacing;
 		case '{':
 			consumeChar();
@@ -56,7 +60,8 @@ GrammarLexer::Token GrammarLexer::recognizeOne() {
 			consumeChar();
 			return Token::Semicolon;
 		case ':':
-			if (peekChar(1) == ':' && peekChar(2) == '=') {
+			if (peekChar(1) == ':' && peekChar(2) == '=')
+			{
 				consumeChar(3);
 				return Token::Assoc;
 			}
@@ -65,7 +70,8 @@ GrammarLexer::Token GrammarLexer::recognizeOne() {
 		case '"':
 			return consumeLiteral();
 		default:
-			if (std::isalpha(currentChar()) || currentChar() == '_') {
+			if (isalpha(currentChar()) || currentChar() == '_')
+			{
 				return consumeIdentifier();
 			}
 			consumeChar();
@@ -73,7 +79,7 @@ GrammarLexer::Token GrammarLexer::recognizeOne() {
 	}
 }
 
-std::string GrammarLexer::consumeLiteralUntilLF()
+string GrammarLexer::consumeLiteralUntilLF()
 {
 	currentLiteral_.clear();
 
@@ -92,13 +98,15 @@ std::string GrammarLexer::consumeLiteralUntilLF()
 	return currentLiteral_;
 }
 
-GrammarLexer::Token GrammarLexer::consumeIdentifier() {
-	assert(!eof() && (std::isalpha(currentChar()) || currentChar() == '_'));
+GrammarLexer::Token GrammarLexer::consumeIdentifier()
+{
+	assert(!eof() && (isalpha(currentChar()) || currentChar() == '_'));
 
-	do {
+	do
+	{
 		currentLiteral_ += static_cast<char>(currentChar());
 		consumeChar();
-	} while (!eof() && (std::isalnum(currentChar()) || currentChar() == '_'));
+	} while (!eof() && (isalnum(currentChar()) || currentChar() == '_'));
 
 	if (currentLiteral_ == "token")
 		return Token::Token;
@@ -107,40 +115,45 @@ GrammarLexer::Token GrammarLexer::consumeIdentifier() {
 }
 
 // ' ... ' | " ... "
-GrammarLexer::Token GrammarLexer::consumeLiteral() {
+GrammarLexer::Token GrammarLexer::consumeLiteral()
+{
 	assert(!eof() && (currentChar() == '"' || currentChar() == '\''));
 	const int delimiter = currentChar();
 	consumeChar();
 
-	while (!eof() && currentChar() != delimiter) {
+	while (!eof() && currentChar() != delimiter)
+	{
 		currentLiteral_ += static_cast<char>(currentChar());
 		consumeChar();
 	}
 
 	if (eof())
-		return Token::Illegal; // Unexpected EOF
+		return Token::Illegal;  // Unexpected EOF
 
-	consumeChar(); // delimiter
+	consumeChar();  // delimiter
 
 	return Token::Literal;
 }
 
-int GrammarLexer::currentChar() const {
+int GrammarLexer::currentChar() const
+{
 	if (offset_ < content_.size())
 		return content_[offset_];
 	else
-		return -1; // EOF
+		return -1;  // EOF
 }
 
-int GrammarLexer::peekChar(size_t offset) const {
+int GrammarLexer::peekChar(size_t offset) const
+{
 	if (offset_ + offset < content_.size())
 		return content_[offset_ + offset];
 	else
-		return -1; // EOF
+		return -1;  // EOF
 }
 
-int GrammarLexer::consumeChar(size_t count) {
-	offset_ += std::min(count, content_.size() - offset_);
+int GrammarLexer::consumeChar(size_t count)
+{
+	offset_ += min(count, content_.size() - offset_);
 	return currentChar();
 }
 

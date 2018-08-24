@@ -22,10 +22,12 @@ using namespace klex;
 using namespace klex::cfg;
 using klex::util::reversed;
 
-namespace { // {{{ helper
+// {{{ helper
+namespace {
 
-template<typename T>
-inline vector<T> to_vector(set<T> S) {
+template <typename T>
+inline vector<T> to_vector(set<T> S)
+{
 	vector<T> out;
 	out.reserve(S.size());
 	for (const T& v : S)
@@ -33,67 +35,68 @@ inline vector<T> to_vector(set<T> S) {
 	return move(out);
 }
 
-template<typename T, typename V = int>
+template <typename T, typename V = int>
 inline map<T, V> createIdMap(const vector<T>& items)
 {
 	map<T, V> out;
-	for (auto i = items.begin(); i != items.end(); ++i)
-		out[*i] = distance(items.begin(), i);
+	for (auto i = begin(items); i != end(items); ++i)
+		out[*i] = distance(begin(items), i);
 	return move(out);
 }
 
-template<typename T>
-inline bool merge(vector<T>* target, vector<T> source) {
-	sort(target->begin(), target->end());
-	sort(source.begin(), source.end());
+template <typename T>
+inline bool merge(vector<T>* target, vector<T> source)
+{
+	sort(begin(*target), end(*target));
+	sort(begin(source), end(source));
 
 	const size_t n = target->size();
 	vector<T> dest;
-	set_union(target->begin(), target->end(),
-			  source.begin(), source.end(),
-			  back_inserter(dest));
+	set_union(begin(*target), end(*target), begin(source), end(source), back_inserter(dest));
 	*target = move(dest);
 	return target->size() > n;
 }
 
-} // }}} helper
+}  // namespace
+// }}} helper
 
 vector<Terminal> Production::first1() const
 {
 	vector<Terminal> result = first;
 	if (epsilon)
-		set_union(result.begin(), result.end(),
-				  follow.begin(), follow.end(),
-				  back_inserter(result));
+		set_union(begin(result), end(result), begin(follow), end(follow), back_inserter(result));
 
 	return move(result);
 }
 
-std::vector<Production*> Grammar::getProductions(const NonTerminal& nt) {
-	std::vector<Production*> result;
+vector<Production*> Grammar::getProductions(const NonTerminal& nt)
+{
+	vector<Production*> result;
 
 	for (Production& production : productions)
 		if (production.name == nt.name)
 			result.push_back(&production);
 
-	return std::move(result);
+	return move(result);
 }
 
-std::vector<const Production*> Grammar::getProductions(const NonTerminal& nt) const {
-	std::vector<const Production*> result;
+vector<const Production*> Grammar::getProductions(const NonTerminal& nt) const
+{
+	vector<const Production*> result;
 
 	for (const Production& production : productions)
 		if (production.name == nt.name)
 			result.push_back(&production);
 
-	return std::move(result);
+	return move(result);
 }
 
-std::vector<Terminal> Grammar::firstOf(const Symbol& b) const {
+vector<Terminal> Grammar::firstOf(const Symbol& b) const
+{
 	if (holds_alternative<Terminal>(b))
-		return vector<Terminal>{ get<Terminal>(b) };
+		return vector<Terminal>{get<Terminal>(b)};
 
-	std::set<Terminal> first;
+	set<Terminal> first;
 	for (const Production* p : getProductions(get<NonTerminal>(b)))
 		for (const Terminal& w : p->first)
 			first.emplace(w);
@@ -101,8 +104,9 @@ std::vector<Terminal> Grammar::firstOf(const Symbol& b) const {
 	return to_vector(move(first));
 }
 
-std::vector<Terminal> Grammar::followOf(const NonTerminal& nt) const {
-	std::set<Terminal> follow;
+vector<Terminal> Grammar::followOf(const NonTerminal& nt) const
+{
+	set<Terminal> follow;
 
 	for (const Production* p : getProductions(nt))
 		for (const Terminal& w : p->follow)
@@ -132,7 +136,7 @@ void Grammar::finalize()
 	nonterminals = [&]() {
 		vector<NonTerminal> nonterminals;
 		for (const Production& production : productions)
-			if (find(nonterminals.begin(), nonterminals.end(), production.name) == nonterminals.end())
+			if (find(begin(nonterminals), end(nonterminals), production.name) == end(nonterminals))
 				nonterminals.emplace_back(NonTerminal{production.name});
 		return move(nonterminals);
 	}();
@@ -162,7 +166,7 @@ void Grammar::finalize()
 
 		for (Production& production : productions)
 		{
-			const NonTerminal nt { production.name };
+			const NonTerminal nt{production.name};
 			const vector<Symbol>& expression = production.handle.symbols;
 
 			// FIRST-set
@@ -207,24 +211,19 @@ string Grammar::dump() const
 {
 	stringstream sstr;
 
-
-	sstr << " ID | NON-TERMINAL  | EXPRESSION           | FIRST                      | FOLLOW                     | FIRST+\n";
-	sstr << "----+---------------+----------------------+----------------------------+----------------------------+-----------\n";
-	for (auto p = productions.begin(); p != productions.end(); ++p)
+	sstr << " ID | NON-TERMINAL  | EXPRESSION           | FIRST                      | FOLLOW                "
+			"     | FIRST+\n";
+	sstr << "----+---------------+----------------------+----------------------------+-----------------------"
+			"-----+-----------\n";
+	for (auto p = begin(productions); p != end(productions); ++p)
 	{
 		char buf[255];
-		snprintf(buf, sizeof(buf),
-				"%3zu | %13s | %-20s | %6s%-20s | %-26s | %s",
-				distance(productions.begin(), p),
-				p->name.c_str(),
-				fmt::format("{}", p->handle).c_str(),
-				p->epsilon ? "{eps} " : "",
-				fmt::format("{{{}}}", p->first).c_str(),
-				fmt::format("{{{}}}", p->follow).c_str(),
-				fmt::format("{{{}}}", p->first1()).c_str()
-		);
-		sstr << (char*) buf;
-		if (next(p) != productions.end())
+		snprintf(buf, sizeof(buf), "%3zu | %13s | %-20s | %6s%-20s | %-26s | %s",
+				 distance(productions.begin(), p), p->name.c_str(), fmt::format("{}", p->handle).c_str(),
+				 p->epsilon ? "{eps} " : "", fmt::format("{{{}}}", p->first).c_str(),
+				 fmt::format("{{{}}}", p->follow).c_str(), fmt::format("{{{}}}", p->first1()).c_str());
+		sstr << buf;
+		if (next(p) != end(productions))
 			sstr << '\n';
 	}
 	return move(sstr.str());

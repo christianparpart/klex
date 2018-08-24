@@ -5,11 +5,11 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/cfg/GrammarParser.h>
-#include <klex/cfg/GrammarLexer.h>
-#include <klex/cfg/Grammar.h>
-#include <klex/regular/RuleParser.h>
 #include <klex/Report.h>
+#include <klex/cfg/Grammar.h>
+#include <klex/cfg/GrammarLexer.h>
+#include <klex/cfg/GrammarParser.h>
+#include <klex/regular/RuleParser.h>
 
 #include <algorithm>
 
@@ -17,19 +17,25 @@ using namespace std;
 using namespace klex;
 using namespace klex::cfg;
 
-#define DEBUG(msg, ...) do { } while (0)
+#define DEBUG(msg, ...) \
+	do                  \
+	{                   \
+	} while (0)
 // #define DEBUG(msg, ...) do { fmt::print((msg), __VA_ARGS__); fmt::print("\n"); } while (0)
 
 GrammarParser::GrammarParser(GrammarLexer _lexer, Report* _report)
-		: report_{_report},
-			lexer_{std::move(_lexer)} {
+	: report_{_report}, lexer_{move(_lexer)}
+{
 }
 
-Grammar GrammarParser::parse() {
+Grammar GrammarParser::parse()
+{
 	consumeToken();
 
-	while (currentToken() != Token::Eof) {
-		switch (currentToken()) {
+	while (currentToken() != Token::Eof)
+	{
+		switch (currentToken())
+		{
 			case Token::Token:
 				parseTokenBlock();
 				break;
@@ -38,8 +44,8 @@ Grammar GrammarParser::parse() {
 				parseRule();
 				break;
 			default:
-				report_->syntaxError(SourceLocation{},
-						"Unexpected token {}. Expecting a rule instead.", currentToken());
+				report_->syntaxError(SourceLocation{}, "Unexpected token {}. Expecting a rule instead.",
+									 currentToken());
 				consumeToken();
 				abort();
 				break;
@@ -48,32 +54,37 @@ Grammar GrammarParser::parse() {
 
 	consumeToken(Token::Eof);
 
-	return std::move(grammar_);
+	return move(grammar_);
 }
 
-void GrammarParser::consumeToken() {
+void GrammarParser::consumeToken()
+{
 	lexer_.recognize();
 	// DEBUG("consumeToken: {} \"{}\"", lexer_.currentToken(), lexer_.currentLiteral());
 }
 
-void GrammarParser::consumeToken(Token expectedToken) {
+void GrammarParser::consumeToken(Token expectedToken)
+{
 	if (lexer_.currentToken() != expectedToken)
-		report_->syntaxError(SourceLocation{}, "Expected token {} but got {}.", expectedToken, lexer_.currentToken());
+		report_->syntaxError(SourceLocation{}, "Expected token {} but got {}.", expectedToken,
+							 lexer_.currentToken());
 
 	consumeToken();
 }
 
-void GrammarParser::parseRule() {
+void GrammarParser::parseRule()
+{
 	// GrammarRule  ::= NonTerminal '::=' Handle ('|' Handle)* ';'
 
-	string name { currentLiteral() };
+	string name{currentLiteral()};
 	consumeToken(Token::Identifier);
 	consumeToken(Token::Assoc);
 
 	grammar_.productions.emplace_back(Production{name, parseHandle()});
 	DEBUG("parsed production: {}", grammar_.productions.back());
 
-	while (currentToken() == Token::Or) {
+	while (currentToken() == Token::Or)
+	{
 		consumeToken();
 		grammar_.productions.emplace_back(Production{name, parseHandle()});
 		DEBUG("parsed production: {}", grammar_.productions.back());
@@ -82,7 +93,8 @@ void GrammarParser::parseRule() {
 	consumeToken(Token::Semicolon);
 }
 
-Handle GrammarParser::parseHandle() {
+Handle GrammarParser::parseHandle()
+{
 	// Handle     ::= (Terminal | NonTerminal)* HandleRef?
 	// HandleRef  ::= '{' Identifier '}'
 
@@ -90,8 +102,10 @@ Handle GrammarParser::parseHandle() {
 
 	Handle handle;
 
-	for (;;) {
-		switch (currentToken()) {
+	for (;;)
+	{
+		switch (currentToken())
+		{
 			case Token::Literal:
 				handle.symbols.emplace_back(Terminal{currentLiteral(), ""});
 				consumeToken();
@@ -100,23 +114,24 @@ Handle GrammarParser::parseHandle() {
 				handle.symbols.emplace_back(NonTerminal{currentLiteral()});
 				consumeToken();
 				break;
-			case Token::SetOpen: {
+			case Token::SetOpen:
+			{
 				consumeToken();
 				handle.ref = currentLiteral();
 				consumeToken(Token::Identifier);
 				consumeToken(Token::SetClose);
-				return std::move(handle);
+				return move(handle);
 			}
 			case Token::Semicolon:
 			case Token::Or:
-				return std::move(handle);
+				return move(handle);
 			case Token::Eof:
 			case Token::Illegal:
 			default:
-				report_->syntaxError(SourceLocation{},
-						"Unexpected token {}. Expected instead one of: {}, {}, {}, {}.",
-						currentToken(), Token::Or, Token::Semicolon, Token::Literal, Token::Identifier);
-				return std::move(handle);
+				report_->syntaxError(
+					SourceLocation{}, "Unexpected token {}. Expected instead one of: {}, {}, {}, {}.",
+					currentToken(), Token::Or, Token::Semicolon, Token::Literal, Token::Identifier);
+				return move(handle);
 		}
 	}
 
@@ -129,7 +144,7 @@ void GrammarParser::parseTokenBlock()
 	// TokenDef   ::= IDENT '::=' RegExpr
 	// RegExpr    ::= <regular expression>
 
-	consumeToken(); // "token"
+	consumeToken();  // "token"
 	consumeToken(Token::SetOpen);
 
 	string klexDef;
@@ -138,11 +153,11 @@ void GrammarParser::parseTokenBlock()
 		klexDef += currentLiteral();
 		klexDef += lexer_.consumeLiteralUntilLF();
 
-		consumeToken(); // parses first token on next line
+		consumeToken();  // parses first token on next line
 	}
 
-	regular::RuleList rules = regular::RuleParser{klexDef}.parseRules(); // TODO: currentLine, currentColumn
-	grammar_.explicitTerminals.insert(grammar_.explicitTerminals.end(), rules.begin(), rules.end());
+	regular::RuleList rules = regular::RuleParser{klexDef}.parseRules();  // TODO: currentLine, currentColumn
+	grammar_.explicitTerminals.insert(end(grammar_.explicitTerminals), begin(rules), end(rules));
 
 	consumeToken(Token::SetClose);
 }

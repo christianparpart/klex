@@ -13,7 +13,7 @@
 #include <iostream>
 
 namespace klex {
-	class Report;
+class Report;
 }
 
 namespace klex::cfg {
@@ -21,15 +21,16 @@ namespace klex::cfg {
 /**
  * Parses a context-free-grammar specification.
  */
-class GrammarParser {
-public:
+class GrammarParser
+{
+  public:
 	GrammarParser(GrammarLexer lexer, Report* report);
 
 	Grammar parse();
 	void parseRule();
 	Handle parseHandle();
 
-private:
+  private:
 	using Token = GrammarLexer::Token;
 
 	void parseTokenBlock();
@@ -39,18 +40,12 @@ private:
 	void consumeToken();
 	void consumeToken(Token expectedToken);
 
-	std::string getCurrentLiteralAndAdvance() {
-		std::string literal = currentLiteral();
-		consumeToken();
-		return std::move(literal);
-	}
-
-private:
+  private:
 	Report* report_;
 	GrammarLexer lexer_;
 	Grammar grammar_;
 };
 
-} // namespace klex::cfg
+}  // namespace klex::cfg
 
 // vim:ts=4:sw=4:noet

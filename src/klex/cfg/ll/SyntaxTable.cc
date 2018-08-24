@@ -24,23 +24,24 @@ using namespace klex;
 using namespace klex::cfg;
 using namespace klex::cfg::ll;
 
-template<typename T, typename V = int>
+template <typename T, typename V = int>
 inline map<T, V> createIdMap(const vector<T>& items)
 {
 	map<T, V> out;
-	for (auto i = items.begin(); i != items.end(); ++i)
-		out[*i] = distance(items.begin(), i);
+	for (auto i = begin(items); i != end(items); ++i)
+		out[*i] = distance(begin(items), i);
 	return move(out);
 }
 
-std::optional<int> SyntaxTable::lookup(int nonterminal, int lookahead) const {
+optional<int> SyntaxTable::lookup(int nonterminal, int lookahead) const
+{
 	auto i = table.find(nonterminal);
 	if (i == table.end())
-		return std::nullopt;
+		return nullopt;
 
 	auto k = i->second.find(lookahead);
 	if (k == i->second.end())
-		return std::nullopt;
+		return nullopt;
 
 	return k->second;
 }
@@ -50,8 +51,8 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 	map<NonTerminal, int> idNonTerminals = createIdMap(grammar.nonterminals);
 	map<Terminal, int> idTerminals = createIdMap(grammar.terminals);
 	map<NonTerminal, int> idProductionsByName;
-	for (auto i = grammar.productions.begin(); i != grammar.productions.end(); ++i)
-		idProductionsByName[NonTerminal{i->name}] = distance(grammar.productions.begin(), i);
+	for (auto i = begin(grammar.productions); i != end(grammar.productions); ++i)
+		idProductionsByName[NonTerminal{i->name}] = distance(begin(grammar.productions), i);
 
 	SyntaxTable st;
 
@@ -83,7 +84,9 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 			if (holds_alternative<regular::Rule>(w.literal))
 				terminalRules.emplace_back(get<regular::Rule>(w.literal));
 			else
-				for (const regular::Rule& rule : regular::RuleParser{fmt::format("{} ::= \"{}\"", w.name, get<string>(w.literal))}.parseRules())
+				for (const regular::Rule& rule :
+					 regular::RuleParser{fmt::format("{} ::= \"{}\"", w.name, get<string>(w.literal))}
+						 .parseRules())
 					terminalRules.emplace_back(rule);
 
 		// TODO: custom tokens: `token { }`
@@ -121,17 +124,20 @@ string SyntaxTable::dump(const Grammar& grammar) const
 	for (const Terminal& t : grammar.terminals)
 		bprintf("%10s |", fmt::format("{}", t).c_str());
 	bprintf("\n");
-	bprintf("-----------------+");;
+	bprintf("-----------------+");
+	;
 	for (size_t i = 0; i < grammar.terminals.size(); ++i)
-		bprintf("-----------+");;
+		bprintf("-----------+");
+	;
 	bprintf("\n");
 
 	// table-body
 	set<NonTerminal> check;
 	for (const Production& production : grammar.productions)
 	{
-		const NonTerminal nt { production.name };
-		if (check.count(nt)) continue;
+		const NonTerminal nt{production.name};
+		if (check.count(nt))
+			continue;
 		check.insert(nt);
 		bprintf("%16s |", nt.name.c_str());
 		for (const Terminal& t : grammar.terminals)
