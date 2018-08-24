@@ -151,7 +151,7 @@ void Grammar::finalize()
 			w.name = fmt::format("T_{}", nextId++);
 
 		for (regular::Rule& rule : explicitTerminals)
-			terms.emplace_back(Terminal{rule.pattern, rule.name, rule});
+			terms.emplace_back(Terminal{rule, rule.name});
 
 		return move(terms);
 	}();

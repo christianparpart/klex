@@ -22,11 +22,10 @@
 namespace klex::cfg {
 
 struct Terminal {
-	std::string literal;			// such as "if"
-	std::string name;				// such as "KW_IF"
-
 	// pre-parsed rule (XXX: could be made `variant<Rule, string> literal` instead
-	std::optional<regular::Rule> rule;
+	std::variant<regular::Rule, std::string> literal;
+
+	std::string name;				// such as "KW_IF"
 
 	bool operator<(const Terminal& rhs) const noexcept { return literal < rhs.literal; }
 };
@@ -41,8 +40,16 @@ using Symbol = std::variant<NonTerminal, Terminal>;
 
 inline bool operator<(const Symbol& a, const Symbol& b) {
 	using namespace std;
-	const string& lhs = holds_alternative<Terminal>(a) ? get<Terminal>(a).literal : get<NonTerminal>(a).name;
-	const string& rhs = holds_alternative<Terminal>(b) ? get<Terminal>(b).literal : get<NonTerminal>(b).name;
+	const string& lhs = holds_alternative<Terminal>(a)
+		? holds_alternative<regular::Rule>(get<Terminal>(a).literal)
+			? get<regular::Rule>(get<Terminal>(a).literal).pattern
+			: get<string>(get<Terminal>(a).literal)
+		: get<NonTerminal>(a).name;
+	const string& rhs = holds_alternative<Terminal>(b)
+		? holds_alternative<regular::Rule>(get<Terminal>(b).literal)
+			? get<regular::Rule>(get<Terminal>(b).literal).pattern
+			: get<string>(get<Terminal>(b).literal)
+		: get<NonTerminal>(b).name;
 	return lhs < rhs;
 }
 
