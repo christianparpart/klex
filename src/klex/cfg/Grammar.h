@@ -130,8 +130,10 @@ namespace fmt {
 		constexpr auto format(const klex::cfg::Terminal& v, FormatContext &ctx) {
 			if (!v.name.empty())
 				return format_to(ctx.begin(), "{}", v.name);
+			else if (std::holds_alternative<klex::regular::Rule>(v.literal))
+				return format_to(ctx.begin(), "{}", std::get<klex::regular::Rule>(v.literal).pattern);
 			else
-				return format_to(ctx.begin(), "\"{}\"", v.literal);
+				return format_to(ctx.begin(), "\"{}\"", std::get<std::string>(v.literal));
 		}
 	};
 

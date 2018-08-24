@@ -80,8 +80,11 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 			terminalRules.emplace_back(rule);
 
 		for (const Terminal& w : grammar.terminals)
-			for (const regular::Rule& rule : regular::RuleParser{fmt::format("{} ::= \"{}\"", w.name, w.literal)}.parseRules())
-				terminalRules.emplace_back(rule);
+			if (holds_alternative<regular::Rule>(w.literal))
+				terminalRules.emplace_back(get<regular::Rule>(w.literal));
+			else
+				for (const regular::Rule& rule : regular::RuleParser{fmt::format("{} ::= \"{}\"", w.name, get<string>(w.literal))}.parseRules())
+					terminalRules.emplace_back(rule);
 
 		// TODO: custom tokens: `token { }`
 
