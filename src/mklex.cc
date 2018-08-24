@@ -105,7 +105,7 @@ void generateTableDefCxx(ostream& os, const LexerDef& lexerDef, const RuleList& 
 
 	os << "klex::regular::LexerDef " << tableName << " {\n";
 	os << "  // initial states\n";
-	os << "  map<string, klex::regular::StateId> {\n";
+	os << "  std::map<std::string, klex::regular::StateId> {\n";
 	for (const pair<const string, StateId>& s0 : lexerDef.initialStates)
 		os << fmt::format("    {{ \"{}\", {} }},\n", s0.first, s0.second);
 	os << "  },\n";
@@ -149,7 +149,7 @@ void generateTableDefCxx(ostream& os, const LexerDef& lexerDef, const RuleList& 
 	}
 	os << "  },\n";
 	os << "  // tag-to-name mappings\n";
-	os << "  map<klex::regular::Tag, string> {\n";
+	os << "  std::map<klex::regular::Tag, std::string> {\n";
 	for (const pair<Tag, string>& tagName : lexerDef.tagNames)
 	{
 		if (tagName.first != IgnoreTag)
@@ -205,7 +205,7 @@ void generateTokenDefCxx(ostream& os, const RuleList& rules, const string& token
 	os << "};\n\n";
 
 	// -------------------------------------------------------------------------------------------------
-	os << "inline constexpr string_view to_string(" << typeName << " t) {\n";
+	os << "inline constexpr std::string_view to_string(" << typeName << " t) {\n";
 	os << "  switch (t) { \n";
 	for (const Rule& rule : rules)
 		if (rule.tag != IgnoreTag)
