@@ -5,8 +5,12 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/cfg/ll/SyntaxTable.h>
 #include <klex/cfg/Grammar.h>
+#include <klex/cfg/ll/SyntaxTable.h>
+#include <klex/regular/Compiler.h>
+#include <klex/regular/LexerDef.h>
+#include <klex/regular/Rule.h>
+#include <klex/regular/RuleParser.h>
 
 #include <algorithm>
 #include <cstdarg>
@@ -66,6 +70,29 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 			// if (p->first1().contains(eof))
 			// 	st.table[nt_][eof_] = p_;
 		}
+	}
+
+	// terminals
+	{
+		regular::RuleList terminalRules;
+
+		for (const regular::Rule& rule : regular::RuleParser{"Eof ::= <<EOF>>"}.parseRules())
+			terminalRules.emplace_back(rule);
+
+		for (const Terminal& w : grammar.terminals)
+			for (const regular::Rule& rule : regular::RuleParser{fmt::format("{} ::= \"{}\"", w.name, w.literal)}.parseRules())
+				terminalRules.emplace_back(rule);
+
+		// TODO: custom tokens: `token { }`
+
+		regular::Compiler rgc;
+		rgc.declareAll(move(terminalRules));
+
+		regular::Compiler::OvershadowMap overshadows;
+		regular::LexerDef lexerDef = rgc.compileMulti(&overshadows);
+
+		// TODO: move lexerDef into SyntaxTable
+		// st.lexer = move(lexerDef);
 	}
 
 	return move(st);

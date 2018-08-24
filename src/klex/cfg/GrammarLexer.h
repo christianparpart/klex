@@ -18,15 +18,16 @@ public:
 
 	enum class Token {
 		Illegal,
-		Spacing,		// [\s\t\n]+
+		Spacing,    // [\s\t\n]+
 		Identifier, // [a-z][a-z0-9]*
-		Literal,		// '[^']*'|"[^"]*"
-		Or,				 // '|'
-		Semicolon,	// ';'
-		Assoc,			// '::='
-		SetOpen,		// '{'
-		SetClose,	 // '}'
-		Eof,				// <<EOF>>
+		Token,      // 'token'
+		Literal,    // '[^']*'|"[^"]*"
+		Or,         // '|'
+		Semicolon,  // ';'
+		Assoc,      // '::='
+		SetOpen,    // '{'
+		SetClose,   // '}'
+		Eof,        // <<EOF>>
 	};
 
 	bool eof() const noexcept { return offset_ >= content_.size(); }
@@ -35,6 +36,8 @@ public:
 	const std::string& currentLiteral() const noexcept { return currentLiteral_; }
 
 	Token recognize();
+
+	std::string consumeLiteralUntilLF(); // NB. only used for sub-language (klex)
 
 private:
 	Token recognizeOne();
@@ -55,6 +58,7 @@ inline std::string to_string(klex::cfg::GrammarLexer::Token v) {
 	switch (v) {
 		case klex::cfg::GrammarLexer::Token::Spacing: return "Spacing";
 		case klex::cfg::GrammarLexer::Token::Identifier: return "Identifier";
+		case klex::cfg::GrammarLexer::Token::Token: return "Token";
 		case klex::cfg::GrammarLexer::Token::Literal: return "Literal";
 		case klex::cfg::GrammarLexer::Token::Or: return "'|'";
 		case klex::cfg::GrammarLexer::Token::Semicolon: return "';'";

@@ -33,9 +33,13 @@ struct TokenTraits {
 /** LL(1)-compatible syntax table.
  */
 struct SyntaxTable {
+	using Expression = std::vector<int>; // non-terminals & terminals
 	using LookAheadMap = std::unordered_map<int /*lookahead*/, int /*production*/>;
 	using NonTerminalMap = std::unordered_map<int /*nonterminals*/, LookAheadMap>;
+	using ProductionVec = std::vector<Expression>;
 
+	std::vector<std::string> nonterminalNames;
+	ProductionVec productions;
 	NonTerminalMap table;
 
 	std::optional<int> lookup(int nonterminal, int lookahead) const;

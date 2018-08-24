@@ -121,8 +121,8 @@ LexerDef Compiler::compile() {
   return generateTables(compileMinimalDFA(), containsBeginOfLine_, std::move(names_));
 }
 
-LexerDef Compiler::compileMulti() {
-  MultiDFA multiDFA = compileMultiDFA(nullptr);
+LexerDef Compiler::compileMulti(OvershadowMap* overshadows) {
+  MultiDFA multiDFA = compileMultiDFA(overshadows);
   multiDFA = std::move(DFAMinimizer{multiDFA}.constructMultiDFA());
   return generateTables(multiDFA, containsBeginOfLine_, names());
 }

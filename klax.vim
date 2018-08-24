@@ -32,7 +32,7 @@ hi def link klaxRuleName      Function
 hi def link klaxOptions       PreProc
 hi def link klaxEof           Special
 hi def link klaxString        String
-hi def link klaxRawString     Constant
+hi def link klaxRawString     String
 hi def link klaxSpecial       Special
 
 let b:current_syntax = "klax"

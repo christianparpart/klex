@@ -143,7 +143,17 @@ void Grammar::finalize()
 			for (const Symbol& b : production.handle.symbols)
 				if (holds_alternative<Terminal>(b))
 					terminals.insert(get<Terminal>(b));
-		return to_vector(move(terminals));
+
+		vector<Terminal> terms = to_vector(move(terminals));
+
+		int nextId = 0;
+		for (Terminal& w : terms)
+			w.name = fmt::format("T_{}", nextId++);
+
+		for (regular::Rule& rule : explicitTerminals)
+			terms.emplace_back(Terminal{rule.pattern, rule.name, rule});
+
+		return move(terms);
 	}();
 
 	while (true)
@@ -152,7 +162,7 @@ void Grammar::finalize()
 
 		for (Production& production : productions)
 		{
-			NonTerminal nt { production.name };
+			const NonTerminal nt { production.name };
 			const vector<Symbol>& expression = production.handle.symbols;
 
 			// FIRST-set
@@ -179,6 +189,7 @@ void Grammar::finalize()
 				{
 					for (Production* p : getProductions(get<NonTerminal>(b)))
 						updated |= merge(&p->follow, trailer);
+
 					if (!containsEpsilon(b))
 						trailer = firstOf(b);
 					else

@@ -73,6 +73,25 @@ GrammarLexer::Token GrammarLexer::recognizeOne() {
 	}
 }
 
+std::string GrammarLexer::consumeLiteralUntilLF()
+{
+	currentLiteral_.clear();
+
+	while (!eof() && currentChar() != '\n')
+	{
+		currentLiteral_ += static_cast<char>(currentChar());
+		consumeChar();
+	}
+
+	if (!eof())
+	{
+		currentLiteral_ += static_cast<char>(currentChar());
+		consumeChar();
+	}
+
+	return currentLiteral_;
+}
+
 GrammarLexer::Token GrammarLexer::consumeIdentifier() {
 	assert(!eof() && (std::isalpha(currentChar()) || currentChar() == '_'));
 
@@ -80,6 +99,9 @@ GrammarLexer::Token GrammarLexer::consumeIdentifier() {
 		currentLiteral_ += static_cast<char>(currentChar());
 		consumeChar();
 	} while (!eof() && (std::isalnum(currentChar()) || currentChar() == '_'));
+
+	if (currentLiteral_ == "token")
+		return Token::Token;
 
 	return Token::Identifier;
 }

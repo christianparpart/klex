@@ -32,10 +32,18 @@ public:
 private:
 	using Token = GrammarLexer::Token;
 
+	void parseTokenBlock();
+
 	const std::string& currentLiteral() const noexcept { return lexer_.currentLiteral(); }
 	Token currentToken() const noexcept { return lexer_.currentToken(); }
 	void consumeToken();
 	void consumeToken(Token expectedToken);
+
+	std::string getCurrentLiteralAndAdvance() {
+		std::string literal = currentLiteral();
+		consumeToken();
+		return std::move(literal);
+	}
 
 private:
 	Report* report_;

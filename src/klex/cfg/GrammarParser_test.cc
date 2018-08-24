@@ -23,7 +23,8 @@ const static std::string simpleGrammarSpec =
 	   `        | 'b' B   {b2};
 	   `)"_multiline;
 
-TEST(cfg_GrammarParser, parserSimple) {
+TEST(cfg_GrammarParser, parserSimple)
+{
 	BufferedReport report;
 	GrammarParser parser(GrammarLexer{simpleGrammarSpec}, &report);
 	Grammar grammar = parser.parse();
@@ -42,6 +43,22 @@ TEST(cfg_GrammarParser, parserSimple) {
 
 	ASSERT_EQ("B", grammar.productions[4].name);
 	ASSERT_EQ("\"b\" B {b2}", to_string(grammar.productions[4].handle));
+}
+
+TEST(cfg_GrammarParser, customTokens)
+{
+	BufferedReport report;
+	Grammar grammar = GrammarParser(GrammarLexer{
+			R"(`token {
+			   `  SPACE(ignore) ::= [\s\t]+
+			   `  NUMBER ::= [0-9]+
+			   `}
+			   `
+			   `Start ::= '(' Number ')';
+			   `)"_multiline}, &report).parse();
+
+	ASSERT_FALSE(report.containsFailures());
+	grammar.finalize();
 }
 
 // vim:ts=4:sw=4:noet

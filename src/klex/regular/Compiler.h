@@ -72,7 +72,7 @@ class Compiler {
    * Compiles all previousely parsed rules into a suitable data structure for Lexer, taking care of
    * multiple conditions as well as begin-of-line.
    */
-  LexerDef compileMulti();
+  LexerDef compileMulti(OvershadowMap* overshadows = nullptr);
 
   /**
    * Translates the given DFA @p dfa with a given TagNameMap @p names into trivial table mappings.

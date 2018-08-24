@@ -8,6 +8,7 @@
 #pragma once
 
 #include <klex/cfg/ll/SyntaxTable.h>
+#include <klex/util/iterator.h>
 #include <klex/Report.h>
 
 #include <algorithm>
@@ -15,6 +16,7 @@
 #include <stack>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace klex::cfg::ll {
@@ -22,21 +24,22 @@ namespace klex::cfg::ll {
 template<typename Lexer, typename SemanticValue>
 class Analyzer {
 public:
-	using Token = typename Lexer::value_type;
-	using Traits = TokenTraits<Token>;
+	using Terminal = typename Lexer::value_type;
+	using NonTerminal = int;
+	using StackValue = std::variant<Terminal, Symbol>;
 
 	Analyzer(SyntaxTable table, Lexer lexer, Report* report);
 
 	void analyze();
 
 private:
-	std::optional<std::vector<int>> getHandleFor(int nonterminal, int currentTerminal) const;
+	std::optional<SyntaxTable::Expression> getHandleFor(int nonterminal, int currentTerminal) const;
 
 private:
 	const SyntaxTable grammar_;
 	Lexer lexer_;
 	Report* report_;
-	std::stack<int> stack_;
+	std::stack<StackValue> stack_;
 };
 
 // ---------------------------------------------------------------------------------------------------------
@@ -50,31 +53,38 @@ Analyzer<Lexer, SemanticValue>::Analyzer(SyntaxTable grammar, Lexer lexer, Repor
 }
 
 template<typename Lexer, typename SemanticValue>
-void Analyzer<Lexer, SemanticValue>::analyze() {
+void Analyzer<Lexer, SemanticValue>::analyze()
+{
+	using ::klex::util::reversed;
+
 	const auto eof = lexer_.end();
 	auto currentToken = lexer_.begin();
 
 	for (;;) {
-		const auto X = stack_.top();
+		const StackValue X = stack_.top();
 
-		if (X == currentToken && currentToken == eof)
+		// if (currentToken == eof && holds_alternative<Terminal>(X) && get<Terminal>(X) == *currentToken)
+		if (X == *currentToken && currentToken == eof)
 			return; // fully parsed program, and success
 
-		if (X == currentToken && Traits::isTerminal(*currentToken)) {
+		if (std::holds_alternative<Terminal>(*currentToken)
+			&& X == std::get<Terminal>(*currentToken))
+		{
 			stack_.pop();
 			++currentToken;
 		}
 
-		if (Traits::isNonTerminal(X)) {
+		if (std::holds_alternative<NonTerminal>(X)) {
 			std::optional<Handle> handle = getHandleFor(X, *currentToken);
 			if (handle.has_value()) {
 				// XXX applying production ``X -> handle``
 				stack_.pop();
-				for (auto x = handle->rbegin(); x != handle->rend(); x++) {
-					stack_.push(*x);
+				for (auto symbol : reversed(*handle)) {
+					stack_.push(symbol);
 				}
 			} else {
 				// XXX parse error. Cannot reduce non-terminal X. No production found.
+				report_->syntaxError(SourceLocation{/*TODO*/}, "Syntax error detected."); // TODO: more elaborated diagnostics
 			}
 		}
 	}

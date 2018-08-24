@@ -8,6 +8,7 @@
 #include <klex/cfg/GrammarParser.h>
 #include <klex/cfg/GrammarLexer.h>
 #include <klex/cfg/Grammar.h>
+#include <klex/regular/RuleParser.h>
 #include <klex/Report.h>
 
 #include <algorithm>
@@ -29,6 +30,9 @@ Grammar GrammarParser::parse() {
 
 	while (currentToken() != Token::Eof) {
 		switch (currentToken()) {
+			case Token::Token:
+				parseTokenBlock();
+				break;
 			case Token::Identifier:
 				// GrammarRule ::= NonTerminal '::=' Handle ('|' Handle)* ';'
 				parseRule();
@@ -60,7 +64,7 @@ void GrammarParser::consumeToken(Token expectedToken) {
 }
 
 void GrammarParser::parseRule() {
-	// GrammarRule				 ::= NonTerminal '::=' Handle ('|' Handle)* ';'
+	// GrammarRule  ::= NonTerminal '::=' Handle ('|' Handle)* ';'
 
 	string name { currentLiteral() };
 	consumeToken(Token::Identifier);
@@ -79,8 +83,8 @@ void GrammarParser::parseRule() {
 }
 
 Handle GrammarParser::parseHandle() {
-	// Handle							::= (Terminal | NonTerminal)* HandleRef?
-	// HandleRef					 ::= '{' Identifier '}'
+	// Handle     ::= (Terminal | NonTerminal)* HandleRef?
+	// HandleRef  ::= '{' Identifier '}'
 
 	// N.B.: FOLLOW-set { ';', '|' }
 
@@ -117,6 +121,30 @@ Handle GrammarParser::parseHandle() {
 	}
 
 	// TODO: parse '{' Identifier '}'
+}
+
+void GrammarParser::parseTokenBlock()
+{
+	// TokenBlock ::= 'token' '{' TokenDef '}'
+	// TokenDef   ::= IDENT '::=' RegExpr
+	// RegExpr    ::= <regular expression>
+
+	consumeToken(); // "token"
+	consumeToken(Token::SetOpen);
+
+	string klexDef;
+	while (currentToken() == Token::Identifier)
+	{
+		klexDef += currentLiteral();
+		klexDef += lexer_.consumeLiteralUntilLF();
+
+		consumeToken(); // parses first token on next line
+	}
+
+	regular::RuleList rules = regular::RuleParser{klexDef}.parseRules(); // TODO: currentLine, currentColumn
+	grammar_.explicitTerminals.insert(grammar_.explicitTerminals.end(), rules.begin(), rules.end());
+
+	consumeToken(Token::SetClose);
 }
 
 // vim:ts=4:sw=4:noet

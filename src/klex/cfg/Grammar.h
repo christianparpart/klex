@@ -7,7 +7,10 @@
 
 #pragma once
 
+#include <klex/regular/Rule.h>
+
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <sstream>
@@ -21,6 +24,9 @@ namespace klex::cfg {
 struct Terminal {
 	std::string literal;			// such as "if"
 	std::string name;				// such as "KW_IF"
+
+	// pre-parsed rule (XXX: could be made `variant<Rule, string> literal` instead
+	std::optional<regular::Rule> rule;
 
 	bool operator<(const Terminal& rhs) const noexcept { return literal < rhs.literal; }
 };
@@ -73,10 +79,11 @@ struct Production {
 };
 
 struct Grammar {
-	std::vector<Production> productions;
+	std::vector<regular::Rule> explicitTerminals;     //!< List of terminals with explicit definitions.
+	std::vector<Production> productions;              //!< List of grammar productions rules.
 
-	std::vector<NonTerminal> nonterminals;
-	std::vector<Terminal> terminals;
+	std::vector<NonTerminal> nonterminals;            //!< Accumulated list of non-terminals, filled by finalize().
+	std::vector<Terminal> terminals;                  //!< Accumulated list of terminals (including explicitely specified terminals), filled by finalize().
 
 	std::vector<const Production*> getProductions(const NonTerminal& nt) const;
 	std::vector<Production*> getProductions(const NonTerminal& nt);
