@@ -43,20 +43,25 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/klex/sysconfig.h.cmake
 
 # ----------------------------------------------------------------------------
 add_library(klex STATIC
-    src/klex/Alphabet.cc
-    src/klex/Compiler.cc
-    src/klex/DFA.cc
-    src/klex/DFABuilder.cc
-    src/klex/DFAMinimizer.cc
-    src/klex/DotWriter.cc
-    src/klex/MultiDFA.cc
-    src/klex/NFA.cc
-    src/klex/NFABuilder.cc
-    src/klex/RegExpr.cc
-    src/klex/RegExprParser.cc
-    src/klex/RuleParser.cc
-    src/klex/State.cc
-    src/klex/Symbols.cc
+    src/klex/Report.cc
+    src/klex/cfg/Grammar.cc
+    src/klex/cfg/GrammarLexer.cc
+    src/klex/cfg/GrammarParser.cc
+    src/klex/cfg/ll/SyntaxTable.cc
+    src/klex/regular/Alphabet.cc
+    src/klex/regular/Compiler.cc
+    src/klex/regular/DFA.cc
+    src/klex/regular/DFABuilder.cc
+    src/klex/regular/DFAMinimizer.cc
+    src/klex/regular/DotWriter.cc
+    src/klex/regular/MultiDFA.cc
+    src/klex/regular/NFA.cc
+    src/klex/regular/NFABuilder.cc
+    src/klex/regular/RegExpr.cc
+    src/klex/regular/RegExprParser.cc
+    src/klex/regular/RuleParser.cc
+    src/klex/regular/State.cc
+    src/klex/regular/Symbols.cc
     src/klex/util/Flags.cc
     )
 
@@ -97,15 +102,20 @@ endif()
 # ----------------------------------------------------------------------------
 if(KLEX_TESTS)
   add_executable(klex_test
-      src/klex/DFABuilder_test.cc
-      src/klex/DotWriter_test.cc
-      src/klex/Lexer_test.cc
-      src/klex/NFA_test.cc
-      src/klex/RegExprParser_test.cc
-      src/klex/RuleParser_test.cc
-      src/klex/State_test.cc
-      src/klex/Symbols_test.cc
+      src/klex/cfg/GrammarLexer_test.cc
+      src/klex/cfg/GrammarParser_test.cc
+      src/klex/cfg/Grammar_test.cc
+      src/klex/cfg/ll/Analyzer_test.cc
+      src/klex/cfg/ll/SyntaxTable_test.cc
       src/klex/klex_test.cc
+      src/klex/regular/DFABuilder_test.cc
+      src/klex/regular/DotWriter_test.cc
+      src/klex/regular/Lexer_test.cc
+      src/klex/regular/NFA_test.cc
+      src/klex/regular/RegExprParser_test.cc
+      src/klex/regular/RuleParser_test.cc
+      src/klex/regular/State_test.cc
+      src/klex/regular/Symbols_test.cc
       src/klex/util/AnsiColor.cc
       src/klex/util/testing.cc
       )

@@ -1,0 +1,57 @@
+# vim:syntax=klex
+
+# keywords
+If              ::= "if"
+Else            ::= "else"
+While           ::= "while"
+Do              ::= "do"
+
+# builtin types
+Void            ::= "void"
+Int             ::= "int"
+Signed          ::= "signed"
+Unsigned        ::= "unsigned"
+
+Auto            ::= "auto"
+Const           ::= "const"
+ConstExpr       ::= "constexpr"
+
+# symbols
+CurlyOpen       ::= "{"
+CurlyClose      ::= "}"
+RndOpen         ::= "("
+RndClose        ::= ")"
+BrOpen          ::= "["
+BrClose         ::= "]"
+Assign          ::= "="
+Not             ::= "!"
+NotEqual        ::= "!="
+Equal           ::= "=="
+Less            ::= "<"
+Greater         ::= ">"
+LessEqu         ::= "<="
+GreaterEqu      ::= ">="
+Shl             ::= "<<"
+Shr             ::= ">>"
+Plus            ::= "+"
+Minus           ::= "-"
+Mul             ::= "*"
+Div             ::= "/"
+PlusPlus        ::= "++"
+MinusMinus      ::= "--"
+PlusAssign      ::= "+="
+MinusAssign     ::= "-="
+MulAssign       ::= "*="
+DivAssign       ::= "/="
+Modulo          ::= "%"
+ModuloAssign    ::= "%="
+
+# Misc
+Spacing(ignore)     ::= [\s\t\n]+
+CxxComment(ignore)  ::= "//"[^$]*
+CComment(ignore)    ::= "/*".*"*/"
+Identifier          ::= [a-zA-Z_][a-zA-Z_0-9]*
+NumberLiteral       ::= [0-9]|0x[0-9a-fA-F]+
+Eof                 ::= <<EOF>>
+StringLiteral       ::= \"([^\"\n]|\\\")*\"
+CharLiteral         ::= '(.)'

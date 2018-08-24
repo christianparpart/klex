@@ -528,12 +528,13 @@ void UnitTest::log(const std::string& message) {
     do {
       eol = message.find('\n', bol);
       std::string line = message.substr(bol, eol - bol);
-      std::cerr << fmt::format("{}{}.{}:{} {}\n",
-                               colorsLog,
-                               currentTestCase_->testCaseName(),
-                               currentTestCase_->testName(),
-                               colorsReset,
-                               line);
+      if (eol + 1 < message.size() || (!line.empty() && line != "\n"))
+        std::cerr << fmt::format("{}{}.{}:{} {}\n",
+                                 colorsLog,
+                                 currentTestCase_->testCaseName(),
+                                 currentTestCase_->testName(),
+                                 colorsReset,
+                                 line);
       bol = eol + 1;
     } while (eol != std::string::npos);
   }

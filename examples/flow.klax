@@ -1,0 +1,52 @@
+# vim:syntax=klax
+
+token {
+  # explicit token definitions, in klex lexer format:
+  Space(ignore) ::= [\s\t\n]+
+  IDENT         ::= [a-zA-Z_][a-zA-Z0-9_]*
+}
+
+Start       ::= FlowProgram
+FlowProgram ::= HandlerDef*
+HandlerDef  ::= 'handler' IDENT BlockStmt
+VarDecl     ::= 'var' IDENT '=' Expr ';'
+
+# statements
+Stmt        ::= IfStmt | WhileStmt | AssignStmt | CallStmt | EmptyStmt
+IfStmt      ::= 'if' Expr BlockStmt
+              | 'if' Expr BlockStmt 'else' BlockStmt
+WhileStmt   ::= 'while' Expr BlockStmt
+AssignStmt  ::= IDENT '=' Expr ';'
+BlockStmt   ::= '{' VarDecl* Stmt '}'
+CallStmt    ::= IDENT ';'
+              | IDENT CallArgs ';'
+              | IDENT '(' CallArgs ')' ';'
+CallArgs    ::= Expr (',' Expr)*
+              | NamedArg (',' NamedArg)*
+NamedArg    ::= IDENT ':' Expr
+
+EmptyStmt   ::= ';'
+
+# expressions
+Expr        ::= LogicExpr
+LogicExpr   ::= NotExpr 'and' NotExpr
+              | NotExpr 'xor' NotExpr
+              | NotExpr 'or' NotExpr
+NotExpr     ::= '?' NotExpr
+              | RelExpr
+RelExpr     ::= AddExpr _RelOp AddExpr
+              | AddExpr
+_RelOp      ::= '==' | '!=' | '<=' | '>=' | '<' | '>' | '=~' | '=^' | '=$' | 'in'
+
+# TODO the parser must automatically rewrite the rule
+AddExpr     ::= MulExpr ('*' MulExpr)*
+
+MulExpr     ::= BitNotExpr ('*' BitNotExpr)+
+              | BitNotExpr ('/' BitNotExpr)+
+              | BitNotExpr
+BitNotExpr  ::=
+NegExpr     ::=
+PrimaryExpr ::=
+LiteralExpr ::= Number | IPv4
+CastExpr    ::= TypeName '(' Expr ')'
+TypeName    ::= 'bool' | 'int' | 'string'
