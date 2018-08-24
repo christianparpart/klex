@@ -13,95 +13,107 @@ using namespace std;
 using namespace klex;
 
 // {{{ Message
-std::string Report::Message::to_string() const {
-  switch (type) {
-    case Type::Warning:
-      return fmt::format("[{}] {}", sourceLocation, text);
-    case Type::LinkError:
-      return fmt::format("{}: {}", type, text);
-    default:
-      return fmt::format("[{}] {}: {}", sourceLocation, type, text);
-  }
+std::string Report::Message::to_string() const
+{
+	switch (type)
+	{
+		case Type::Warning:
+			return fmt::format("[{}] {}", sourceLocation, text);
+		case Type::LinkError:
+			return fmt::format("{}: {}", type, text);
+		default:
+			return fmt::format("[{}] {}: {}", sourceLocation, type, text);
+	}
 }
 
-bool Report::Message::operator==(const Message& other) const noexcept {
-  // XXX ignore SourceLocation's filename & end
-  return type == other.type &&
-         sourceLocation.offset == other.sourceLocation.offset &&
-         text == other.text;
+bool Report::Message::operator==(const Message& other) const noexcept
+{
+	// XXX ignore SourceLocation's filename & end
+	return type == other.type && sourceLocation.offset == other.sourceLocation.offset && text == other.text;
 }
 // }}}
 // {{{ ConsoleReport
-void ConsoleReport::onMessage(Message message) {
-  switch (message.type) {
-    case Type::Warning:
-      std::cerr << fmt::format("Warning: {}\n", message);
-      break;
-    default:
-      std::cerr << fmt::format("Error: {}\n", message);
-      break;
-  }
+void ConsoleReport::onMessage(Message message)
+{
+	switch (message.type)
+	{
+		case Type::Warning:
+			std::cerr << fmt::format("Warning: {}\n", message);
+			break;
+		default:
+			std::cerr << fmt::format("Error: {}\n", message);
+			break;
+	}
 }
 // }}}
 // {{{ BufferedReport
-void BufferedReport::onMessage(Message msg) {
-  messages_.emplace_back(std::move(msg));
+void BufferedReport::onMessage(Message msg)
+{
+	messages_.emplace_back(std::move(msg));
 }
 
-void BufferedReport::clear() {
-  messages_.clear();
+void BufferedReport::clear()
+{
+	messages_.clear();
 }
 
-std::string BufferedReport::to_string() const {
-  std::stringstream sstr;
-  for (const Message& message: messages_) {
-    switch (message.type) {
-      case Type::Warning:
-        sstr << "Warning: " << message.to_string() << "\n";
-        break;
-      default:
-        sstr << "Error: " << message.to_string() << "\n";
-        break;
-    }
-  }
-  return sstr.str();
+std::string BufferedReport::to_string() const
+{
+	std::stringstream sstr;
+	for (const Message& message : messages_)
+	{
+		switch (message.type)
+		{
+			case Type::Warning:
+				sstr << "Warning: " << message.to_string() << "\n";
+				break;
+			default:
+				sstr << "Error: " << message.to_string() << "\n";
+				break;
+		}
+	}
+	return sstr.str();
 }
 
-bool BufferedReport::operator==(const BufferedReport& other) const noexcept {
-  if (size() != other.size())
-    return false;
+bool BufferedReport::operator==(const BufferedReport& other) const noexcept
+{
+	if (size() != other.size())
+		return false;
 
-  for (size_t i = 0, e = size(); i != e; ++i)
-    if (messages_[i] != other.messages_[i])
-      return false;
+	for (size_t i = 0, e = size(); i != e; ++i)
+		if (messages_[i] != other.messages_[i])
+			return false;
 
-  return true;
+	return true;
 }
 
-bool BufferedReport::contains(const Message& message) const noexcept {
-  for (const Message& m: messages_)
-    if (m == message)
-      return true;
+bool BufferedReport::contains(const Message& message) const noexcept
+{
+	for (const Message& m : messages_)
+		if (m == message)
+			return true;
 
-  return false;
+	return false;
 }
 
-DifferenceReport difference(const BufferedReport& first, const BufferedReport& second) {
-  DifferenceReport diff;
+DifferenceReport difference(const BufferedReport& first, const BufferedReport& second)
+{
+	DifferenceReport diff;
 
-  for (const Report::Message& m: first)
-    if (!second.contains(m))
-      diff.first.push_back(m);
+	for (const Report::Message& m : first)
+		if (!second.contains(m))
+			diff.first.push_back(m);
 
-  for (const Report::Message& m: second)
-    if (!first.contains(m))
-      diff.second.push_back(m);
+	for (const Report::Message& m : second)
+		if (!first.contains(m))
+			diff.second.push_back(m);
 
-  return diff;
+	return diff;
 }
 
-std::ostream& operator<<(std::ostream& os, const BufferedReport& report) {
-  os << report.to_string();
-  return os;
+std::ostream& operator<<(std::ostream& os, const BufferedReport& report)
+{
+	os << report.to_string();
+	return os;
 }
 // }}}

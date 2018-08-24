@@ -17,43 +17,43 @@ class DFA;
 class State;
 
 class DFABuilder {
- public:
-  //! Map of rules that shows which rule is overshadowed by which other rule.
-  using OvershadowMap = std::vector<std::pair<Tag, Tag>>;
+  public:
+	//! Map of rules that shows which rule is overshadowed by which other rule.
+	using OvershadowMap = std::vector<std::pair<Tag, Tag>>;
 
-  DFABuilder(NFA nfa) : nfa_{std::move(nfa)} {}
+	DFABuilder(NFA nfa) : nfa_{std::move(nfa)} {}
 
-  /**
-   * Constructs a DFA out of the NFA.
-   *
-   * @param overshadows if not nullptr, it will be used to store semantic information about
-   *                    which rule tags have been overshadowed by which.
-   */
-  DFA construct(OvershadowMap* overshadows = nullptr);
+	/**
+	 * Constructs a DFA out of the NFA.
+	 *
+	 * @param overshadows if not nullptr, it will be used to store semantic information about
+	 *                    which rule tags have been overshadowed by which.
+	 */
+	DFA construct(OvershadowMap* overshadows = nullptr);
 
- private:
-  struct TransitionTable;
+  private:
+	struct TransitionTable;
 
-  DFA constructDFA(const std::vector<StateIdVec>& Q,
-                   const TransitionTable& T,
-                   OvershadowMap* overshadows) const;
+	DFA constructDFA(const std::vector<StateIdVec>& Q, const TransitionTable& T,
+					 OvershadowMap* overshadows) const;
 
-  /**
-   * Finds @p t in @p Q and returns its offset (aka configuration number) or -1 if not found.
-   */
-  static int configurationNumber(const std::vector<StateIdVec>& Q, const StateIdVec& t);
+	/**
+	 * Finds @p t in @p Q and returns its offset (aka configuration number) or -1 if not found.
+	 */
+	static int configurationNumber(const std::vector<StateIdVec>& Q, const StateIdVec& t);
 
-  /**
-   * Determines the tag to use for the deterministic state representing @p q from non-deterministic FA @p fa.
-   *
-   * @param q the set of states that reflect a single state in the DFA equal to the input FA
-   *
-   * @returns the determined tag or std::nullopt if none
-   */
-  std::optional<Tag> determineTag(const StateIdVec& q, std::map<Tag, Tag>* overshadows) const;
+	/**
+	 * Determines the tag to use for the deterministic state representing @p q from non-deterministic FA @p
+	 * fa.
+	 *
+	 * @param q the set of states that reflect a single state in the DFA equal to the input FA
+	 *
+	 * @returns the determined tag or std::nullopt if none
+	 */
+	std::optional<Tag> determineTag(const StateIdVec& q, std::map<Tag, Tag>* overshadows) const;
 
- private:
-  const NFA nfa_;
+  private:
+	const NFA nfa_;
 };
 
-} // namespace klex::regular
+}  // namespace klex::regular

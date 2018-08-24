@@ -27,29 +27,28 @@ class DFA;
  * Generates a finite automaton from the given input (a regular expression).
  */
 class NFABuilder : public RegExprVisitor {
- public:
-  explicit NFABuilder()
-      : fa_{} {}
+  public:
+	explicit NFABuilder() : fa_{} {}
 
-  NFA construct(const RegExpr* re, Tag tag);
+	NFA construct(const RegExpr* re, Tag tag);
 
- private:
-  NFA construct(const RegExpr* re);
-  void visit(LookAheadExpr& lookaheadExpr) override;
-  void visit(ConcatenationExpr& concatenationExpr) override;
-  void visit(AlternationExpr& alternationExpr) override;
-  void visit(CharacterExpr& characterExpr) override;
-  void visit(CharacterClassExpr& characterClassExpr) override;
-  void visit(ClosureExpr& closureExpr) override;
-  void visit(BeginOfLineExpr& eolExpr) override;
-  void visit(EndOfLineExpr& eolExpr) override;
-  void visit(EndOfFileExpr& eofExpr) override;
-  void visit(DotExpr& dotExpr) override;
-  void visit(EmptyExpr& emptyExpr) override;
+  private:
+	NFA construct(const RegExpr* re);
+	void visit(LookAheadExpr& lookaheadExpr) override;
+	void visit(ConcatenationExpr& concatenationExpr) override;
+	void visit(AlternationExpr& alternationExpr) override;
+	void visit(CharacterExpr& characterExpr) override;
+	void visit(CharacterClassExpr& characterClassExpr) override;
+	void visit(ClosureExpr& closureExpr) override;
+	void visit(BeginOfLineExpr& eolExpr) override;
+	void visit(EndOfLineExpr& eolExpr) override;
+	void visit(EndOfFileExpr& eofExpr) override;
+	void visit(DotExpr& dotExpr) override;
+	void visit(EmptyExpr& emptyExpr) override;
 
- private:
-  NFA fa_;
-  std::optional<StateId> acceptState_;
+  private:
+	NFA fa_;
+	std::optional<StateId> acceptState_;
 };
 
-} // namespace klex::regular
+}  // namespace klex::regular

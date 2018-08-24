@@ -30,17 +30,21 @@ using AcceptMap = std::map<StateId, Tag>;
  */
 std::string to_string(const StateIdVec& S, std::string_view stateLabelPrefix = "n");
 
-} // namespace klex::regular
+}  // namespace klex::regular
 
 namespace fmt {
-  template<>
-  struct formatter<klex::regular::StateIdVec> {
-    template <typename ParseContext>
-    constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+template <>
+struct formatter<klex::regular::StateIdVec> {
+	template <typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
 
-    template <typename FormatContext>
-    constexpr auto format(const klex::regular::StateIdVec& v, FormatContext &ctx) {
-      return format_to(ctx.begin(), "{}", klex::regular::to_string(v));
-    }
-  };
-}
+	template <typename FormatContext>
+	constexpr auto format(const klex::regular::StateIdVec& v, FormatContext& ctx)
+	{
+		return format_to(ctx.begin(), "{}", klex::regular::to_string(v));
+	}
+};
+}  // namespace fmt

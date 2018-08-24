@@ -9,7 +9,7 @@
 
 namespace klex::util {
 
-template<typename Container>
+template <typename Container>
 struct _reversed {
 	const Container& container;
 
@@ -17,11 +17,14 @@ struct _reversed {
 	auto end() { return container.crend(); }
 };
 
-template<typename Container>
-inline auto reversed(const Container& c) { return _reversed<Container>{c}; }
+template <typename Container>
+inline auto reversed(const Container& c)
+{
+	return _reversed<Container>{c};
+}
 
 // TODO: create INDEXED_ITERATORS indexed(container); so something like that's possible:
 //
 // for (auto && [index, value] : container) { ... }
 
-} // namespace klex::util
+}  // namespace klex::util

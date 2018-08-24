@@ -7,36 +7,46 @@
 
 #include <klex/regular/Alphabet.h>
 #include <klex/regular/Symbols.h>
-#include <sstream>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
 
 namespace klex::regular {
 
 #if 0
-#define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
+#	define DEBUG(msg, ...)                                     \
+		do                                                      \
+		{                                                       \
+			std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
+		} while (0)
 #else
-#define DEBUG(msg, ...) do { } while (0)
+#	define DEBUG(msg, ...) \
+		do                  \
+		{                   \
+		} while (0)
 #endif
 
-void Alphabet::insert(Symbol ch) {
-  if (alphabet_.find(ch) == alphabet_.end()) {
-    DEBUG("Alphabet: insert '{:}'", prettySymbol(ch));
-    alphabet_.insert(ch);
-  }
+void Alphabet::insert(Symbol ch)
+{
+	if (alphabet_.find(ch) == alphabet_.end())
+	{
+		DEBUG("Alphabet: insert '{:}'", prettySymbol(ch));
+		alphabet_.insert(ch);
+	}
 }
 
-std::string Alphabet::to_string() const {
-  std::stringstream sstr;
+std::string Alphabet::to_string() const
+{
+	std::stringstream sstr;
 
-  sstr << '{';
+	sstr << '{';
 
-  for (Symbol c : alphabet_)
-    sstr << prettySymbol(c);
+	for (Symbol c : alphabet_)
+		sstr << prettySymbol(c);
 
-  sstr << '}';
+	sstr << '}';
 
-  return std::move(sstr.str());
+	return std::move(sstr.str());
 }
 
-} // namespace klex::regular
+}  // namespace klex::regular

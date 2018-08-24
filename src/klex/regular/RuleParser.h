@@ -19,143 +19,154 @@
 namespace klex::regular {
 
 class RuleParser {
- public:
-  explicit RuleParser(std::unique_ptr<std::istream> input);
-  explicit RuleParser(std::string input);
+  public:
+	explicit RuleParser(std::unique_ptr<std::istream> input);
+	explicit RuleParser(std::string input);
 
-  RuleList parseRules();
+	RuleList parseRules();
 
-  class UnexpectedChar;
-  class UnexpectedToken;
-  class InvalidRuleOption;
-  class InvalidRefRuleWithConditions;
-  class DuplicateRule;
+	class UnexpectedChar;
+	class UnexpectedToken;
+	class InvalidRuleOption;
+	class InvalidRefRuleWithConditions;
+	class DuplicateRule;
 
- private:
-  void parseRule(RuleList& rules);
-  std::vector<std::string> parseRuleConditions();
-  void parseBasicRule(RuleList& rules, std::vector<std::string>&& conditions);
-  std::string parseExpression();
+  private:
+	void parseRule(RuleList& rules);
+	std::vector<std::string> parseRuleConditions();
+	void parseBasicRule(RuleList& rules, std::vector<std::string>&& conditions);
+	std::string parseExpression();
 
- private:
-  std::string consumeToken();
-  void consumeAnySP();
-  void consumeSP();
-  void consumeAssoc();
-  void consumeSpace();
-  char currentChar() const noexcept;
-  char consumeChar(char ch);
-  char consumeChar();
-  bool eof() const noexcept;
-  std::string replaceRefs(const std::string& pattern);
+  private:
+	std::string consumeToken();
+	void consumeAnySP();
+	void consumeSP();
+	void consumeAssoc();
+	void consumeSpace();
+	char currentChar() const noexcept;
+	char consumeChar(char ch);
+	char consumeChar();
+	bool eof() const noexcept;
+	std::string replaceRefs(const std::string& pattern);
 
- private:
-  std::unique_ptr<std::istream> stream_;
-  std::map<std::string, Rule> refRules_;
-  Rule* lastParsedRule_;
-  bool lastParsedRuleIsRef_;
-  char currentChar_;
-  unsigned int line_;
-  unsigned int column_;
-  unsigned int offset_;
-  int nextTag_;
+  private:
+	std::unique_ptr<std::istream> stream_;
+	std::map<std::string, Rule> refRules_;
+	Rule* lastParsedRule_;
+	bool lastParsedRuleIsRef_;
+	char currentChar_;
+	unsigned int line_;
+	unsigned int column_;
+	unsigned int offset_;
+	int nextTag_;
 };
 
 class RuleParser::InvalidRefRuleWithConditions : public std::runtime_error {
- public:
-  InvalidRefRuleWithConditions(unsigned line, unsigned column, Rule rule)
-      : std::runtime_error{fmt::format("{}:{}: Invalid rule \"{}\". Reference rules must not be labelled with conditions.",
-          line, column, rule.name)},
-      rule_{std::move(rule)} {}
+  public:
+	InvalidRefRuleWithConditions(unsigned line, unsigned column, Rule rule)
+		: std::runtime_error{fmt::format(
+			  "{}:{}: Invalid rule \"{}\". Reference rules must not be labelled with conditions.", line,
+			  column, rule.name)},
+		  rule_{std::move(rule)}
+	{
+	}
 
-  const Rule& rule() const noexcept { return rule_; }
+	const Rule& rule() const noexcept { return rule_; }
 
- private:
-  const Rule rule_;
+  private:
+	const Rule rule_;
 };
 
 class RuleParser::DuplicateRule : public std::runtime_error {
- public:
-  DuplicateRule(Rule duplicate, const Rule& other)
-      : std::runtime_error{fmt::format("{}:{}: Duplicated rule definition with name \"{}\", previously defined in {}:{}.",
-            duplicate.line, duplicate.column, duplicate.name,
-            other.line, other.column)},
-        duplicate_{std::move(duplicate)},
-        other_{other} {}
+  public:
+	DuplicateRule(Rule duplicate, const Rule& other)
+		: std::runtime_error{fmt::format(
+			  "{}:{}: Duplicated rule definition with name \"{}\", previously defined in {}:{}.",
+			  duplicate.line, duplicate.column, duplicate.name, other.line, other.column)},
+		  duplicate_{std::move(duplicate)},
+		  other_{other}
+	{
+	}
 
-  const Rule& duplicate() const noexcept { return duplicate_; }
-  const Rule& other() const noexcept { return other_; }
+	const Rule& duplicate() const noexcept { return duplicate_; }
+	const Rule& other() const noexcept { return other_; }
 
- private:
-  const Rule duplicate_;
-  const Rule& other_;
+  private:
+	const Rule duplicate_;
+	const Rule& other_;
 };
 
 class RuleParser::UnexpectedToken : public std::runtime_error {
- public:
-  UnexpectedToken(unsigned offset, char actual, std::string expected)
-      : std::runtime_error{fmt::format("{}: Unexpected token {}, expected <{}> instead.",
-          offset, actual, expected)},
-        offset_{offset},
-        actual_{std::move(actual)},
-        expected_{std::move(expected)} {}
+  public:
+	UnexpectedToken(unsigned offset, char actual, std::string expected)
+		: std::runtime_error{fmt::format("{}: Unexpected token {}, expected <{}> instead.", offset, actual,
+										 expected)},
+		  offset_{offset},
+		  actual_{std::move(actual)},
+		  expected_{std::move(expected)}
+	{
+	}
 
-  unsigned offset() const noexcept { return offset_; }
-  char actual() const noexcept { return actual_; }
-  const std::string& expected() const noexcept { return expected_; }
+	unsigned offset() const noexcept { return offset_; }
+	char actual() const noexcept { return actual_; }
+	const std::string& expected() const noexcept { return expected_; }
 
- private:
-  unsigned offset_;
-  unsigned line_;
-  unsigned column_;
-  char actual_;
-  std::string expected_;
+  private:
+	unsigned offset_;
+	unsigned line_;
+	unsigned column_;
+	char actual_;
+	std::string expected_;
 };
 
 class RuleParser::UnexpectedChar : public std::runtime_error {
- public:
-  UnexpectedChar(unsigned int line, unsigned int column, char actual, char expected)
-      : std::runtime_error{fmt::format("[{}:{}] Unexpected char {}, expected {} instead.",
-          line, column, quoted(actual), quoted(expected))},
-        line_{line},
-        column_{column},
-        actual_{actual},
-        expected_{expected} {}
+  public:
+	UnexpectedChar(unsigned int line, unsigned int column, char actual, char expected)
+		: std::runtime_error{fmt::format("[{}:{}] Unexpected char {}, expected {} instead.", line, column,
+										 quoted(actual), quoted(expected))},
+		  line_{line},
+		  column_{column},
+		  actual_{actual},
+		  expected_{expected}
+	{
+	}
 
-  unsigned int line() const noexcept { return line_; }
-  unsigned int column() const noexcept { return column_; }
-  char actual() const noexcept { return actual_; }
-  char expected() const noexcept { return expected_; }
+	unsigned int line() const noexcept { return line_; }
+	unsigned int column() const noexcept { return column_; }
+	char actual() const noexcept { return actual_; }
+	char expected() const noexcept { return expected_; }
 
- private:
-  static std::string quoted(char ch) {
-    if (ch < 0)
-      return "<<EOF>>";
-    else
-      return fmt::format("'{}'", ch);
-  }
+  private:
+	static std::string quoted(char ch)
+	{
+		if (ch < 0)
+			return "<<EOF>>";
+		else
+			return fmt::format("'{}'", ch);
+	}
 
- private:
-  unsigned int line_;
-  unsigned int column_;
-  char actual_;
-  char expected_;
+  private:
+	unsigned int line_;
+	unsigned int column_;
+	char actual_;
+	char expected_;
 };
 
 class RuleParser::InvalidRuleOption : public std::runtime_error {
- public:
-  InvalidRuleOption(unsigned offset, std::string option)
-      : std::runtime_error{fmt::format("{}: Invalid rule option \"{}\".",
-          offset, option)},
-        offset_{offset},
-        option_{option} {}
+  public:
+	InvalidRuleOption(unsigned offset, std::string option)
+		: std::runtime_error{fmt::format("{}: Invalid rule option \"{}\".", offset, option)},
+		  offset_{offset},
+		  option_{option}
+	{
+	}
 
-  unsigned offset() const noexcept { return offset_; }
-  const std::string& option() const noexcept { return option_; }
+	unsigned offset() const noexcept { return offset_; }
+	const std::string& option() const noexcept { return option_; }
 
- private:
-  unsigned offset_;
-  std::string option_;
+  private:
+	unsigned offset_;
+	std::string option_;
 };
 
-} // namespace klex::regular
+}  // namespace klex::regular

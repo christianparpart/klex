@@ -7,9 +7,9 @@
 #pragma once
 
 #include <klex/regular/Symbols.h>
+#include <fmt/format.h>
 #include <set>
 #include <string>
-#include <fmt/format.h>
 
 namespace klex::regular {
 
@@ -17,34 +17,38 @@ namespace klex::regular {
  * Represents the alphabet of a finite automaton or regular expression.
  */
 class Alphabet {
- public:
-  using set_type = std::set<Symbol>;
-  using iterator = set_type::iterator;
+  public:
+	using set_type = std::set<Symbol>;
+	using iterator = set_type::iterator;
 
-  size_t size() const noexcept { return alphabet_.size(); }
+	size_t size() const noexcept { return alphabet_.size(); }
 
-  void insert(Symbol ch);
+	void insert(Symbol ch);
 
-  std::string to_string() const;
+	std::string to_string() const;
 
-  const iterator begin() const { return alphabet_.begin(); }
-  const iterator end() const { return alphabet_.end(); }
+	const iterator begin() const { return alphabet_.begin(); }
+	const iterator end() const { return alphabet_.end(); }
 
- private:
-  set_type alphabet_;
+  private:
+	set_type alphabet_;
 };
 
-} // namespace klex::regular
+}  // namespace klex::regular
 
 namespace fmt {
-  template<>
-  struct formatter<klex::regular::Alphabet> {
-    template <typename ParseContext>
-    constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+template <>
+struct formatter<klex::regular::Alphabet> {
+	template <typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
 
-    template <typename FormatContext>
-    constexpr auto format(const klex::regular::Alphabet& v, FormatContext &ctx) {
-      return format_to(ctx.begin(), "{}", v.to_string());
-    }
-  };
-}
+	template <typename FormatContext>
+	constexpr auto format(const klex::regular::Alphabet& v, FormatContext& ctx)
+	{
+		return format_to(ctx.begin(), "{}", v.to_string());
+	}
+};
+}  // namespace fmt

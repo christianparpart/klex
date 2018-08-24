@@ -19,47 +19,45 @@ constexpr CharCatId ErrorCharCat = static_cast<CharCatId>(-1);
 /**
  * Represents an error-state, such as invalid input character or unexpected EOF.
  */
-constexpr StateId ErrorState {808080}; // static_cast<StateId>(-1);
+constexpr StateId ErrorState{808080};  // static_cast<StateId>(-1);
 
 /**
  * Transition mapping API to map the input (currentState, charCat) to (newState).
  */
 class TransitionMap {
- public:
-  using Container = std::map<StateId, std::map<Symbol, StateId>>;
+  public:
+	using Container = std::map<StateId, std::map<Symbol, StateId>>;
 
-  TransitionMap()
-      : mapping_{} {}
+	TransitionMap() : mapping_{} {}
 
-  TransitionMap(Container mapping)
-      : mapping_{std::move(mapping)} {}
+	TransitionMap(Container mapping) : mapping_{std::move(mapping)} {}
 
-  /**
-   * Defines a new mapping for (currentState, charCat) to (nextState).
-   */
-  void define(StateId currentState, Symbol charCat, StateId nextState);
+	/**
+	 * Defines a new mapping for (currentState, charCat) to (nextState).
+	 */
+	void define(StateId currentState, Symbol charCat, StateId nextState);
 
-  /**
-   * Retrieves the next state for the input (currentState, charCat).
-   *
-   * @returns the transition from (currentState, charCat) to (nextState) or ErrorState if not defined.
-   */
-  StateId apply(StateId currentState, Symbol charCat) const;
+	/**
+	 * Retrieves the next state for the input (currentState, charCat).
+	 *
+	 * @returns the transition from (currentState, charCat) to (nextState) or ErrorState if not defined.
+	 */
+	StateId apply(StateId currentState, Symbol charCat) const;
 
-  /**
-   * Retrieves a list of all available states.
-   */
-  std::vector<StateId> states() const;
+	/**
+	 * Retrieves a list of all available states.
+	 */
+	std::vector<StateId> states() const;
 
-  /**
-   * Retrieves a map of all transitions from given state @p inputState.
-   */
-  std::map<Symbol, StateId> map(StateId inputState) const;
+	/**
+	 * Retrieves a map of all transitions from given state @p inputState.
+	 */
+	std::map<Symbol, StateId> map(StateId inputState) const;
 
- private:
-  Container mapping_;
+  private:
+	Container mapping_;
 };
 
-} // namespace klex::regular
+}  // namespace klex::regular
 
 #include <klex/regular/TransitionMap-inl.h>

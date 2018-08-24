@@ -6,21 +6,21 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <klex/regular/Symbols.h>
-#include <klex/regular/State.h>
 #include <klex/regular/DFA.h>
+#include <klex/regular/State.h>
+#include <klex/regular/Symbols.h>
 #include <map>
 #include <string>
 
 namespace klex::regular {
 
 struct MultiDFA {
-  using InitialStateMap = std::map<std::string, StateId>;
+	using InitialStateMap = std::map<std::string, StateId>;
 
-  InitialStateMap initialStates;
-  DFA dfa;
+	InitialStateMap initialStates;
+	DFA dfa;
 };
 
 MultiDFA constructMultiDFA(std::map<std::string, DFA> many);
 
-} // namespace klex::regular
+}  // namespace klex::regular

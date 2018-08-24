@@ -7,6 +7,7 @@
 
 #include <klex/util/testing.h>
 
-int main(int argc, const char* argv[]) {
-  return klex::util::testing::main(argc, argv);
+int main(int argc, const char* argv[])
+{
+	return klex::util::testing::main(argc, argv);
 }

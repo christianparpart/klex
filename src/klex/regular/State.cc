@@ -10,22 +10,24 @@
 
 namespace klex::regular {
 
-std::string to_string(const StateIdVec& S, std::string_view stateLabelPrefix) {
-  StateIdVec names = S;
-  std::sort(names.begin(), names.end());
+std::string to_string(const StateIdVec& S, std::string_view stateLabelPrefix)
+{
+	StateIdVec names = S;
+	std::sort(names.begin(), names.end());
 
-  std::stringstream sstr;
-  sstr << "{";
-  int i = 0;
-  for (StateId name : names) {
-    if (i)
-      sstr << ", ";
-    sstr << stateLabelPrefix << name;
-    i++;
-  }
-  sstr << "}";
+	std::stringstream sstr;
+	sstr << "{";
+	int i = 0;
+	for (StateId name : names)
+	{
+		if (i)
+			sstr << ", ";
+		sstr << stateLabelPrefix << name;
+		i++;
+	}
+	sstr << "}";
 
-  return sstr.str();
+	return sstr.str();
 }
 
-} // namespace klex::regular
+}  // namespace klex::regular

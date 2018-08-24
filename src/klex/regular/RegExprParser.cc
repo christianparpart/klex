@@ -5,21 +5,28 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/regular/RegExprParser.h>
 #include <klex/regular/RegExpr.h>
+#include <klex/regular/RegExprParser.h>
 #include <klex/regular/Symbols.h>
 
 #include <functional>
-#include <sstream>
-#include <limits>
 #include <iostream>
+#include <limits>
+#include <sstream>
 
 #include <fmt/format.h>
 
 #if 0
-#define DEBUG(msg, ...) do { std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; } while (0)
+#	define DEBUG(msg, ...)                                     \
+		do                                                      \
+		{                                                       \
+			std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
+		} while (0)
 #else
-#define DEBUG(msg, ...) do { } while (0)
+#	define DEBUG(msg, ...) \
+		do                  \
+		{                   \
+		} while (0)
 #endif
 
 /*
@@ -31,418 +38,475 @@
   concatenation           := closure (closure)*
   closure                 := atom ['*' | '?' | '{' NUM [',' NUM] '}']
   atom                    := character
-                           | '^'
-                           | '$'
-                           | '<<EOF>>'
-                           | '"' LITERAL '"'
-                           | characterClass
-                           | '(' expr ')'
-                           | EPSILON
+						   | '^'
+						   | '$'
+						   | '<<EOF>>'
+						   | '"' LITERAL '"'
+						   | characterClass
+						   | '(' expr ')'
+						   | EPSILON
   characterClass          := '[' ['^'] characterClassFragment+ ']'
   characterClassFragment  := character | character '-' character
 */
 
 namespace klex::regular {
 
-RegExprParser::RegExprParser()
-    : input_{},
-      currentChar_{input_.end()},
-      line_{1},
-      column_{0} {
+RegExprParser::RegExprParser() : input_{}, currentChar_{input_.end()}, line_{1}, column_{0}
+{
 }
 
-int RegExprParser::currentChar() const {
-  if (currentChar_ != input_.end())
-    return *currentChar_;
-  else
-    return -1;
+int RegExprParser::currentChar() const
+{
+	if (currentChar_ != input_.end())
+		return *currentChar_;
+	else
+		return -1;
 }
 
-bool RegExprParser::consumeIf(int ch) {
-  if (currentChar() != ch)
-    return false;
+bool RegExprParser::consumeIf(int ch)
+{
+	if (currentChar() != ch)
+		return false;
 
-  consume();
-  return true;
+	consume();
+	return true;
 }
 
-int RegExprParser::consume() {
-  if (currentChar_ == input_.end())
-    return -1;
+int RegExprParser::consume()
+{
+	if (currentChar_ == input_.end())
+		return -1;
 
-  int ch = *currentChar_;
-  if (ch == '\n') {
-    line_++;
-    column_ = 1;
-  } else {
-    column_++;
-  }
-  ++currentChar_;
-  DEBUG("consume: '{}'", (char)ch);
-  return ch;
+	int ch = *currentChar_;
+	if (ch == '\n')
+	{
+		line_++;
+		column_ = 1;
+	}
+	else
+	{
+		column_++;
+	}
+	++currentChar_;
+	DEBUG("consume: '{}'", (char) ch);
+	return ch;
 }
 
-void RegExprParser::consume(int expected) {
-  int actual = currentChar();
-  consume();
-  if (actual != expected) {
-    throw UnexpectedToken{line_, column_, actual, expected};
-  }
+void RegExprParser::consume(int expected)
+{
+	int actual = currentChar();
+	consume();
+	if (actual != expected)
+	{
+		throw UnexpectedToken{line_, column_, actual, expected};
+	}
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parse(std::string_view expr, int line, int column) {
-  input_ = std::move(expr);
-  currentChar_ = input_.begin();
-  line_ = line;
-  column_ = column;
+std::unique_ptr<RegExpr> RegExprParser::parse(std::string_view expr, int line, int column)
+{
+	input_ = std::move(expr);
+	currentChar_ = input_.begin();
+	line_ = line;
+	column_ = column;
 
-  return parseExpr();
+	return parseExpr();
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseExpr() {
-  return parseLookAheadExpr();
+std::unique_ptr<RegExpr> RegExprParser::parseExpr()
+{
+	return parseLookAheadExpr();
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseLookAheadExpr() {
-  std::unique_ptr<RegExpr> lhs = parseAlternation();
+std::unique_ptr<RegExpr> RegExprParser::parseLookAheadExpr()
+{
+	std::unique_ptr<RegExpr> lhs = parseAlternation();
 
-  if (currentChar() == '/') {
-    consume();
-    std::unique_ptr<RegExpr> rhs = parseAlternation();
-    lhs = std::make_unique<LookAheadExpr>(std::move(lhs), std::move(rhs));
-  }
+	if (currentChar() == '/')
+	{
+		consume();
+		std::unique_ptr<RegExpr> rhs = parseAlternation();
+		lhs = std::make_unique<LookAheadExpr>(std::move(lhs), std::move(rhs));
+	}
 
-  return lhs;
+	return lhs;
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseAlternation() {
-  std::unique_ptr<RegExpr> lhs = parseConcatenation();
+std::unique_ptr<RegExpr> RegExprParser::parseAlternation()
+{
+	std::unique_ptr<RegExpr> lhs = parseConcatenation();
 
-  while (currentChar() == '|') {
-    consume();
-    std::unique_ptr<RegExpr> rhs = parseConcatenation();
-    lhs = std::make_unique<AlternationExpr>(std::move(lhs), std::move(rhs));
-  }
+	while (currentChar() == '|')
+	{
+		consume();
+		std::unique_ptr<RegExpr> rhs = parseConcatenation();
+		lhs = std::make_unique<AlternationExpr>(std::move(lhs), std::move(rhs));
+	}
 
-  return lhs;
+	return lhs;
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseConcatenation() {
-  // FOLLOW-set, the set of terminal tokens that can occur right after a concatenation
-  static const std::string_view follow = "/|)";
-  std::unique_ptr<RegExpr> lhs = parseClosure();
+std::unique_ptr<RegExpr> RegExprParser::parseConcatenation()
+{
+	// FOLLOW-set, the set of terminal tokens that can occur right after a concatenation
+	static const std::string_view follow = "/|)";
+	std::unique_ptr<RegExpr> lhs = parseClosure();
 
-  while (!eof() && follow.find(currentChar()) == follow.npos) {
-    std::unique_ptr<RegExpr> rhs = parseClosure();
-    lhs = std::make_unique<ConcatenationExpr>(std::move(lhs), std::move(rhs));
-  }
+	while (!eof() && follow.find(currentChar()) == follow.npos)
+	{
+		std::unique_ptr<RegExpr> rhs = parseClosure();
+		lhs = std::make_unique<ConcatenationExpr>(std::move(lhs), std::move(rhs));
+	}
 
-  return lhs;
+	return lhs;
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseClosure() {
-  std::unique_ptr<RegExpr> subExpr = parseAtom();
+std::unique_ptr<RegExpr> RegExprParser::parseClosure()
+{
+	std::unique_ptr<RegExpr> subExpr = parseAtom();
 
-  switch (currentChar()) {
-    case '?':
-      consume();
-      return std::make_unique<ClosureExpr>(std::move(subExpr), 0, 1);
-    case '*':
-      consume();
-      return std::make_unique<ClosureExpr>(std::move(subExpr), 0);
-    case '+':
-      consume();
-      return std::make_unique<ClosureExpr>(std::move(subExpr), 1);
-    case '{': {
-      consume();
-      int m = parseInt();
-      if (currentChar() == ',') {
-        consume();
-        int n = parseInt();
-        consume('}');
-        return std::make_unique<ClosureExpr>(std::move(subExpr), m, n);
-      } else {
-        consume('}');
-        return std::make_unique<ClosureExpr>(std::move(subExpr), m, m);
-      }
-    }
-    default:
-      return subExpr;
-  }
+	switch (currentChar())
+	{
+		case '?':
+			consume();
+			return std::make_unique<ClosureExpr>(std::move(subExpr), 0, 1);
+		case '*':
+			consume();
+			return std::make_unique<ClosureExpr>(std::move(subExpr), 0);
+		case '+':
+			consume();
+			return std::make_unique<ClosureExpr>(std::move(subExpr), 1);
+		case '{':
+		{
+			consume();
+			int m = parseInt();
+			if (currentChar() == ',')
+			{
+				consume();
+				int n = parseInt();
+				consume('}');
+				return std::make_unique<ClosureExpr>(std::move(subExpr), m, n);
+			}
+			else
+			{
+				consume('}');
+				return std::make_unique<ClosureExpr>(std::move(subExpr), m, m);
+			}
+		}
+		default:
+			return subExpr;
+	}
 }
 
-unsigned RegExprParser::parseInt() {
-  unsigned n = 0;
-  while (std::isdigit(currentChar())) {
-    n *= 10;
-    n += currentChar() - '0';
-    consume();
-  }
-  return n;
+unsigned RegExprParser::parseInt()
+{
+	unsigned n = 0;
+	while (std::isdigit(currentChar()))
+	{
+		n *= 10;
+		n += currentChar() - '0';
+		consume();
+	}
+	return n;
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseAtom() {
-  switch (currentChar()) {
-    case -1: // EOF
-    case ')':
-      return std::make_unique<EmptyExpr>();
-    case '<':
-      consume();
-      consume('<');
-      consume('E');
-      consume('O');
-      consume('F');
-      consume('>');
-      consume('>');
-      return std::make_unique<EndOfFileExpr>();
-    case '(': {
-      consume();
-      std::unique_ptr<RegExpr> subExpr = parseExpr();
-      consume(')');
-      return subExpr;
-    }
-    case '"': {
-      consume();
-      std::unique_ptr<RegExpr> lhs = std::make_unique<CharacterExpr>(consume());
-      while (!eof() && currentChar() != '"') {
-        std::unique_ptr<RegExpr> rhs = std::make_unique<CharacterExpr>(consume());
-        lhs = std::make_unique<ConcatenationExpr>(std::move(lhs), std::move(rhs));
-      }
-      consume('"');
-      return lhs;
-    }
-    case '[':
-      return parseCharacterClass();
-    case '.':
-      consume();
-      return std::make_unique<DotExpr>();
-    case '^':
-      consume();
-      return std::make_unique<BeginOfLineExpr>();
-    case '$':
-      consume();
-      return std::make_unique<EndOfLineExpr>();
-    default:
-      return std::make_unique<CharacterExpr>(parseSingleCharacter());
-  }
+std::unique_ptr<RegExpr> RegExprParser::parseAtom()
+{
+	switch (currentChar())
+	{
+		case -1:  // EOF
+		case ')':
+			return std::make_unique<EmptyExpr>();
+		case '<':
+			consume();
+			consume('<');
+			consume('E');
+			consume('O');
+			consume('F');
+			consume('>');
+			consume('>');
+			return std::make_unique<EndOfFileExpr>();
+		case '(':
+		{
+			consume();
+			std::unique_ptr<RegExpr> subExpr = parseExpr();
+			consume(')');
+			return subExpr;
+		}
+		case '"':
+		{
+			consume();
+			std::unique_ptr<RegExpr> lhs = std::make_unique<CharacterExpr>(consume());
+			while (!eof() && currentChar() != '"')
+			{
+				std::unique_ptr<RegExpr> rhs = std::make_unique<CharacterExpr>(consume());
+				lhs = std::make_unique<ConcatenationExpr>(std::move(lhs), std::move(rhs));
+			}
+			consume('"');
+			return lhs;
+		}
+		case '[':
+			return parseCharacterClass();
+		case '.':
+			consume();
+			return std::make_unique<DotExpr>();
+		case '^':
+			consume();
+			return std::make_unique<BeginOfLineExpr>();
+		case '$':
+			consume();
+			return std::make_unique<EndOfLineExpr>();
+		default:
+			return std::make_unique<CharacterExpr>(parseSingleCharacter());
+	}
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseCharacterClass() {
-  consume(); // '['
-  const bool complement = consumeIf('^'); // TODO
+std::unique_ptr<RegExpr> RegExprParser::parseCharacterClass()
+{
+	consume();                               // '['
+	const bool complement = consumeIf('^');  // TODO
 
-  SymbolSet ss;
-  parseCharacterClassFragment(ss);
-  while (!eof() && currentChar() != ']')
-    parseCharacterClassFragment(ss);
+	SymbolSet ss;
+	parseCharacterClassFragment(ss);
+	while (!eof() && currentChar() != ']')
+		parseCharacterClassFragment(ss);
 
-  if (complement)
-    ss.complement();
+	if (complement)
+		ss.complement();
 
-  consume(']');
-  return std::make_unique<CharacterClassExpr>(std::move(ss));
+	consume(']');
+	return std::make_unique<CharacterClassExpr>(std::move(ss));
 }
 
-void RegExprParser::parseNamedCharacterClass(SymbolSet& ss) {
-  consume('[');
-  consume(':');
-  std::string token;
-  while (std::isalpha(currentChar())) {
-    token += static_cast<char>(consume());
-  }
-  consume(':');
-  consume(']');
+void RegExprParser::parseNamedCharacterClass(SymbolSet& ss)
+{
+	consume('[');
+	consume(':');
+	std::string token;
+	while (std::isalpha(currentChar()))
+	{
+		token += static_cast<char>(consume());
+	}
+	consume(':');
+	consume(']');
 
-  static const std::unordered_map<std::string_view, std::function<void(SymbolSet&)>> names = {
-    {"alnum", [](SymbolSet& ss) {
-      for (Symbol c = 'a'; c <= 'z'; c++) ss.insert(c);
-      for (Symbol c = 'A'; c <= 'Z'; c++) ss.insert(c);
-      for (Symbol c = '0'; c <= '9'; c++) ss.insert(c);
-    }},
-    {"alpha", [](SymbolSet& ss) {
-      for (Symbol c = 'a'; c <= 'z'; c++) ss.insert(c);
-      for (Symbol c = 'A'; c <= 'Z'; c++) ss.insert(c);
-    }},
-    {"blank", [](SymbolSet& ss) {
-      ss.insert(' ');
-      ss.insert('\t');
-    }},
-    {"cntrl", [](SymbolSet& ss) {
-      for (Symbol c = 0; c <= 255; c++)
-        if (std::iscntrl(c))
-          ss.insert(c);
-    }},
-    {"digit", [](SymbolSet& ss) {
-      for (Symbol c = '0'; c <= '9'; c++)
-        ss.insert(c);
-    }},
-    {"graph", [](SymbolSet& ss) {
-      for (Symbol c = 0; c <= 255; c++)
-        if (std::isgraph(c))
-          ss.insert(c);
-    }},
-    {"lower", [](SymbolSet& ss) {
-      for (Symbol c = 'a'; c <= 'z'; c++)
-        ss.insert(c);
-    }},
-    {"print", [](SymbolSet& ss) {
-      for (Symbol c = 0; c <= 255; c++)
-        if (std::isprint(c) || c == ' ')
-          ss.insert(c);
-    }},
-    {"punct", [](SymbolSet& ss) {
-      for (Symbol c = 0; c <= 255; c++)
-        if (std::ispunct(c))
-          ss.insert(c);
-    }},
-    {"space", [](SymbolSet& ss) {
-      for (Symbol c : "\f\n\r\t\v")
-        ss.insert(c);
-    }},
-    {"upper", [](SymbolSet& ss) {
-      for (Symbol c = 'A'; c <= 'Z'; c++)
-        ss.insert(c);
-    }},
-    {"xdigit", [](SymbolSet& ss) {
-      for (Symbol c = '0'; c <= '9'; c++) ss.insert(c);
-      for (Symbol c = 'a'; c <= 'f'; c++) ss.insert(c);
-      for (Symbol c = 'A'; c <= 'F'; c++) ss.insert(c);
-    }},
-  };
+	static const std::unordered_map<std::string_view, std::function<void(SymbolSet&)>> names = {
+		{"alnum",
+		 [](SymbolSet& ss) {
+			 for (Symbol c = 'a'; c <= 'z'; c++)
+				 ss.insert(c);
+			 for (Symbol c = 'A'; c <= 'Z'; c++)
+				 ss.insert(c);
+			 for (Symbol c = '0'; c <= '9'; c++)
+				 ss.insert(c);
+		 }},
+		{"alpha",
+		 [](SymbolSet& ss) {
+			 for (Symbol c = 'a'; c <= 'z'; c++)
+				 ss.insert(c);
+			 for (Symbol c = 'A'; c <= 'Z'; c++)
+				 ss.insert(c);
+		 }},
+		{"blank",
+		 [](SymbolSet& ss) {
+			 ss.insert(' ');
+			 ss.insert('\t');
+		 }},
+		{"cntrl",
+		 [](SymbolSet& ss) {
+			 for (Symbol c = 0; c <= 255; c++)
+				 if (std::iscntrl(c))
+					 ss.insert(c);
+		 }},
+		{"digit",
+		 [](SymbolSet& ss) {
+			 for (Symbol c = '0'; c <= '9'; c++)
+				 ss.insert(c);
+		 }},
+		{"graph",
+		 [](SymbolSet& ss) {
+			 for (Symbol c = 0; c <= 255; c++)
+				 if (std::isgraph(c))
+					 ss.insert(c);
+		 }},
+		{"lower",
+		 [](SymbolSet& ss) {
+			 for (Symbol c = 'a'; c <= 'z'; c++)
+				 ss.insert(c);
+		 }},
+		{"print",
+		 [](SymbolSet& ss) {
+			 for (Symbol c = 0; c <= 255; c++)
+				 if (std::isprint(c) || c == ' ')
+					 ss.insert(c);
+		 }},
+		{"punct",
+		 [](SymbolSet& ss) {
+			 for (Symbol c = 0; c <= 255; c++)
+				 if (std::ispunct(c))
+					 ss.insert(c);
+		 }},
+		{"space",
+		 [](SymbolSet& ss) {
+			 for (Symbol c : "\f\n\r\t\v")
+				 ss.insert(c);
+		 }},
+		{"upper",
+		 [](SymbolSet& ss) {
+			 for (Symbol c = 'A'; c <= 'Z'; c++)
+				 ss.insert(c);
+		 }},
+		{"xdigit",
+		 [](SymbolSet& ss) {
+			 for (Symbol c = '0'; c <= '9'; c++)
+				 ss.insert(c);
+			 for (Symbol c = 'a'; c <= 'f'; c++)
+				 ss.insert(c);
+			 for (Symbol c = 'A'; c <= 'F'; c++)
+				 ss.insert(c);
+		 }},
+	};
 
-  if (auto i = names.find(token); i != names.end())
-    i->second(ss);
-  else
-    throw UnexpectedToken{line_, column_, token, "<valid character class>"};
+	if (auto i = names.find(token); i != names.end())
+		i->second(ss);
+	else
+		throw UnexpectedToken{line_, column_, token, "<valid character class>"};
 }
 
-Symbol RegExprParser::parseSingleCharacter() {
-  if (currentChar() != '\\')
-    return consume();
+Symbol RegExprParser::parseSingleCharacter()
+{
+	if (currentChar() != '\\')
+		return consume();
 
-  consume(); // consumes escape character
-  switch (currentChar()) {
-    case 'a':
-      consume();
-      return '\a';
-    case 'b':
-      consume();
-      return '\b';
-    case 'f':
-      consume();
-      return '\f';
-    case 'n':
-      consume();
-      return '\n';
-    case 'r':
-      consume();
-      return '\r';
-    case 's':
-      consume();
-      return ' ';
-    case 't':
-      consume();
-      return '\t';
-    case 'v':
-      consume();
-      return '\v';
-    case 'x': {
-      consume();
+	consume();  // consumes escape character
+	switch (currentChar())
+	{
+		case 'a':
+			consume();
+			return '\a';
+		case 'b':
+			consume();
+			return '\b';
+		case 'f':
+			consume();
+			return '\f';
+		case 'n':
+			consume();
+			return '\n';
+		case 'r':
+			consume();
+			return '\r';
+		case 's':
+			consume();
+			return ' ';
+		case 't':
+			consume();
+			return '\t';
+		case 'v':
+			consume();
+			return '\v';
+		case 'x':
+		{
+			consume();
 
-      char buf[3];
-      buf[0] = consume();
-      if (!std::isxdigit(buf[0]))
-        throw UnexpectedToken{line_, column_, std::string(1, buf[0]), "[0-9a-fA-F]"};
-      buf[1] = consume();
-      if (!std::isxdigit(buf[1]))
-        throw UnexpectedToken{line_, column_, std::string(1, buf[1]), "[0-9a-fA-F]"};
-      buf[2] = 0;
+			char buf[3];
+			buf[0] = consume();
+			if (!std::isxdigit(buf[0]))
+				throw UnexpectedToken{line_, column_, std::string(1, buf[0]), "[0-9a-fA-F]"};
+			buf[1] = consume();
+			if (!std::isxdigit(buf[1]))
+				throw UnexpectedToken{line_, column_, std::string(1, buf[1]), "[0-9a-fA-F]"};
+			buf[2] = 0;
 
-      return static_cast<Symbol>(strtoul(buf, nullptr, 16));
-    }
-    case '0': {
-      const Symbol x0 = consume();
-      if (!isdigit(currentChar()))
-        return '\0';
+			return static_cast<Symbol>(strtoul(buf, nullptr, 16));
+		}
+		case '0':
+		{
+			const Symbol x0 = consume();
+			if (!isdigit(currentChar()))
+				return '\0';
 
-      // octal value (\DDD)
-      char buf[4];
-      buf[0] = x0;
-      buf[1] = consume();
-      if (!(buf[1] >= '0' && buf[1] <= '7'))
-        throw UnexpectedToken{line_, column_, std::string(1, buf[1]), "[0-7]"};
-      buf[2] = consume();
-      if (!(buf[2] >= '0' && buf[2] <= '7'))
-        throw UnexpectedToken{line_, column_, std::string(1, buf[2]), "[0-7]"};
-      buf[3] = '\0';
+			// octal value (\DDD)
+			char buf[4];
+			buf[0] = x0;
+			buf[1] = consume();
+			if (!(buf[1] >= '0' && buf[1] <= '7'))
+				throw UnexpectedToken{line_, column_, std::string(1, buf[1]), "[0-7]"};
+			buf[2] = consume();
+			if (!(buf[2] >= '0' && buf[2] <= '7'))
+				throw UnexpectedToken{line_, column_, std::string(1, buf[2]), "[0-7]"};
+			buf[3] = '\0';
 
-      return static_cast<Symbol>(strtoul(buf, nullptr, 8));
-    }
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7': {
-      // octal value (\DDD)
-      char buf[4];
-      buf[0] = consume();
-      buf[1] = consume();
-      if (!(buf[1] >= '0' && buf[1] <= '7'))
-        throw UnexpectedToken{line_, column_, std::string(1, buf[1]), "[0-7]"};
-      buf[2] = consume();
-      if (!(buf[2] >= '0' && buf[2] <= '7'))
-        throw UnexpectedToken{line_, column_, std::string(1, buf[2]), "[0-7]"};
-      buf[3] = '\0';
+			return static_cast<Symbol>(strtoul(buf, nullptr, 8));
+		}
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		{
+			// octal value (\DDD)
+			char buf[4];
+			buf[0] = consume();
+			buf[1] = consume();
+			if (!(buf[1] >= '0' && buf[1] <= '7'))
+				throw UnexpectedToken{line_, column_, std::string(1, buf[1]), "[0-7]"};
+			buf[2] = consume();
+			if (!(buf[2] >= '0' && buf[2] <= '7'))
+				throw UnexpectedToken{line_, column_, std::string(1, buf[2]), "[0-7]"};
+			buf[3] = '\0';
 
-      return static_cast<Symbol>(strtoul(buf, nullptr, 8));
-    }
-    case '"':
-    case '$':
-    case '(':
-    case ')':
-    case '*':
-    case '+':
-    case ':':
-    case '?':
-    case '[':
-    case '\'':
-    case '\\':
-    case ']':
-    case '^':
-    case '{':
-    case '}':
-    case '.':
-    case '/':
-      return consume();
-    default: {
-      throw UnexpectedToken{line_, column_, 
-        fmt::format("'{}'", static_cast<char>(currentChar())),
-        "<escape sequence character>"};
-    }
-  }
+			return static_cast<Symbol>(strtoul(buf, nullptr, 8));
+		}
+		case '"':
+		case '$':
+		case '(':
+		case ')':
+		case '*':
+		case '+':
+		case ':':
+		case '?':
+		case '[':
+		case '\'':
+		case '\\':
+		case ']':
+		case '^':
+		case '{':
+		case '}':
+		case '.':
+		case '/':
+			return consume();
+		default:
+		{
+			throw UnexpectedToken{line_, column_, fmt::format("'{}'", static_cast<char>(currentChar())),
+								  "<escape sequence character>"};
+		}
+	}
 }
 
-void RegExprParser::parseCharacterClassFragment(SymbolSet& ss) {
-  // parse [:named:]
-  if (currentChar() == '[') {
-    parseNamedCharacterClass(ss);
-    return;
-  }
+void RegExprParser::parseCharacterClassFragment(SymbolSet& ss)
+{
+	// parse [:named:]
+	if (currentChar() == '[')
+	{
+		parseNamedCharacterClass(ss);
+		return;
+	}
 
-  // parse single char (A) or range (A-Z)
-  const Symbol c1 = parseSingleCharacter();
-  if (currentChar() != '-') {
-    ss.insert(c1);
-    return;
-  }
+	// parse single char (A) or range (A-Z)
+	const Symbol c1 = parseSingleCharacter();
+	if (currentChar() != '-')
+	{
+		ss.insert(c1);
+		return;
+	}
 
-  consume(); // consume '-'
-  const Symbol c2 = parseSingleCharacter();
+	consume();  // consume '-'
+	const Symbol c2 = parseSingleCharacter();
 
-  for (Symbol c_i = c1; c_i <= c2; c_i++)
-    ss.insert(c_i);
+	for (Symbol c_i = c1; c_i <= c2; c_i++)
+		ss.insert(c_i);
 }
 
-} // namespace klex::regular
+}  // namespace klex::regular

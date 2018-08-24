@@ -12,52 +12,52 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <list>
 #include <optional>
 #include <unordered_map>
 #include <vector>
-#include <list>
 
 namespace klex::regular {
 
 class DFA;
 
 class DFAMinimizer {
- public:
-  explicit DFAMinimizer(const DFA& dfa);
-  explicit DFAMinimizer(const MultiDFA& multiDFA);
+  public:
+	explicit DFAMinimizer(const DFA& dfa);
+	explicit DFAMinimizer(const MultiDFA& multiDFA);
 
-  DFA constructDFA();
-  MultiDFA constructMultiDFA();
+	DFA constructDFA();
+	MultiDFA constructMultiDFA();
 
- private:
-  using PartitionVec = std::list<StateIdVec>;
+  private:
+	using PartitionVec = std::list<StateIdVec>;
 
-  void constructPartitions();
-  StateIdVec nonAcceptStates() const;
-  bool containsInitialState(const StateIdVec& S) const;
-  bool isMultiInitialState(StateId s) const;
-  PartitionVec::iterator findGroup(StateId s);
-  int partitionId(StateId s) const;
-  PartitionVec split(const StateIdVec& S) const;
-  DFA constructFromPartitions(const PartitionVec& P) const;
-  std::optional<StateId> containsBacktrackState(const StateIdVec& Q) const;
+	void constructPartitions();
+	StateIdVec nonAcceptStates() const;
+	bool containsInitialState(const StateIdVec& S) const;
+	bool isMultiInitialState(StateId s) const;
+	PartitionVec::iterator findGroup(StateId s);
+	int partitionId(StateId s) const;
+	PartitionVec split(const StateIdVec& S) const;
+	DFA constructFromPartitions(const PartitionVec& P) const;
+	std::optional<StateId> containsBacktrackState(const StateIdVec& Q) const;
 
-  static void dumpGroups(const PartitionVec& T);
+	static void dumpGroups(const PartitionVec& T);
 
-  StateId targetStateId(StateId oldId) const {
-    auto i = targetStateIdMap_.find(oldId);
-    assert(i != targetStateIdMap_.end());
-    return i->second;
-  }
+	StateId targetStateId(StateId oldId) const
+	{
+		auto i = targetStateIdMap_.find(oldId);
+		assert(i != targetStateIdMap_.end());
+		return i->second;
+	}
 
- private:
-  const DFA& dfa_;
-  const MultiDFA::InitialStateMap initialStates_;
-  const Alphabet alphabet_;
-  PartitionVec T;
-  PartitionVec P;
-  std::unordered_map<StateId, StateId> targetStateIdMap_;
+  private:
+	const DFA& dfa_;
+	const MultiDFA::InitialStateMap initialStates_;
+	const Alphabet alphabet_;
+	PartitionVec T;
+	PartitionVec P;
+	std::unordered_map<StateId, StateId> targetStateIdMap_;
 };
 
-} // namespace klex::regular
-
+}  // namespace klex::regular
