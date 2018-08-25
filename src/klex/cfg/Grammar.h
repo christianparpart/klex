@@ -12,8 +12,8 @@
 #include <map>
 #include <optional>
 #include <set>
-#include <string>
 #include <sstream>
+#include <string>
 #include <variant>
 #include <vector>
 
@@ -21,69 +21,72 @@
 
 namespace klex::cfg {
 
+/**
+ * Terminal represents a terminal symbol within a grammar's production rule.
+ *
+ * @see NonTerminal, Production, Grammar.
+ */
 struct Terminal {
-	std::variant<regular::Rule, std::string> literal; // such as [0-9]+ or "if"
+	std::variant<regular::Rule, std::string> literal;  // such as [0-9]+ or "if"
 
 	std::string name;  // such as "KW_IF"
 };
 
+/**
+ * NonTerminal represents a non-terminal symbol within a grammar's production rule.
+ *
+ * @see Terminal, Production, Grammar.
+ */
 struct NonTerminal {
 	std::string name;  // such as "IfStmt"
 
 	bool operator==(const std::string& other) const { return name == other; }
 };
 
+/**
+ * Symbol is a terminal or non-terminal within a grammar rule (Production).
+ *
+ * @see Terminal, NonTerminal, Production.
+ */
 using Symbol = std::variant<NonTerminal, Terminal>;
 
-inline bool operator<(const Symbol& a, const Symbol& b) {
-	using namespace std;
-	const string& lhs = holds_alternative<Terminal>(a)
-		? holds_alternative<regular::Rule>(get<Terminal>(a).literal)
-			? get<regular::Rule>(get<Terminal>(a).literal).pattern
-			: get<string>(get<Terminal>(a).literal)
-		: get<NonTerminal>(a).name;
-	const string& rhs = holds_alternative<Terminal>(b)
-		? holds_alternative<regular::Rule>(get<Terminal>(b).literal)
-			? get<regular::Rule>(get<Terminal>(b).literal).pattern
-			: get<string>(get<Terminal>(b).literal)
-		: get<NonTerminal>(b).name;
-	return lhs < rhs;
-}
+//! @returns true if symbol @p a is by string-comparison smaller then symbol @p b.
+bool operator<(const Symbol& a, const Symbol& b);
 
+/**
+ * Handle is the right-hand-side of a Production rule.
+ *
+ * @see Production, Terminal, NonTerminal
+ */
 struct Handle {
 	std::vector<Symbol> symbols;
 	std::string ref;
 };
 
-inline std::string to_string(const Handle& handle) {
-	std::stringstream sstr;
+//! @returns a human readable form of @p handle.
+std::string to_string(const Handle& handle);
 
-	int i = 0;
-	for (const klex::cfg::Symbol& symbol : handle.symbols) {
-		if (i++) sstr << ' ';
-		sstr << fmt::format("{}", symbol);
-	}
-
-	if (!handle.ref.empty())
-		sstr << " {" << handle.ref << "}";
-
-	return sstr.str();
-}
-
+/**
+ * Production declares a production rule related to a Grammar.
+ *
+ * @see Grammar, Terminal, NonTerminal
+ */
 struct Production {
-	std::string name;
-	Handle handle;
+	std::string name;  //!< Represents the productions non-terminal symbol name.
+	Handle handle;     //!< Represents the productions right-hand-side's expression, also known as handle.
 
-	int id;
-	bool epsilon;
-	std::vector<Terminal> first;
-	std::vector<Terminal> follow;
+	int id;                        //!< Unique ID identifying this production.
+	bool epsilon;                  //!< Indicates whether or not this rule contains an epsilon.
+	std::vector<Terminal> first;   //!< Accumulated set of terminals representing the FIRST-set.
+	std::vector<Terminal> follow;  //!< Accumulated set of terminals representing the FOLLOW-set.
 
-	std::vector<Terminal> first1() const;
+	std::vector<Terminal> first1() const;  //!< @returns the FIRST+-set of this production's handle.
 };
 
 /**
  * Context-free grammar.
+ *
+ * @see Production
  */
 struct Grammar {
 	//! List of terminals with explicit definitions.
@@ -98,15 +101,21 @@ struct Grammar {
 	//! Accumulated list of terminals (including explicitely specified terminals), filled by finalize().
 	std::vector<Terminal> terminals;
 
+	//! @returns a set of Production alternating rules that represent given NonTerminal @p nt.
 	std::vector<const Production*> getProductions(const NonTerminal& nt) const;
+
+	//! @returns a set of Production alternating rules that represent given NonTerminal @p nt.
 	std::vector<Production*> getProductions(const NonTerminal& nt);
 
-	bool containsEpsilon(const Symbol& s) const {
-		return std::holds_alternative<NonTerminal>(s)
-			&& containsEpsilon(std::get<NonTerminal>(s));
+	//! @returns boolean, indicating whether or not given symbol contains an epsilon.
+	bool containsEpsilon(const Symbol& s) const
+	{
+		return std::holds_alternative<NonTerminal>(s) && containsEpsilon(std::get<NonTerminal>(s));
 	}
 
-	bool containsEpsilon(const NonTerminal& nt) const {
+	//! @returns boolean, indicating whether or not given symbol contains an epsilon.
+	bool containsEpsilon(const NonTerminal& nt) const
+	{
 		for (const Production* p : getProductions(nt))
 			if (p->epsilon)
 				return true;
@@ -114,139 +123,180 @@ struct Grammar {
 		return false;
 	}
 
+	//! @returns a set of terminals representing the FIRST-set of Symbol @p b.
 	std::vector<Terminal> firstOf(const Symbol& b) const;
+
+	//! @returns a set of terminals representing the FOLLOW-set of NonTerminal @p nt.
 	std::vector<Terminal> followOf(const NonTerminal& nt) const;
 
+	//! Clears any metadata generated by finalize().
 	void clearMetadata();
+
+	//! Finalizes this grammar, i.e. filling out any computed metadata about this grammar (such as
+	//! FIRST/FOLLOW sets).
 	void finalize();
 
+	//! @returns the state of this Grammar in a print-compatbile form.
 	std::string dump() const;
 };
 
-} // namespace klex::cfg
+}  // namespace klex::cfg
 
 // {{{ fmtlib integration
 namespace fmt {
-	template<>
-	struct formatter<klex::cfg::Terminal> {
-		template <typename ParseContext>
-		constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+template <>
+struct formatter<klex::cfg::Terminal> {
+	template <typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
 
-		template <typename FormatContext>
-		constexpr auto format(const klex::cfg::Terminal& v, FormatContext &ctx) {
-			if (!v.name.empty())
-				return format_to(ctx.begin(), "{}", v.name);
-			else if (std::holds_alternative<klex::regular::Rule>(v.literal))
-				return format_to(ctx.begin(), "{}", std::get<klex::regular::Rule>(v.literal).pattern);
-			else
-				return format_to(ctx.begin(), "\"{}\"", std::get<std::string>(v.literal));
-		}
-	};
-
-	template<>
-	struct formatter<klex::cfg::NonTerminal> {
-		template <typename ParseContext>
-		constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
-
-		template <typename FormatContext>
-		constexpr auto format(const klex::cfg::NonTerminal& v, FormatContext &ctx) {
+	template <typename FormatContext>
+	constexpr auto format(const klex::cfg::Terminal& v, FormatContext& ctx)
+	{
+		if (!v.name.empty())
 			return format_to(ctx.begin(), "{}", v.name);
-		}
-	};
+		else if (std::holds_alternative<klex::regular::Rule>(v.literal))
+			return format_to(ctx.begin(), "{}", std::get<klex::regular::Rule>(v.literal).pattern);
+		else
+			return format_to(ctx.begin(), "\"{}\"", std::get<std::string>(v.literal));
+	}
+};
 
-	template<>
-	struct formatter<klex::cfg::Symbol> {
-		template <typename ParseContext>
-		constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+template <>
+struct formatter<klex::cfg::NonTerminal> {
+	template <typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
 
-		template <typename FormatContext>
-		constexpr auto format(const klex::cfg::Symbol& v, FormatContext &ctx) {
-			if (std::holds_alternative<klex::cfg::Terminal>(v))
-				return format_to(ctx.begin(), "{}", std::get<klex::cfg::Terminal>(v));
+	template <typename FormatContext>
+	constexpr auto format(const klex::cfg::NonTerminal& v, FormatContext& ctx)
+	{
+		return format_to(ctx.begin(), "{}", v.name);
+	}
+};
+
+template <>
+struct formatter<klex::cfg::Symbol> {
+	template <typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
+
+	template <typename FormatContext>
+	constexpr auto format(const klex::cfg::Symbol& v, FormatContext& ctx)
+	{
+		if (std::holds_alternative<klex::cfg::Terminal>(v))
+			return format_to(ctx.begin(), "{}", std::get<klex::cfg::Terminal>(v));
+		else
+			return format_to(ctx.begin(), "{}", std::get<klex::cfg::NonTerminal>(v));
+	}
+};
+
+template <>
+struct formatter<klex::cfg::Handle> {
+	template <typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
+
+	template <typename FormatContext>
+	constexpr auto format(const klex::cfg::Handle& handle, FormatContext& ctx)
+	{
+		return format_to(ctx.begin(), "{}", to_string(handle));
+	}
+};
+
+template <>
+struct formatter<klex::cfg::Production> {
+	template <typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
+
+	template <typename FormatContext>
+	constexpr auto format(const klex::cfg::Production& v, FormatContext& ctx)
+	{
+		return format_to(ctx.begin(), "{:} ::= {};", v.name, v.handle);
+	}
+};
+
+template <>
+struct formatter<std::vector<klex::cfg::Terminal>> {
+	template <typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
+
+	template <typename FormatContext>
+	constexpr auto format(const std::vector<klex::cfg::Terminal>& terminals, FormatContext& ctx)
+	{
+		std::stringstream sstr;
+		size_t i = 0;
+		for (const klex::cfg::Terminal& t : terminals)
+			if (i++)
+				sstr << ", " << fmt::format("{}", t);
 			else
-				return format_to(ctx.begin(), "{}", std::get<klex::cfg::NonTerminal>(v));
-		}
-	};
+				sstr << fmt::format("{}", t);
 
-	template<>
-	struct formatter<klex::cfg::Handle> {
-		template <typename ParseContext>
-		constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+		return format_to(ctx.begin(), "{}", sstr.str());
+	}
+};
 
-		template <typename FormatContext>
-		constexpr auto format(const klex::cfg::Handle& handle, FormatContext &ctx) {
-			return format_to(ctx.begin(), "{}", to_string(handle));
-		}
-	};
+template <>
+struct formatter<std::set<klex::cfg::Terminal>> {
+	template <typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
 
-	template<>
-	struct formatter<klex::cfg::Production> {
-		template <typename ParseContext>
-		constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+	template <typename FormatContext>
+	constexpr auto format(const std::set<klex::cfg::Terminal>& terminals, FormatContext& ctx)
+	{
+		std::stringstream sstr;
+		size_t i = 0;
+		for (const klex::cfg::Terminal& t : terminals)
+			if (i++)
+				sstr << ", " << fmt::format("{}", t);
+			else
+				sstr << fmt::format("{}", t);
 
-		template <typename FormatContext>
-		constexpr auto format(const klex::cfg::Production& v, FormatContext &ctx) {
-			return format_to(ctx.begin(), "{:} ::= {};", v.name, v.handle);
-		}
-	};
+		return format_to(ctx.begin(), "{}", sstr.str());
+	}
+};
 
-	template<>
-	struct formatter<std::vector<klex::cfg::Terminal>> {
-		template <typename ParseContext>
-		constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+template <>
+struct formatter<std::set<klex::cfg::NonTerminal>> {
+	template <typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
 
-		template <typename FormatContext>
-		constexpr auto format(const std::vector<klex::cfg::Terminal>& terminals, FormatContext &ctx) {
-			std::stringstream sstr;
-			size_t i = 0;
-			for (const klex::cfg::Terminal& t : terminals)
-				if (i++)
-					sstr << ", " << fmt::format("{}", t);
-				else
-					sstr << fmt::format("{}", t);
+	template <typename FormatContext>
+	constexpr auto format(const std::set<klex::cfg::NonTerminal>& nonterminals, FormatContext& ctx)
+	{
+		std::stringstream sstr;
+		size_t i = 0;
+		for (const klex::cfg::NonTerminal& nt : nonterminals)
+			if (i++)
+				sstr << ", " << fmt::format("{}", nt);
+			else
+				sstr << fmt::format("{}", nt);
 
-			return format_to(ctx.begin(), "{}", sstr.str());
-		}
-	};
+		return format_to(ctx.begin(), "{}", sstr.str());
+	}
+};
+}  // namespace fmt
 
-	template<>
-	struct formatter<std::set<klex::cfg::Terminal>> {
-		template <typename ParseContext>
-		constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
-
-		template <typename FormatContext>
-		constexpr auto format(const std::set<klex::cfg::Terminal>& terminals, FormatContext &ctx) {
-			std::stringstream sstr;
-			size_t i = 0;
-			for (const klex::cfg::Terminal& t : terminals)
-				if (i++)
-					sstr << ", " << fmt::format("{}", t);
-				else
-					sstr << fmt::format("{}", t);
-
-			return format_to(ctx.begin(), "{}", sstr.str());
-		}
-	};
-
-	template<>
-	struct formatter<std::set<klex::cfg::NonTerminal>> {
-		template <typename ParseContext>
-		constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
-
-		template <typename FormatContext>
-		constexpr auto format(const std::set<klex::cfg::NonTerminal>& nonterminals, FormatContext &ctx) {
-			std::stringstream sstr;
-			size_t i = 0;
-			for (const klex::cfg::NonTerminal& nt : nonterminals)
-				if (i++)
-					sstr << ", " << fmt::format("{}", nt);
-				else
-					sstr << fmt::format("{}", nt);
-
-			return format_to(ctx.begin(), "{}", sstr.str());
-		}
-	};
-}
 // }}}
 
 // vim:ts=4:sw=4:noet

@@ -60,6 +60,40 @@ inline bool merge(vector<T>* target, vector<T> source)
 }  // namespace
 // }}} helper
 
+bool klex::cfg::operator<(const Symbol& a, const Symbol& b)
+{
+	using namespace std;
+	const string& lhs = holds_alternative<Terminal>(a)
+							? holds_alternative<regular::Rule>(get<Terminal>(a).literal)
+								  ? get<regular::Rule>(get<Terminal>(a).literal).pattern
+								  : get<string>(get<Terminal>(a).literal)
+							: get<NonTerminal>(a).name;
+	const string& rhs = holds_alternative<Terminal>(b)
+							? holds_alternative<regular::Rule>(get<Terminal>(b).literal)
+								  ? get<regular::Rule>(get<Terminal>(b).literal).pattern
+								  : get<string>(get<Terminal>(b).literal)
+							: get<NonTerminal>(b).name;
+	return lhs < rhs;
+}
+
+std::string klex::cfg::to_string(const Handle& handle)
+{
+	std::stringstream sstr;
+
+	int i = 0;
+	for (const klex::cfg::Symbol& symbol : handle.symbols)
+	{
+		if (i++)
+			sstr << ' ';
+		sstr << fmt::format("{}", symbol);
+	}
+
+	if (!handle.ref.empty())
+		sstr << " {" << handle.ref << "}";
+
+	return sstr.str();
+}
+
 vector<Terminal> Production::first1() const
 {
 	vector<Terminal> result = first;

@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <klex/regular/LexerDef.h>
+
 #include <algorithm>
 #include <optional>
 #include <stack>
@@ -41,6 +43,7 @@ struct SyntaxTable {
 	std::vector<std::string> nonterminalNames;
 	ProductionVec productions;
 	NonTerminalMap table;
+	regular::LexerDef lexerDef;
 
 	std::optional<int> lookup(int nonterminal, int lookahead) const;
 

@@ -26,7 +26,7 @@ class Analyzer {
 public:
 	using Terminal = typename Lexer::value_type;
 	using NonTerminal = int;
-	using StackValue = std::variant<Terminal, Symbol>;
+	using StackValue = std::variant<Terminal, NonTerminal>;
 
 	Analyzer(SyntaxTable table, Lexer lexer, Report* report);
 

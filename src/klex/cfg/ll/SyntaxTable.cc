@@ -56,6 +56,8 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 
 	SyntaxTable st;
 
+	// TODO: add productions to SyntaxTable
+
 	for (const NonTerminal& nt : grammar.nonterminals)
 	{
 		const int nt_ = idNonTerminals[nt];
@@ -89,16 +91,14 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 						 .parseRules())
 					terminalRules.emplace_back(rule);
 
-		// TODO: custom tokens: `token { }`
-
+		// compile terminals
 		regular::Compiler rgc;
 		rgc.declareAll(move(terminalRules));
 
 		regular::Compiler::OvershadowMap overshadows;
 		regular::LexerDef lexerDef = rgc.compileMulti(&overshadows);
 
-		// TODO: move lexerDef into SyntaxTable
-		// st.lexer = move(lexerDef);
+		st.lexerDef = move(lexerDef);
 	}
 
 	return move(st);
