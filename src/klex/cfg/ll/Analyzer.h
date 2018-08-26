@@ -75,7 +75,7 @@ void Analyzer<Lexer, SemanticValue>::analyze()
 		}
 
 		if (std::holds_alternative<NonTerminal>(X)) {
-			std::optional<Handle> handle = getHandleFor(X, *currentToken);
+			std::optional<SyntaxTable::Expression> handle = getHandleFor(X, *currentToken);
 			if (handle.has_value()) {
 				// XXX applying production ``X -> handle``
 				stack_.pop();

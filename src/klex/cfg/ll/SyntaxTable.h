@@ -22,8 +22,8 @@ struct Grammar;
 
 namespace klex::cfg::ll {
 
-using Symbol = int;
-using Handle = std::vector<Symbol>;
+// using Symbol = int;
+// using Handle = std::vector<Symbol>;
 
 template <typename T>
 struct TokenTraits {
@@ -46,6 +46,10 @@ struct SyntaxTable {
 	regular::LexerDef lexerDef;
 
 	std::optional<int> lookup(int nonterminal, int lookahead) const;
+
+	size_t nonterminalCount() const { return nonterminalNames.size(); }
+	bool isNonTerminal(int id) const { return id < static_cast<int>(nonterminalNames.size()); }
+	bool isTerminal(int id) const { return lexerDef.isValidTag(id); }
 
 	std::string dump(const Grammar& grammar) const;
 

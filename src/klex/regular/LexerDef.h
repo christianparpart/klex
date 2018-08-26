@@ -33,6 +33,10 @@ struct LexerDef {
 
   std::string to_string() const;
 
+  bool isValidTag(Tag t) const noexcept {
+    return tagNames.find(t) != tagNames.end();
+  }
+
   std::string tagName(Tag t) const {
     auto i = tagNames.find(t);
     assert(i != tagNames.end());

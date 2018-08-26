@@ -20,8 +20,8 @@ namespace klex::regular {
 
 class RuleParser {
   public:
-	explicit RuleParser(std::unique_ptr<std::istream> input);
-	explicit RuleParser(std::string input);
+	explicit RuleParser(std::unique_ptr<std::istream> input, size_t firstTerminalId = FirstUserTag);
+	explicit RuleParser(std::string input, size_t firstTerminalId = FirstUserTag);
 
 	RuleList parseRules();
 
