@@ -66,7 +66,7 @@ void DFA::setTransition(StateId from, Symbol symbol, StateId to)
 	const State& s = states_[from];
 	if (auto i = s.transitions.find(symbol); i != s.transitions.end())
 	{
-		printf("overwriting transition! %lu --(%s)--> %lu (new: %lu)\n", from, prettySymbol(symbol).c_str(),
+		fmt::print("overwriting transition! {} --({})--> {} (new: {})\n", from, prettySymbol(symbol),
 			   i->second, to);
 	}
 	// XXX assert(s.transitions.find(symbol) == s.transitions.end());

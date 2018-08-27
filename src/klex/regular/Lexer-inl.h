@@ -103,10 +103,10 @@ inline void Lexer<Token, Machine, RequiresBeginOfLine, Debug>::open(std::unique_
 template <typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
 inline size_t Lexer<Token, Machine, RequiresBeginOfLine, Debug>::getFileSize()
 {
-	int oldpos = stream_->tellg();
+	std::streamoff oldpos = stream_->tellg();
 	stream_->seekg(0, stream_->end);
 
-	int theSize = stream_->tellg();
+	std::streamoff theSize = stream_->tellg();
 	stream_->seekg(oldpos, stream_->beg);
 
 	return static_cast<size_t>(theSize);
