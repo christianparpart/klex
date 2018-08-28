@@ -81,21 +81,31 @@ TEST(cfg_GrammarParser, customTokens)
 	for (const Terminal& w : grammar.terminals)
 		logf("Terminal: {}", w);
 
-	ASSERT_EQ(4, grammar.terminals.size());
+	// verify presense of all terminals in the grammar
+	ASSERT_EQ(5, grammar.terminals.size());
 	ASSERT_TRUE(any_of(begin(grammar.terminals), end(grammar.terminals), CheckTerminalPattern{"[0-9]+"}));
 	ASSERT_TRUE(any_of(begin(grammar.terminals), end(grammar.terminals), CheckTerminalPattern{"[\\s\\t]+"}));
 	ASSERT_TRUE(any_of(begin(grammar.terminals), end(grammar.terminals), CheckTerminalPattern{"("}));
 	ASSERT_TRUE(any_of(begin(grammar.terminals), end(grammar.terminals), CheckTerminalPattern{")"}));
 
+	// verify production rule to be in the form as the input mandates
 	const auto& symbols = grammar.productions[0].handle.symbols;
-	ASSERT_EQ(3, symbols.size());
+	ASSERT_EQ(4, symbols.size());
 
 	ASSERT_TRUE(holds_alternative<Terminal>(symbols[0]));
 	ASSERT_TRUE(holds_alternative<Terminal>(symbols[1]));
 	ASSERT_TRUE(holds_alternative<Terminal>(symbols[2]));
+	ASSERT_TRUE(holds_alternative<Terminal>(symbols[3]));
 
-//	ASSERT_EQ("(", get<Terminal>(symbols[0]).pattern());
-//	ASSERT_EQ(")", get<Terminal>(symbols[2]).pattern());
+	ASSERT_EQ("(", get<Terminal>(symbols[0]).pattern());
+
+	ASSERT_EQ("Number", get<Terminal>(symbols[1]).name);
+	ASSERT_EQ("[0-9]+", get<Terminal>(symbols[1]).pattern());
+
+	ASSERT_EQ(")", get<Terminal>(symbols[2]).pattern());
+
+	ASSERT_EQ("EOF", get<Terminal>(symbols[3]).name);
+	ASSERT_EQ("<<EOF>>", get<Terminal>(symbols[3]).pattern());
 }
 
 // vim:ts=4:sw=4:noet

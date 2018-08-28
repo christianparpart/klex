@@ -167,6 +167,8 @@ void Grammar::finalize()
 {
 	clearMetadata();
 
+	productions[0].handle.symbols.emplace_back(Terminal{regular::Rule{0, 0, 0, {"INITIAL"}, "EOF", "<<EOF>>"}, "EOF"});
+
 	nonterminals = [&]() {
 		vector<NonTerminal> nonterminals;
 		for (const Production& production : productions)

@@ -92,6 +92,16 @@ void GrammarParser::parseRule()
 	consumeToken(Token::Semicolon);
 }
 
+optional<const regular::Rule*> GrammarParser::findExplicitTerminal(const string& terminalName) const
+{
+	const auto i = find_if(begin(grammar_.explicitTerminals), end(grammar_.explicitTerminals),
+						   [&](const regular::Rule& w) -> bool { return w.name == terminalName; });
+	if (i != end(grammar_.explicitTerminals))
+		return &*i;
+	else
+		return nullopt;
+}
+
 Handle GrammarParser::parseHandle()
 {
 	// Handle     ::= (Terminal | NonTerminal)* HandleRef?
@@ -110,19 +120,10 @@ Handle GrammarParser::parseHandle()
 				consumeToken();
 				break;
 			case Token::Identifier:
-				if (auto i =
-						find_if(begin(grammar_.explicitTerminals), end(grammar_.explicitTerminals),
-								[&](const regular::Rule& w) -> bool { return w.name == currentLiteral(); });
-					i != end(grammar_.explicitTerminals))
-				{
-					printf("terminal: %s\n", currentLiteral().c_str());
-					handle.symbols.emplace_back(Terminal{*i, currentLiteral()});
-				}
+				if (optional<const regular::Rule*> r = findExplicitTerminal(currentLiteral()); r.has_value())
+					handle.symbols.emplace_back(Terminal{**r, currentLiteral()});
 				else
-				{
-					printf("nonterminal: %s\n", currentLiteral().c_str());
 					handle.symbols.emplace_back(NonTerminal{currentLiteral()});
-				}
 				consumeToken();
 				break;
 			case Token::SetOpen:

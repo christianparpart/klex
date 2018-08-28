@@ -40,6 +40,8 @@ class GrammarParser
 	void consumeToken();
 	void consumeToken(Token expectedToken);
 
+	std::optional<const regular::Rule*> findExplicitTerminal(const std::string& terminalName) const;
+
   private:
 	Report* report_;
 	GrammarLexer lexer_;
