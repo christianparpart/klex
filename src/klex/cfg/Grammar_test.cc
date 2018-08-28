@@ -17,6 +17,13 @@ using namespace klex;
 using namespace klex::cfg;
 using namespace klex::util::literals;
 
+TEST(cfg_Grammar, missing_production) {
+	BufferedReport report;
+	Grammar grammar = GrammarParser(GrammarLexer{"Start ::= Expr;"}, &report).parse();
+	ASSERT_FALSE(report.containsFailures());
+	ASSERT_THROW(grammar.finalize(), logic_error);
+}
+
 TEST(cfg_Grammar, metadata_right_recursive) {
 	ConsoleReport report;
 	Grammar grammar = GrammarParser(GrammarLexer{

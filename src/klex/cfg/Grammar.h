@@ -131,6 +131,13 @@ struct Grammar {
 		return false;
 	}
 
+	//! @returns true if given non-terminal corresponds to a production, false otherwise.
+	bool containsProduction(const NonTerminal& nt) const
+	{
+		return std::any_of(productions.begin(), productions.end(),
+						   [&](const Production& p) { return p.name == nt.name; });
+	}
+
 	//! @returns boolean, indicating whether or not a terminal by given symbolic name has been declared.
 	bool containsExplicitTerminalWithName(const std::string& terminalName) const
 	{

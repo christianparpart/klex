@@ -63,12 +63,10 @@ void DFA::setInitialState(StateId s)
 
 void DFA::setTransition(StateId from, Symbol symbol, StateId to)
 {
-	const State& s = states_[from];
-	if (auto i = s.transitions.find(symbol); i != s.transitions.end())
-	{
-		fmt::print("overwriting transition! {} --({})--> {} (new: {})\n", from, prettySymbol(symbol),
-			   i->second, to);
-	}
+	// if (auto i = states_[from].transitions.find(symbol); i != states_[from].transitions.end())
+	// 	fmt::print("overwriting transition! {} --({})--> {} (new: {})\n", from, prettySymbol(symbol),
+	// 		   i->second, to);
+
 	// XXX assert(s.transitions.find(symbol) == s.transitions.end());
 	states_[from].transitions[symbol] = to;
 }

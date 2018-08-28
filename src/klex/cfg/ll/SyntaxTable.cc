@@ -46,6 +46,22 @@ optional<int> SyntaxTable::lookup(int nonterminal, int lookahead) const
 	return k->second;
 }
 
+struct TerminalRuleBuilder {
+	size_t nextTerminalId;
+
+	regular::Rule operator()(const Terminal& w)
+	{
+		if (holds_alternative<regular::Rule>(w.literal))
+			// st.terminalNames.emplace_back(get<regular::Rule>(w.literal).pattern);
+			return get<regular::Rule>(w.literal);
+
+		const string rule = fmt::format("{} ::= \"{}\"", w.name, get<string>(w.literal));
+		regular::RuleList rules = regular::RuleParser{rule, nextTerminalId++}.parseRules();
+		// st.terminalNames.emplace_back(rules.front().pattern);
+		return rules.front();
+	}
+};
+
 SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 {
 	map<NonTerminal, int> idNonTerminals = createIdMap(grammar.nonterminals, 0);
@@ -55,51 +71,14 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 		idProductionsByName[NonTerminal{i->name}] = distance(begin(grammar.productions), i);
 
 	SyntaxTable st;
-	st.nonterminalNames.resize(grammar.nonterminals.size());
-
-	// syntax table
-	for (const NonTerminal& nt : grammar.nonterminals)
-	{
-		const int nt_ = idNonTerminals[nt];
-		st.nonterminalNames[nt_] = nt.name;
-		LookAheadMap& ntRow = st.table[nt_];
-		for (const Production* p : grammar.getProductions(nt))
-		{
-			for (const Terminal& w : p->first1())
-			{
-				assert(ntRow.find(idTerminals[w]) == ntRow.end());
-				ntRow[idTerminals[w]] = p->id;
-			}
-
-			// if (p->first1().contains(eof))
-			// 	st.table[nt_][eof_] = p_;
-		}
-	}
 
 	// terminals
+	transform(begin(grammar.terminals), end(grammar.terminals), back_inserter(st.terminalNames),
+			  [](const Terminal& w) { return w.name; });
 	{
 		regular::RuleList terminalRules;
-		size_t nextTerminalId = grammar.nonterminals.size() + 1;
-
-		static const string eofRule = "Eof ::= <<EOF>>";
-		for (const regular::Rule& rule : regular::RuleParser{eofRule, nextTerminalId++}.parseRules())
-			terminalRules.emplace_back(rule);
-
-		for (const Terminal& w : grammar.terminals)
-			if (holds_alternative<regular::Rule>(w.literal))
-			{
-				st.terminalNames.emplace_back(get<regular::Rule>(w.literal).pattern);
-				terminalRules.emplace_back(get<regular::Rule>(w.literal));
-			}
-			else
-			{
-				const string rule = fmt::format("{} ::= \"{}\"", w.name, get<string>(w.literal));
-				for (const regular::Rule& rule : regular::RuleParser{rule, nextTerminalId++}.parseRules())
-				{
-					st.terminalNames.emplace_back(rule.pattern);
-					terminalRules.emplace_back(rule);
-				}
-			}
+		transform(begin(grammar.terminals), end(grammar.terminals), back_inserter(terminalRules),
+				  TerminalRuleBuilder{grammar.nonterminals.size()});
 
 		// compile terminals
 		regular::Compiler rgc;
@@ -109,6 +88,25 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 		regular::LexerDef lexerDef = rgc.compileMulti(&overshadows);
 
 		st.lexerDef = move(lexerDef);
+	}
+
+	// syntax table
+	st.nonterminalNames.resize(grammar.nonterminals.size());
+	for (const NonTerminal& nt : grammar.nonterminals)
+	{
+		const int nt_ = idNonTerminals[nt];
+		st.nonterminalNames[nt_] = nt.name;
+		for (const Production* p : grammar.getProductions(nt))
+		{
+			for (const Terminal& w : p->first1())
+			{
+				assert(st.table[nt_].find(idTerminals[w]) == st.table[nt_].end());
+				st.table[nt_][idTerminals[w]] = p->id;
+			}
+
+			// TODO if (p->first1().contains(eof))
+			// 	st.table[nt_][eof_] = p_;
+		}
 	}
 
 	// add productions to SyntaxTable
@@ -146,7 +144,6 @@ string SyntaxTable::dump(const Grammar& grammar) const
 		os << (char*) buf;
 	};
 
-#if 1
 	bprintf("PRODUCTIONS:\n");
 	size_t p_i = 0;
 	for (const auto& p : productions)
@@ -156,7 +153,7 @@ string SyntaxTable::dump(const Grammar& grammar) const
 		for (const auto& b : p)
 		{
 			if (isNonTerminal(b))
-				bprintf(" <%s>", nonterminalNames[b].c_str());
+				bprintf(" %s", nonterminalNames[b].c_str());
 			else if (isTerminal(b))
 			{
 				assert(b >= static_cast<int>(nonterminalNames.size()));
@@ -167,18 +164,22 @@ string SyntaxTable::dump(const Grammar& grammar) const
 		}
 		bprintf("\n");
 	}
-#endif
 
 	// table-header
 	bprintf("%16s |", "NT \\ T");
+#if 0
+	for (const string& w : terminalNames)
+		bprintf("%10s |", w.c_str());
+#else
 	for (const Terminal& t : grammar.terminals)
 		if (holds_alternative<string>(t.literal))
 			bprintf("%10s |", fmt::format("{}", get<string>(t.literal)).c_str());
 		else
 			bprintf("%10s |", fmt::format("{}", t).c_str());
+#endif
 	bprintf("\n");
 	bprintf("-----------------+");
-	for (size_t i = 0; i < grammar.terminals.size(); ++i)
+	for (size_t i = 0; i < terminalNames.size(); ++i)
 		bprintf("-----------+");
 	bprintf("\n");
 
