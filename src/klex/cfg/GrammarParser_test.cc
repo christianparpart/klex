@@ -11,6 +11,8 @@
 #include <klex/util/testing.h>
 #include <klex/util/literals.h>
 
+#include <algorithm>
+
 using namespace std;
 using namespace klex;
 using namespace klex::cfg;
@@ -45,13 +47,27 @@ TEST(cfg_GrammarParser, parserSimple)
 	ASSERT_EQ("\"b\" B {b2}", to_string(grammar.productions[4].handle));
 }
 
+TEST(cfg_GrammarParser, unresolved_nonterminals)
+{
+	BufferedReport report;
+	Grammar grammar = GrammarParser(GrammarLexer{"Start ::= Another"}, &report).parse();
+	ASSERT_TRUE(report.containsFailures());
+
+	// TODO: make sure the failure reported is the unresolved-nonterminals case.
+}
+
+struct CheckTerminalPattern {
+	string pattern;
+	bool operator()(const Terminal& w) const { return pattern == w.pattern(); }
+};
+
 TEST(cfg_GrammarParser, customTokens)
 {
 	BufferedReport report;
 	Grammar grammar = GrammarParser(GrammarLexer{
 			R"(`token {
-			   `  SPACE(ignore) ::= [\s\t]+
-			   `  NUMBER ::= [0-9]+
+			   `  Spacing(ignore) ::= [\s\t]+
+			   `  Number          ::= [0-9]+
 			   `}
 			   `
 			   `Start ::= '(' Number ')';
@@ -59,6 +75,27 @@ TEST(cfg_GrammarParser, customTokens)
 
 	ASSERT_FALSE(report.containsFailures());
 	grammar.finalize();
+
+	log(grammar.dump());
+
+	for (const Terminal& w : grammar.terminals)
+		logf("Terminal: {}", w);
+
+	ASSERT_EQ(4, grammar.terminals.size());
+	ASSERT_TRUE(any_of(begin(grammar.terminals), end(grammar.terminals), CheckTerminalPattern{"[0-9]+"}));
+	ASSERT_TRUE(any_of(begin(grammar.terminals), end(grammar.terminals), CheckTerminalPattern{"[\\s\\t]+"}));
+	ASSERT_TRUE(any_of(begin(grammar.terminals), end(grammar.terminals), CheckTerminalPattern{"("}));
+	ASSERT_TRUE(any_of(begin(grammar.terminals), end(grammar.terminals), CheckTerminalPattern{")"}));
+
+	const auto& symbols = grammar.productions[0].handle.symbols;
+	ASSERT_EQ(3, symbols.size());
+
+	ASSERT_TRUE(holds_alternative<Terminal>(symbols[0]));
+	ASSERT_TRUE(holds_alternative<Terminal>(symbols[1]));
+	ASSERT_TRUE(holds_alternative<Terminal>(symbols[2]));
+
+//	ASSERT_EQ("(", get<Terminal>(symbols[0]).pattern());
+//	ASSERT_EQ(")", get<Terminal>(symbols[2]).pattern());
 }
 
 // vim:ts=4:sw=4:noet

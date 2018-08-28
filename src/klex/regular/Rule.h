@@ -28,6 +28,8 @@ struct Rule {
 	std::string pattern;
 	std::unique_ptr<RegExpr> regexpr = nullptr;
 
+	bool isIgnored() const noexcept { return tag == IgnoreTag; }
+
 	Rule clone() const
 	{
 		return regexpr ? Rule{line,

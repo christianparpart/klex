@@ -33,8 +33,9 @@ struct SyntaxTable {
 	using NonTerminalMap = std::unordered_map<int /*nonterminals*/, LookAheadMap>;
 	using ProductionVec = std::vector<Expression>;
 
+	std::vector<std::string> terminalNames;
 	std::vector<std::string> nonterminalNames;
-	std::vector<size_t> productionNonTerminals;  // mapping to nonterminalNames[] for productionId
+	std::vector<std::string> productionNames;
 	ProductionVec productions;
 	NonTerminalMap table;
 	regular::LexerDef lexerDef;
@@ -43,7 +44,7 @@ struct SyntaxTable {
 
 	size_t nonterminalCount() const { return nonterminalNames.size(); }
 	bool isNonTerminal(int id) const { return id < static_cast<int>(nonterminalNames.size()); }
-	bool isTerminal(int id) const { return lexerDef.isValidTag(id); }
+	bool isTerminal(int id) const { return !isNonTerminal(id); }
 
 	std::string dump(const Grammar& grammar) const;
 

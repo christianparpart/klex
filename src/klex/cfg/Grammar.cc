@@ -189,24 +189,26 @@ void Grammar::finalize()
 		for (Terminal& w : terms)
 		{
 			static map<string, string> wellKnown = {
-				{ "\"+\"", "PLUS" },
-				{ "\"-\"", "MINUS" },
-				{ "\"*\"", "MUL" },
-				{ "\"/\"", "DIV" },
-				{ "\"(\"", "RND_OPEN" },
-				{ "\")\"", "RND_CLOSE" },
+				{ "+", "PLUS" },
+				{ "-", "MINUS" },
+				{ "*", "MUL" },
+				{ "/", "DIV" },
+				{ "(", "RND_OPEN" },
+				{ ")", "RND_CLOSE" },
 			};
-			if (auto i = wellKnown.find(get<string>(w.literal)); i != wellKnown.end())
+			if (holds_alternative<regular::Rule>(w.literal))
+				;//w.name = get<regular::Rule>(w.literal).name;
+			else if (auto i = wellKnown.find(get<string>(w.literal)); i != wellKnown.end())
 				w.name = i->second;
 			else
-			{
 				w.name = fmt::format("T_{}", nextId++);
-				fmt::print("T: {} = {}\n", w.name, get<string>(w.literal));
-			}
 		}
 
+		// XXX: only add those explicits which haven't been added yet. This is important for at
+		// least those rules that have been marked as "ignore".
 		for (regular::Rule& rule : explicitTerminals)
-			terms.emplace_back(Terminal{rule, rule.name});
+			if (rule.isIgnored())
+				terms.emplace_back(Terminal{rule, rule.name});
 
 		return move(terms);
 	}();

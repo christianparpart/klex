@@ -23,8 +23,7 @@ using namespace klex::cfg;
 	} while (0)
 // #define DEBUG(msg, ...) do { fmt::print((msg), __VA_ARGS__); fmt::print("\n"); } while (0)
 
-GrammarParser::GrammarParser(GrammarLexer _lexer, Report* _report)
-	: report_{_report}, lexer_{move(_lexer)}
+GrammarParser::GrammarParser(GrammarLexer _lexer, Report* _report) : report_{_report}, lexer_{move(_lexer)}
 {
 }
 
@@ -111,7 +110,19 @@ Handle GrammarParser::parseHandle()
 				consumeToken();
 				break;
 			case Token::Identifier:
-				handle.symbols.emplace_back(NonTerminal{currentLiteral()});
+				if (auto i =
+						find_if(begin(grammar_.explicitTerminals), end(grammar_.explicitTerminals),
+								[&](const regular::Rule& w) -> bool { return w.name == currentLiteral(); });
+					i != end(grammar_.explicitTerminals))
+				{
+					printf("terminal: %s\n", currentLiteral().c_str());
+					handle.symbols.emplace_back(Terminal{*i, currentLiteral()});
+				}
+				else
+				{
+					printf("nonterminal: %s\n", currentLiteral().c_str());
+					handle.symbols.emplace_back(NonTerminal{currentLiteral()});
+				}
 				consumeToken();
 				break;
 			case Token::SetOpen:
@@ -157,6 +168,10 @@ void GrammarParser::parseTokenBlock()
 	}
 
 	regular::RuleList rules = regular::RuleParser{klexDef}.parseRules();  // TODO: currentLine, currentColumn
+
+	for (const regular::Rule& rule : rules)
+		fmt::print("explict terminal: {}\n", rule);
+
 	grammar_.explicitTerminals.insert(end(grammar_.explicitTerminals), begin(rules), end(rules));
 
 	consumeToken(Token::SetClose);

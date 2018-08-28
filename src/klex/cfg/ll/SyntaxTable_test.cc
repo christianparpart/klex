@@ -22,16 +22,21 @@ TEST(cfg_ll_SyntaxTable, construct_right_recursive)
 {
 	ConsoleReport report;
 	Grammar grammar = GrammarParser(GrammarLexer{
-		R"(`S ::= E;
-		   `E ::= T X;
-		   `X ::= '+' T X
-		   `    | ;
-		   `T ::= F Y;
-		   `Y ::= '*' F Y
-		   `    | ;
-		   `F ::= '(' E ')'
-		   `    | 'NUMBER'
-		   `    ;
+		R"(`token {
+		   `  Spacing(ignore) ::= [\s\t]+
+		   `  Number          ::= [0-9]+
+		   `}
+		   `
+		   `Start  ::= Expr;
+		   `Expr   ::= Term Expr_;
+		   `Expr_  ::= '+' Term Expr_
+		   `         | ;
+		   `Term   ::= Factor Term_;
+		   `Term_  ::= '*' Factor Term_
+		   `         | ;
+		   `Factor ::= '(' Expr ')'
+		   `         | Number
+		   `         ;
 		   `)"_multiline}, &report).parse();
 
 	ASSERT_FALSE(report.containsFailures());

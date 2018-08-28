@@ -57,6 +57,7 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 	SyntaxTable st;
 	st.nonterminalNames.resize(grammar.nonterminals.size());
 
+	// syntax table
 	for (const NonTerminal& nt : grammar.nonterminals)
 	{
 		const int nt_ = idNonTerminals[nt];
@@ -86,12 +87,18 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 
 		for (const Terminal& w : grammar.terminals)
 			if (holds_alternative<regular::Rule>(w.literal))
+			{
+				st.terminalNames.emplace_back(get<regular::Rule>(w.literal).pattern);
 				terminalRules.emplace_back(get<regular::Rule>(w.literal));
+			}
 			else
 			{
 				const string rule = fmt::format("{} ::= \"{}\"", w.name, get<string>(w.literal));
 				for (const regular::Rule& rule : regular::RuleParser{rule, nextTerminalId++}.parseRules())
+				{
+					st.terminalNames.emplace_back(rule.pattern);
 					terminalRules.emplace_back(rule);
+				}
 			}
 
 		// compile terminals
@@ -116,6 +123,7 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 			else
 				expr.emplace_back(idTerminals[get<Terminal>(b)]);
 
+		st.productionNames.emplace_back(p.name);
 		st.productions.emplace_back(move(expr));
 	}
 
@@ -140,15 +148,20 @@ string SyntaxTable::dump(const Grammar& grammar) const
 
 #if 1
 	bprintf("PRODUCTIONS:\n");
+	size_t p_i = 0;
 	for (const auto& p : productions)
 	{
-		bprintf("%10s ::= ", "<?>");
+		bprintf("%10s ::= ", productionNames[p_i].c_str());
+		p_i++;
 		for (const auto& b : p)
 		{
 			if (isNonTerminal(b))
 				bprintf(" <%s>", nonterminalNames[b].c_str());
 			else if (isTerminal(b))
-				bprintf(" %s", lexerDef.tagName(b).c_str());
+			{
+				assert(b >= static_cast<int>(nonterminalNames.size()));
+				bprintf(" %s", terminalNames[b - nonterminalNames.size()].c_str());
+			}
 			else
 				bprintf(" %d", b);
 		}
@@ -165,10 +178,8 @@ string SyntaxTable::dump(const Grammar& grammar) const
 			bprintf("%10s |", fmt::format("{}", t).c_str());
 	bprintf("\n");
 	bprintf("-----------------+");
-	;
 	for (size_t i = 0; i < grammar.terminals.size(); ++i)
 		bprintf("-----------+");
-	;
 	bprintf("\n");
 
 	// table-body

@@ -30,6 +30,14 @@ struct Terminal {
 	std::variant<regular::Rule, std::string> literal;  // such as [0-9]+ or "if"
 
 	std::string name;  // such as "KW_IF"
+
+	const std::string& pattern() const
+	{
+		if (std::holds_alternative<std::string>(literal))
+			return std::get<std::string>(literal);
+		else
+			return std::get<regular::Rule>(literal).pattern;
+	}
 };
 
 /**
@@ -121,6 +129,14 @@ struct Grammar {
 				return true;
 
 		return false;
+	}
+
+	//! @returns boolean, indicating whether or not a terminal by given symbolic name has been declared.
+	bool containsExplicitTerminalWithName(const std::string& terminalName) const
+	{
+		using namespace std;
+		return any_of(begin(explicitTerminals), end(explicitTerminals),
+					  [&](const regular::Rule& rule) -> bool { return rule.name == terminalName; });
 	}
 
 	//! @returns a set of terminals representing the FIRST-set of Symbol @p b.
