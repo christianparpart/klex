@@ -185,8 +185,25 @@ void Grammar::finalize()
 		vector<Terminal> terms = to_vector(move(terminals));
 
 		int nextId = 0;
+
 		for (Terminal& w : terms)
-			w.name = fmt::format("T_{}", nextId++);
+		{
+			static map<string, string> wellKnown = {
+				{ "\"+\"", "PLUS" },
+				{ "\"-\"", "MINUS" },
+				{ "\"*\"", "MUL" },
+				{ "\"/\"", "DIV" },
+				{ "\"(\"", "RND_OPEN" },
+				{ "\")\"", "RND_CLOSE" },
+			};
+			if (auto i = wellKnown.find(get<string>(w.literal)); i != wellKnown.end())
+				w.name = i->second;
+			else
+			{
+				w.name = fmt::format("T_{}", nextId++);
+				fmt::print("T: {} = {}\n", w.name, get<string>(w.literal));
+			}
+		}
 
 		for (regular::Rule& rule : explicitTerminals)
 			terms.emplace_back(Terminal{rule, rule.name});

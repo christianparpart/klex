@@ -27,22 +27,13 @@ const std::string balancedParentheses = "A ::= '(' A ')' | '(' ')'";
 
 TEST(cfg_ll_Analyzer, ETF)
 {
-	enum class ExprToken { Eof = 1, Plus, Minus, Mul, Div, Number };
-	using Lexer = regular::Lexer<ExprToken>;
-
-	regular::Compiler rgc;
-	rgc.parse(R"(`Eof             ::= <<EOF>>
-				 `Spacing(ignore) ::= [\s\t\n]+
-				 `Plus            ::= "+"
-				 `Minus           ::= "-"
-				 `Mul             ::= "*"
-				 `Div             ::= "/"
-				 `Number          ::= [0-9]+
-				 `)"_multiline);
-
 	ConsoleReport report;
 	Grammar grammar = GrammarParser(GrammarLexer{
-		R"(`Start     ::= Expr "<<EOF>>";
+		R"(`token {
+		   `  Spacing(ignore) ::= [\s\t\n]+
+		   `  Number          ::= [0-9]+
+		   `}
+		   `Start     ::= Expr;
 		   `Expr      ::= Term Expr_;
 		   `Expr_     ::= '+' Term Expr_
 		   `            | ;
@@ -56,17 +47,15 @@ TEST(cfg_ll_Analyzer, ETF)
 
 	ASSERT_FALSE(report.containsFailures());
 	grammar.finalize();
+	log("GRAMMAR:");
+	log(grammar.dump());
 
 	SyntaxTable st = SyntaxTable::construct(grammar);
 
-	log("GRAMMAR:");
+	log("SYNTAX TABLE:");
 	log(st.dump(grammar));
 
-	Lexer lexer { rgc.compile(),
-				  "2 + 3 * 4", 
-				  [this](const std::string& msg) { log(msg); } };
-
-	Analyzer<Lexer, int> parser(move(st), move(lexer), &report);
+	Analyzer<int> parser(move(st), &report, "2 + 3 * 4");
 
 	// parser.analyze();
 }

@@ -55,10 +55,12 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 		idProductionsByName[NonTerminal{i->name}] = distance(begin(grammar.productions), i);
 
 	SyntaxTable st;
+	st.nonterminalNames.resize(grammar.nonterminals.size());
 
 	for (const NonTerminal& nt : grammar.nonterminals)
 	{
 		const int nt_ = idNonTerminals[nt];
+		st.nonterminalNames[nt_] = nt.name;
 		LookAheadMap& ntRow = st.table[nt_];
 		for (const Production* p : grammar.getProductions(nt))
 		{
@@ -144,11 +146,11 @@ string SyntaxTable::dump(const Grammar& grammar) const
 		for (const auto& b : p)
 		{
 			if (isNonTerminal(b))
-				bprintf(" %s", nonterminalNames[b].c_str());
+				bprintf(" <%s>", nonterminalNames[b].c_str());
 			else if (isTerminal(b))
 				bprintf(" %s", lexerDef.tagName(b).c_str());
 			else
-				bprintf(" <%d>", b);
+				bprintf(" %d", b);
 		}
 		bprintf("\n");
 	}

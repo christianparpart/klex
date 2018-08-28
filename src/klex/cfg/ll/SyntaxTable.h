@@ -25,13 +25,6 @@ namespace klex::cfg::ll {
 // using Symbol = int;
 // using Handle = std::vector<Symbol>;
 
-template <typename T>
-struct TokenTraits {
-	static bool isEof(T X);
-	static bool isTerminal(T X);
-	static bool isNonTerminal(T X);
-};
-
 /** LL(1)-compatible syntax table.
  */
 struct SyntaxTable {
@@ -41,6 +34,7 @@ struct SyntaxTable {
 	using ProductionVec = std::vector<Expression>;
 
 	std::vector<std::string> nonterminalNames;
+	std::vector<size_t> productionNonTerminals;  // mapping to nonterminalNames[] for productionId
 	ProductionVec productions;
 	NonTerminalMap table;
 	regular::LexerDef lexerDef;
