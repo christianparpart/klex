@@ -20,15 +20,18 @@ using namespace klex::util::literals;
 TEST(cfg_Grammar, metadata_right_recursive) {
 	ConsoleReport report;
 	Grammar grammar = GrammarParser(GrammarLexer{
-		R"(`Start     ::= Expr "<<EOF>>";
+		R"(`token {
+		   `  NUMBER ::= [0-9]+
+		   `}
+		   `Start     ::= Expr;
 		   `Expr      ::= Term Expr_;
 		   `Expr_     ::= '+' Term Expr_
 		   `            | ;
 		   `Term      ::= Factor Term_;
 		   `Term_     ::= '*' Factor Term_
 		   `            | ;
-		   `Factor    ::= "NUMBER"
-		   `            | '(' Expr ')'
+		   `Factor    ::= '(' Expr ')'
+		   `            | NUMBER
 		   `            ;
 		   `)"_multiline}, &report).parse();
 
@@ -42,18 +45,18 @@ TEST(cfg_Grammar, metadata_right_recursive) {
 	ASSERT_EQ("\")\"", fmt::format("{}", grammar.firstOf(Terminal{")"})));
 	ASSERT_EQ("\"+\"", fmt::format("{}", grammar.firstOf(Terminal{"+"})));
 	ASSERT_EQ("\"*\"", fmt::format("{}", grammar.firstOf(Terminal{"*"})));
-	ASSERT_EQ("\"<<EOF>>\"", fmt::format("{}", grammar.firstOf(Terminal{"<<EOF>>"})));
+	ASSERT_EQ("EOF", fmt::format("{}", grammar.firstOf(Terminal{regular::Rule{0,0,0, {"INITIAL"}, "EOF", "<<EOF>>"}})));
 
 	// ASSERT_EQ(2, metadata.epsilon.size());
 	// ASSERT_TRUE(metadata.epsilon.find(NonTerminal{"Expr_"}) != metadata.epsilon.end());
 	// ASSERT_TRUE(metadata.epsilon.find(NonTerminal{"Term_"}) != metadata.epsilon.end());
 
 	ASSERT_EQ("", fmt::format("{}", grammar.followOf(NonTerminal{"Start"})));
-	ASSERT_EQ("\")\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Expr"})));
-	ASSERT_EQ("\")\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Expr_"})));
-	ASSERT_EQ("\")\", \"+\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Term"})));
-	ASSERT_EQ("\")\", \"+\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Term_"})));
-	ASSERT_EQ("\")\", \"*\", \"+\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Factor"})));
+	ASSERT_EQ("\")\", EOF", fmt::format("{}", grammar.followOf(NonTerminal{"Expr"})));
+	ASSERT_EQ("\")\", EOF", fmt::format("{}", grammar.followOf(NonTerminal{"Expr_"})));
+	ASSERT_EQ("\")\", \"+\", EOF", fmt::format("{}", grammar.followOf(NonTerminal{"Term"})));
+	ASSERT_EQ("\")\", \"+\", EOF", fmt::format("{}", grammar.followOf(NonTerminal{"Term_"})));
+	ASSERT_EQ("\")\", \"*\", \"+\", EOF", fmt::format("{}", grammar.followOf(NonTerminal{"Factor"})));
 }
 
 TEST(cfg_Grammar, with_complex_tokens) {

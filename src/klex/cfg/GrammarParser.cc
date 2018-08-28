@@ -170,9 +170,6 @@ void GrammarParser::parseTokenBlock()
 
 	regular::RuleList rules = regular::RuleParser{klexDef}.parseRules();  // TODO: currentLine, currentColumn
 
-	for (const regular::Rule& rule : rules)
-		fmt::print("explict terminal: {}\n", rule);
-
 	grammar_.explicitTerminals.insert(end(grammar_.explicitTerminals), begin(rules), end(rules));
 
 	consumeToken(Token::SetClose);

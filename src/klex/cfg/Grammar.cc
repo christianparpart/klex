@@ -149,25 +149,45 @@ vector<Terminal> Grammar::followOf(const NonTerminal& nt) const
 	return to_vector(move(follow));
 }
 
-void Grammar::clearMetadata()
+void Grammar::injectEof()
 {
-	int nextId = 0;
-	for (Production& p : productions)
-	{
-		p.id = nextId++;
-		p.epsilon = false;
-		p.first.clear();
-		p.follow.clear();
-	}
-	nonterminals.clear();
-	terminals.clear();
+	productions[0].handle.symbols.emplace_back(
+		Terminal{regular::Rule{0, 0, /*TODO:tag*/ 0, {"INITIAL"}, "EOF", "<<EOF>>"}, "EOF"});
 }
+
+struct ProductionIdBuilder {
+	int nextId = 0;
+	void operator()(Production& p) { p.id = nextId++; }
+};
+
+struct TerminalNameCurator {
+	int nextId = 0;
+
+	void operator()(Terminal& w)
+	{
+		static map<string, string> wellKnown = {
+			{"+", "PLUS"},      {"-", "MINUS"},   {"*", "MUL"},      {"/", "DIV"},     {"(", "RND_OPEN"},
+			{")", "RND_CLOSE"}, {"[", "BR_OPEN"}, {"]", "BR_CLOSE"}, {"{", "CR_OPEN"}, {"}", "CR_CLOSE"},
+		};
+
+		if (holds_alternative<string>(w.literal))
+		{
+			if (auto i = wellKnown.find(get<string>(w.literal)); i != wellKnown.end())
+				w.name = i->second;
+			else
+				w.name = fmt::format("T_{}", nextId++);
+		}
+	}
+};
 
 void Grammar::finalize()
 {
-	clearMetadata();
+	assert(nonterminals.empty());
+	assert(terminals.empty());
 
-	productions[0].handle.symbols.emplace_back(Terminal{regular::Rule{0, 0, 0, {"INITIAL"}, "EOF", "<<EOF>>"}, "EOF"});
+	injectEof();
+
+	for_each(begin(productions), end(productions), ProductionIdBuilder{});
 
 	nonterminals = [&]() {
 		vector<NonTerminal> nonterminals;
@@ -186,28 +206,9 @@ void Grammar::finalize()
 
 		vector<Terminal> terms = to_vector(move(terminals));
 
-		int nextId = 0;
+		for_each(begin(terms), end(terms), TerminalNameCurator{});
 
-		for (Terminal& w : terms)
-		{
-			static map<string, string> wellKnown = {
-				{ "+", "PLUS" },
-				{ "-", "MINUS" },
-				{ "*", "MUL" },
-				{ "/", "DIV" },
-				{ "(", "RND_OPEN" },
-				{ ")", "RND_CLOSE" },
-			};
-			if (holds_alternative<regular::Rule>(w.literal))
-				;//w.name = get<regular::Rule>(w.literal).name;
-			else if (auto i = wellKnown.find(get<string>(w.literal)); i != wellKnown.end())
-				w.name = i->second;
-			else
-				w.name = fmt::format("T_{}", nextId++);
-		}
-
-		// XXX: only add those explicits which haven't been added yet. This is important for at
-		// least those rules that have been marked as "ignore".
+		// Add those explicit terminals that are flagged as "ignore".
 		for (regular::Rule& rule : explicitTerminals)
 			if (rule.isIgnored())
 				terms.emplace_back(Terminal{rule, rule.name});
