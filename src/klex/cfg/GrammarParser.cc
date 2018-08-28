@@ -107,8 +107,6 @@ Handle GrammarParser::parseHandle()
 	// Handle     ::= (Terminal | NonTerminal)* HandleRef?
 	// HandleRef  ::= '{' Identifier '}'
 
-	// N.B.: FOLLOW-set { ';', '|' }
-
 	Handle handle;
 
 	for (;;)

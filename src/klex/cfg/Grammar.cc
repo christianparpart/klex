@@ -166,8 +166,15 @@ struct TerminalNameCurator {
 	void operator()(Terminal& w)
 	{
 		static map<string, string> wellKnown = {
-			{"+", "PLUS"},      {"-", "MINUS"},   {"*", "MUL"},      {"/", "DIV"},     {"(", "RND_OPEN"},
-			{")", "RND_CLOSE"}, {"[", "BR_OPEN"}, {"]", "BR_CLOSE"}, {"{", "CR_OPEN"}, {"}", "CR_CLOSE"},
+			{"+", "PLUS"},        {"-", "MINUS"},
+			{"*", "MUL"},         {"/", "DIV"},
+			{"(", "RND_OPEN"},    {")", "RND_CLOSE"},
+			{"[", "BR_OPEN"},     {"]", "BR_CLOSE"},
+			{"{", "CR_OPEN"},     {"}", "CR_CLOSE"},
+			{"<", "LESS"},        {">", "GREATER"},
+			{"<=", "LESS_EQUAL"}, {">=", "GREATER_EQUAL"},
+			{"==", "EQUAL"},      {"!=", "NOT_EQUAL"},
+			{"=", "EQ"},          {"!", "NOT"},
 		};
 
 		if (holds_alternative<string>(w.literal))

@@ -76,11 +76,12 @@ void Analyzer<SemanticValue>::analyze()
 
 	for (;;)
 	{
-		const StackValue X = stack_.top();
-
-		if (currentToken == eof && holds_alternative<Terminal>(X) && get<Terminal>(X) == *currentToken)
-			// if (X == *currentToken && currentToken == eof)
+		if (currentToken == eof && stack_.empty())
+		// if (currentToken == eof && holds_alternative<Terminal>(X) && get<Terminal>(X) == *currentToken)
+		// if (X == *currentToken && currentToken == eof)
 			return;  // fully parsed program, and success
+
+		const StackValue X = stack_.top();
 
 		if (holds_alternative<Terminal>(X) && get<Terminal>(X) == *currentToken)
 		{
