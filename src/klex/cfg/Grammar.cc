@@ -192,12 +192,6 @@ void Grammar::finalize()
 	assert(nonterminals.empty());
 	assert(terminals.empty());
 
-	for (const Production& p : productions)
-		for (const Symbol& b : p.handle.symbols)
-			if (holds_alternative<NonTerminal>(b))
-				if (!containsProduction(get<NonTerminal>(b)))
-					throw std::logic_error(fmt::format("Non-terminal {} is missing a production rule.", b));
-
 	injectEof();
 
 	for_each(begin(productions), end(productions), ProductionIdBuilder{});

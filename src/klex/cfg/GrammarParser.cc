@@ -9,6 +9,7 @@
 #include <klex/cfg/Grammar.h>
 #include <klex/cfg/GrammarLexer.h>
 #include <klex/cfg/GrammarParser.h>
+#include <klex/cfg/GrammarValidator.h>
 #include <klex/regular/RuleParser.h>
 
 #include <algorithm>
@@ -52,6 +53,8 @@ Grammar GrammarParser::parse()
 	}
 
 	consumeToken(Token::Eof);
+
+	GrammarValidator{report_}.validate(grammar_);
 
 	return move(grammar_);
 }
