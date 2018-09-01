@@ -9,7 +9,7 @@
 #include <klex/util/testing.h>
 #include <fmt/format.h>
 
-TEST(State, to_string)
+TEST(regular_State, to_string)
 {
 	klex::regular::StateIdVec v{1, 2, 3};
 	EXPECT_EQ("{n1, n2, n3}", fmt::format("{}", v));

@@ -12,7 +12,7 @@
 using namespace std;
 using namespace klex::regular;
 
-TEST(DotWriter, simple)
+TEST(regular_DotWriter, simple)
 {
 	stringstream sstr;
 	DotWriter dw(sstr, "n");
@@ -36,7 +36,7 @@ TEST(DotWriter, simple)
 	// just make sure it processes
 }
 
-TEST(DotWriter, multidfa_simple)
+TEST(regular_DotWriter, multidfa_simple)
 {
 	stringstream sstr;
 	const MultiDFA::InitialStateMap mis{{"foo", 1}, {"bar", 2}};

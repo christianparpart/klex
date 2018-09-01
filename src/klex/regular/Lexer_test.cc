@@ -79,7 +79,7 @@ struct formatter<LookaheadToken> {
 };
 }  // namespace fmt
 
-TEST(Lexer, lookahead)
+TEST(regular_Lexer, lookahead)
 {
 	Compiler cc;
 	cc.parse(RULES);
@@ -96,7 +96,7 @@ TEST(Lexer, lookahead)
 	ASSERT_EQ(LookaheadToken::Eof, lexer.recognize());
 }
 
-TEST(Lexer, LexerError)
+TEST(regular_Lexer, LexerError)
 {
 	Compiler cc;
 	cc.parse(RULES);
@@ -107,7 +107,7 @@ TEST(Lexer, LexerError)
 	EXPECT_THROW(lexer.recognize(), LookaheadLexer::LexerError);
 }
 
-TEST(Lexer, evaluateDotToken)
+TEST(regular_Lexer, evaluateDotToken)
 {
 	Compiler cc;
 	cc.parse(RULES);
@@ -118,7 +118,7 @@ TEST(Lexer, evaluateDotToken)
 	ASSERT_EQ(LookaheadToken::Eof, lexer.recognize());
 }
 
-TEST(Lexer, match_eol)
+TEST(regular_Lexer, match_eol)
 {
 	Compiler cc;
 	cc.parse(RULES);
@@ -143,7 +143,7 @@ TEST(Lexer, match_eol)
 	ASSERT_EQ(LookaheadToken::Eof, lexer.recognize());
 }
 
-TEST(Lexer, bol)
+TEST(regular_Lexer, bol)
 {
 	Compiler cc;
 	cc.parse(R"(|Spacing(ignore)  ::= [\s\t\n]+
@@ -160,7 +160,7 @@ TEST(Lexer, bol)
 	ASSERT_EQ(4, lexer.recognize());  // EOS
 }
 
-TEST(Lexer, bol_no_match)
+TEST(regular_Lexer, bol_no_match)
 {
 	Compiler cc;
 	cc.parse(R"(|Spacing(ignore)  ::= [\s\t\n]+
@@ -186,7 +186,7 @@ TEST(Lexer, bol_no_match)
 	ASSERT_EQ(4, lexer.recognize());  // EOS
 }
 
-TEST(Lexer, bol_line2)
+TEST(regular_Lexer, bol_line2)
 {
 	Compiler cc;
 	cc.parse(R"(|Spacing(ignore)  ::= [\s\t\n]+
@@ -203,7 +203,7 @@ TEST(Lexer, bol_line2)
 	ASSERT_EQ(3, lexer.recognize());  // EOS
 }
 
-TEST(Lexer, bol_and_other_conditions)
+TEST(regular_Lexer, bol_and_other_conditions)
 {
 	Compiler cc;
 	cc.parse(R"(|Spacing(ignore)  ::= [\s\t\n]+
@@ -220,7 +220,7 @@ TEST(Lexer, bol_and_other_conditions)
 	ASSERT_EQ(3, lexer.recognize());  // <<EOF>>
 }
 
-TEST(Lexer, bol_rules_on_non_bol_lexer)
+TEST(regular_Lexer, bol_rules_on_non_bol_lexer)
 {
 	Compiler cc;
 	cc.parse(R"(|Spacing(ignore)  ::= [\s\t\n]+
@@ -235,7 +235,7 @@ TEST(Lexer, bol_rules_on_non_bol_lexer)
 	ASSERT_THROW(SimpleLexer(lexerDef, "pragma"), std::invalid_argument);
 }
 
-TEST(Lexer, non_bol_rules_on_non_bol_lexer)
+TEST(regular_Lexer, non_bol_rules_on_non_bol_lexer)
 {
 	Compiler cc;
 	cc.parse(R"(|Spacing(ignore)  ::= [\s\t\n]+
@@ -251,7 +251,7 @@ TEST(Lexer, non_bol_rules_on_non_bol_lexer)
 	ASSERT_EQ(1, lexer.recognize());  // <<EOF>>
 }
 
-TEST(Lexer, non_bol_rules_on_bol_lexer)
+TEST(regular_Lexer, non_bol_rules_on_bol_lexer)
 {
 	Compiler cc;
 	cc.parse(R"(|Spacing(ignore)  ::= [\s\t\n]+
@@ -267,7 +267,7 @@ TEST(Lexer, non_bol_rules_on_bol_lexer)
 	ASSERT_EQ(1, lexer.recognize());  // <<EOF>>
 }
 
-TEST(Lexer, iterator)
+TEST(regular_Lexer, iterator)
 {
 	Compiler cc;
 	cc.parse(std::make_unique<std::stringstream>(R"(
@@ -311,7 +311,7 @@ TEST(Lexer, iterator)
 	ASSERT_TRUE(i == e);
 }
 
-TEST(Lexer, empty_alt)
+TEST(regular_Lexer, empty_alt)
 {
 	Compiler cc;
 	cc.parse(R"(|Spacing(ignore) ::= [\s\t\n]+
@@ -329,7 +329,7 @@ TEST(Lexer, empty_alt)
 	ASSERT_EQ(2, lexer.recognize());  // EOF
 }
 
-TEST(Lexer, ignore_many)
+TEST(regular_Lexer, ignore_many)
 {
 	Compiler cc;
 	cc.parse(R"(|Spacing(ignore)  ::= [\s\t\n]+
@@ -359,7 +359,7 @@ TEST(Lexer, ignore_many)
 	ASSERT_EQ(1, lexer.recognize());  // EOF
 }
 
-TEST(Lexer, realworld_ipv4)
+TEST(regular_Lexer, realworld_ipv4)
 {
 	Compiler cc;
 	cc.parse(R"(|
@@ -417,7 +417,7 @@ struct formatter<RealWorld> {
 };
 }  // namespace fmt
 
-TEST(Lexer, realworld_ipv6)
+TEST(regular_Lexer, realworld_ipv6)
 {
 	Compiler cc;
 	cc.parse(R"(|
@@ -515,7 +515,7 @@ TEST(Lexer, realworld_ipv6)
 	ASSERT_EQ(RealWorld::Eof, lexer.recognize());
 }
 
-TEST(Lexer, internal)
+TEST(regular_Lexer, internal)
 {
 	ASSERT_EQ("Eof", fmt::format("{}", LookaheadToken::Eof));
 	ASSERT_EQ("abba", fmt::format("{}", LookaheadToken::ABBA));

@@ -12,7 +12,7 @@
 
 using namespace klex::regular;
 
-TEST(RegExprParser, namedCharacterClass_graph)
+TEST(regular_RegExprParser, namedCharacterClass_graph)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:graph:]]");
 	auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -20,7 +20,7 @@ TEST(RegExprParser, namedCharacterClass_graph)
 	EXPECT_EQ("!-~", e->value().to_string());
 }
 
-TEST(RegExprParser, namedCharacterClass_digit)
+TEST(regular_RegExprParser, namedCharacterClass_digit)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:digit:]]");
 	auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -28,7 +28,7 @@ TEST(RegExprParser, namedCharacterClass_digit)
 	EXPECT_EQ("0-9", e->value().to_string());
 }
 
-TEST(RegExprParser, namedCharacterClass_alnum)
+TEST(regular_RegExprParser, namedCharacterClass_alnum)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:alnum:]]");
 	auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -36,7 +36,7 @@ TEST(RegExprParser, namedCharacterClass_alnum)
 	EXPECT_EQ("0-9A-Za-z", e->value().to_string());
 }
 
-TEST(RegExprParser, namedCharacterClass_alpha)
+TEST(regular_RegExprParser, namedCharacterClass_alpha)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:alpha:]]");
 	auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -44,7 +44,7 @@ TEST(RegExprParser, namedCharacterClass_alpha)
 	EXPECT_EQ("A-Za-z", e->value().to_string());
 }
 
-TEST(RegExprParser, namedCharacterClass_blank)
+TEST(regular_RegExprParser, namedCharacterClass_blank)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:blank:]]");
 	auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -52,7 +52,7 @@ TEST(RegExprParser, namedCharacterClass_blank)
 	EXPECT_EQ("\\t\\s", e->value().to_string());
 }
 
-TEST(RegExprParser, namedCharacterClass_cntrl)
+TEST(regular_RegExprParser, namedCharacterClass_cntrl)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:cntrl:]]");
 	auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -60,7 +60,7 @@ TEST(RegExprParser, namedCharacterClass_cntrl)
 	EXPECT_EQ("\\0-\\x1f\\x7f", e->value().to_string());
 }
 
-TEST(RegExprParser, namedCharacterClass_print)
+TEST(regular_RegExprParser, namedCharacterClass_print)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:print:]]");
 	auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -69,7 +69,7 @@ TEST(RegExprParser, namedCharacterClass_print)
 	EXPECT_EQ("\\s-~", e->value().to_string());
 }
 
-TEST(RegExprParser, namedCharacterClass_punct)
+TEST(regular_RegExprParser, namedCharacterClass_punct)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:punct:]]");
 	auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -78,7 +78,7 @@ TEST(RegExprParser, namedCharacterClass_punct)
 	EXPECT_EQ("!-/:-@[-`{-~", e->value().to_string());
 }
 
-TEST(RegExprParser, namedCharacterClass_space)
+TEST(regular_RegExprParser, namedCharacterClass_space)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:space:]]");
 	auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -86,12 +86,12 @@ TEST(RegExprParser, namedCharacterClass_space)
 	EXPECT_EQ("\\0\\t-\\r", e->value().to_string());
 }
 
-TEST(RegExprParser, namedCharacterClass_unknown)
+TEST(regular_RegExprParser, namedCharacterClass_unknown)
 {
 	EXPECT_THROW(RegExprParser{}.parse("[[:unknown:]]"), RegExprParser::UnexpectedToken);
 }
 
-TEST(RegExprParser, namedCharacterClass_upper)
+TEST(regular_RegExprParser, namedCharacterClass_upper)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:upper:]]");
 	auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -99,7 +99,7 @@ TEST(RegExprParser, namedCharacterClass_upper)
 	EXPECT_EQ("A-Z", e->value().to_string());
 }
 
-TEST(RegExprParser, namedCharacterClass_mixed)
+TEST(regular_RegExprParser, namedCharacterClass_mixed)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:lower:]0-9]");
 	auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -107,7 +107,7 @@ TEST(RegExprParser, namedCharacterClass_mixed)
 	EXPECT_EQ("0-9a-z", e->value().to_string());
 }
 
-TEST(RegExprParser, characterClass_complement)
+TEST(regular_RegExprParser, characterClass_complement)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[^\\n]");
 	auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -116,12 +116,12 @@ TEST(RegExprParser, characterClass_complement)
 	EXPECT_EQ(".", e->value().to_string());
 }
 
-TEST(RegExprParser, escapeSequences_invalid)
+TEST(regular_RegExprParser, escapeSequences_invalid)
 {
 	EXPECT_THROW(RegExprParser{}.parse("[\\z]"), RegExprParser::UnexpectedToken);
 }
 
-TEST(RegExprParser, escapeSequences_abfnrstv)
+TEST(regular_RegExprParser, escapeSequences_abfnrstv)
 {
 	EXPECT_EQ("\\a", RegExprParser{}.parse("[\\a]")->to_string());
 	EXPECT_EQ("\\b", RegExprParser{}.parse("[\\b]")->to_string());
@@ -133,7 +133,7 @@ TEST(RegExprParser, escapeSequences_abfnrstv)
 	EXPECT_EQ("\\v", RegExprParser{}.parse("[\\v]")->to_string());
 }
 
-TEST(RegExprParser, newline)
+TEST(regular_RegExprParser, newline)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("\n");
 	auto e = dynamic_cast<const CharacterExpr*>(re.get());
@@ -141,7 +141,7 @@ TEST(RegExprParser, newline)
 	EXPECT_EQ('\n', e->value());
 }
 
-TEST(RegExprParser, escapeSequences_hex)
+TEST(regular_RegExprParser, escapeSequences_hex)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[\\x20]");
 	auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -153,7 +153,7 @@ TEST(RegExprParser, escapeSequences_hex)
 	EXPECT_THROW(RegExprParser{}.parse("[\\xZA]"), RegExprParser::UnexpectedToken);
 }
 
-TEST(RegExprParser, escapeSequences_nul)
+TEST(regular_RegExprParser, escapeSequences_nul)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[\\0]");
 	auto e = dynamic_cast<const CharacterClassExpr*>(re.get());
@@ -161,7 +161,7 @@ TEST(RegExprParser, escapeSequences_nul)
 	EXPECT_EQ("\\0", e->value().to_string());
 }
 
-TEST(RegExprParser, escapeSequences_octal)
+TEST(regular_RegExprParser, escapeSequences_octal)
 {
 	// with leading zero
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("[\\040]");
@@ -183,7 +183,7 @@ TEST(RegExprParser, escapeSequences_octal)
 	EXPECT_THROW(RegExprParser{}.parse("[\\028]"), RegExprParser::UnexpectedToken);
 }
 
-TEST(RegExprParser, doubleQuote)
+TEST(regular_RegExprParser, doubleQuote)
 {
 	// as concatenation character
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse(R"(\")");
@@ -198,7 +198,7 @@ TEST(RegExprParser, doubleQuote)
 	EXPECT_EQ(R"(")", c->value().to_string());
 }
 
-TEST(RegExprParser, dot)
+TEST(regular_RegExprParser, dot)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse(".");
 	auto e = dynamic_cast<const DotExpr*>(re.get());
@@ -206,7 +206,7 @@ TEST(RegExprParser, dot)
 	EXPECT_EQ(".", e->to_string());
 }
 
-TEST(RegExprParser, optional)
+TEST(regular_RegExprParser, optional)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("a?");
 	auto e = dynamic_cast<const ClosureExpr*>(re.get());
@@ -214,7 +214,7 @@ TEST(RegExprParser, optional)
 	EXPECT_EQ("a?", e->to_string());
 }
 
-TEST(RegExprParser, bol)
+TEST(regular_RegExprParser, bol)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("^a");
 	auto cat = dynamic_cast<const ConcatenationExpr*>(re.get());
@@ -225,7 +225,7 @@ TEST(RegExprParser, bol)
 	EXPECT_EQ("^", bol->to_string());
 }
 
-TEST(RegExprParser, eol)
+TEST(regular_RegExprParser, eol)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("a$");
 	auto cat = dynamic_cast<const ConcatenationExpr*>(re.get());
@@ -236,7 +236,7 @@ TEST(RegExprParser, eol)
 	EXPECT_EQ("a$", re->to_string());
 }
 
-TEST(RegExprParser, eof)
+TEST(regular_RegExprParser, eof)
 {
 	std::unique_ptr<RegExpr> re = RegExprParser{}.parse("<<EOF>>");
 	auto eof = dynamic_cast<const EndOfFileExpr*>(re.get());
@@ -244,14 +244,14 @@ TEST(RegExprParser, eof)
 	EXPECT_EQ("<<EOF>>", re->to_string());
 }
 
-TEST(RegExprParser, alternation)
+TEST(regular_RegExprParser, alternation)
 {
 	EXPECT_EQ("a|b", RegExprParser{}.parse("a|b")->to_string());
 	EXPECT_EQ("(a|b)c", RegExprParser{}.parse("(a|b)c")->to_string());
 	EXPECT_EQ("a(b|c)", RegExprParser{}.parse("a(b|c)")->to_string());
 }
 
-TEST(RegExprParser, lookahead)
+TEST(regular_RegExprParser, lookahead)
 {
 	auto re = RegExprParser{}.parse("ab/cd");
 	auto e = dynamic_cast<const LookAheadExpr*>(re.get());
@@ -261,7 +261,7 @@ TEST(RegExprParser, lookahead)
 	EXPECT_EQ("a|(b/c)", RegExprParser{}.parse("a|(b/c)")->to_string());
 }
 
-TEST(RegExprParser, closure)
+TEST(regular_RegExprParser, closure)
 {
 	auto re = RegExprParser{}.parse("(abc)*");
 	auto e = dynamic_cast<const ClosureExpr*>(re.get());
@@ -271,7 +271,7 @@ TEST(RegExprParser, closure)
 	EXPECT_EQ("(abc)*", re->to_string());
 }
 
-TEST(RegExprParser, positive)
+TEST(regular_RegExprParser, positive)
 {
 	auto re = RegExprParser{}.parse("(abc)+");
 	auto e = dynamic_cast<const ClosureExpr*>(re.get());
@@ -281,7 +281,7 @@ TEST(RegExprParser, positive)
 	EXPECT_EQ("(abc)+", re->to_string());
 }
 
-TEST(RegExprParser, closure_range)
+TEST(regular_RegExprParser, closure_range)
 {
 	auto re = RegExprParser{}.parse("a{2,4}");
 	auto e = dynamic_cast<const ClosureExpr*>(re.get());
@@ -291,18 +291,18 @@ TEST(RegExprParser, closure_range)
 	EXPECT_EQ("a{2,4}", re->to_string());
 }
 
-TEST(RegExprParser, empty)
+TEST(regular_RegExprParser, empty)
 {
 	auto re = RegExprParser{}.parse("(a|)");
 	EXPECT_EQ("a|", re->to_string());  // grouping '(' & ')' is not preserved as node in the parse tree.
 }
 
-TEST(RegExprParser, UnexpectedToken_grouping)
+TEST(regular_RegExprParser, UnexpectedToken_grouping)
 {
 	EXPECT_THROW(RegExprParser{}.parse("(a"), RegExprParser::UnexpectedToken);
 }
 
-TEST(RegExprParser, UnexpectedToken_literal)
+TEST(regular_RegExprParser, UnexpectedToken_literal)
 {
 	EXPECT_THROW(RegExprParser{}.parse("\"a"), RegExprParser::UnexpectedToken);
 }

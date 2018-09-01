@@ -10,14 +10,14 @@
 
 using klex::regular::SymbolSet;
 
-TEST(SymbolSet, s0)
+TEST(regular_SymbolSet, s0)
 {
 	SymbolSet s0;
 	ASSERT_EQ(0, s0.size());
 	ASSERT_TRUE(s0.empty());
 }
 
-TEST(SymbolSet, s1)
+TEST(regular_SymbolSet, s1)
 {
 	SymbolSet s1;
 
@@ -32,7 +32,7 @@ TEST(SymbolSet, s1)
 	ASSERT_FALSE(s1.empty());
 }
 
-TEST(SymbolSet, initializer_list)
+TEST(regular_SymbolSet, initializer_list)
 {
 	SymbolSet a{'a'};
 	EXPECT_EQ(1, a.size());
@@ -43,7 +43,7 @@ TEST(SymbolSet, initializer_list)
 	EXPECT_EQ("abc", s2.to_string());
 }
 
-TEST(SymbolSet, dot)
+TEST(regular_SymbolSet, dot)
 {
 	SymbolSet dot(SymbolSet::Dot);
 	EXPECT_FALSE(dot.contains('\n'));
@@ -53,7 +53,7 @@ TEST(SymbolSet, dot)
 	EXPECT_EQ(".", dot.to_string());
 }
 
-TEST(SymbolSet, complement)
+TEST(regular_SymbolSet, complement)
 {
 	SymbolSet s;
 	s.insert('\n');
@@ -62,7 +62,7 @@ TEST(SymbolSet, complement)
 	EXPECT_EQ(".", s.to_string());
 }
 
-TEST(SymbolSet, range)
+TEST(regular_SymbolSet, range)
 {
 	SymbolSet r;
 	r.insert(std::make_pair('a', 'f'));
@@ -75,7 +75,7 @@ TEST(SymbolSet, range)
 	EXPECT_EQ("0-9a-f", r.to_string());
 }
 
-TEST(SymbolSet, fmt_format)
+TEST(regular_SymbolSet, fmt_format)
 {
 	SymbolSet s;
 	s.insert(std::make_pair('0', '9'));
@@ -84,7 +84,7 @@ TEST(SymbolSet, fmt_format)
 	EXPECT_EQ("0-9a-f", fmt::format("{}", s));
 }
 
-TEST(SymbolSet, hash_map)
+TEST(regular_SymbolSet, hash_map)
 {
 	SymbolSet s0;
 	SymbolSet s1{'a'};
@@ -100,7 +100,7 @@ TEST(SymbolSet, hash_map)
 	EXPECT_EQ(2, map[s2]);
 }
 
-TEST(SymbolSet, compare)
+TEST(regular_SymbolSet, compare)
 {
 	SymbolSet s1{'a', 'b'};
 	SymbolSet s2{'a', 'b'};

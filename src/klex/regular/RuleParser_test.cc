@@ -12,7 +12,7 @@
 
 using namespace klex::regular;
 
-TEST(RuleParser, simple)
+TEST(regular_RuleParser, simple)
 {
 	RuleParser rp{"main ::= blah\n"};
 	RuleList rules = rp.parseRules();
@@ -20,7 +20,7 @@ TEST(RuleParser, simple)
 	EXPECT_EQ("blah", rules[0].pattern);
 }
 
-TEST(RuleParser, rule_at_eof)
+TEST(regular_RuleParser, rule_at_eof)
 {
 	RuleParser rp{"main ::= blah"};
 	RuleList rules = rp.parseRules();
@@ -28,7 +28,7 @@ TEST(RuleParser, rule_at_eof)
 	EXPECT_EQ("blah", rules[0].pattern);
 }
 
-TEST(RuleParser, simple_trailing_spaces)
+TEST(regular_RuleParser, simple_trailing_spaces)
 {
 	RuleParser rp{"main ::= blah\n   "};
 	RuleList rules = rp.parseRules();
@@ -36,7 +36,7 @@ TEST(RuleParser, simple_trailing_spaces)
 	EXPECT_EQ("blah", rules[0].pattern);
 }
 
-TEST(RuleParser, quotedPattern)
+TEST(regular_RuleParser, quotedPattern)
 {
 	RuleParser rp{"main ::= \"blah\""};
 	RuleList rules = rp.parseRules();
@@ -44,7 +44,7 @@ TEST(RuleParser, quotedPattern)
 	EXPECT_EQ("\"blah\"", rules[0].pattern);
 }
 
-TEST(RuleParser, multiQuotedPattern)
+TEST(regular_RuleParser, multiQuotedPattern)
 {
 	RuleParser rp{R"(rule ::= "b"la"h")"};
 	RuleList rules = rp.parseRules();
@@ -52,7 +52,7 @@ TEST(RuleParser, multiQuotedPattern)
 	EXPECT_EQ(R"("b"la"h")", rules[0].pattern);
 }
 
-TEST(RuleParser, doubleQuote)
+TEST(regular_RuleParser, doubleQuote)
 {
 	RuleParser rp{R"(rule ::= \")"};
 	RuleList rules = rp.parseRules();
@@ -60,7 +60,7 @@ TEST(RuleParser, doubleQuote)
 	EXPECT_EQ(R"(\")", rules[0].pattern);
 }
 
-TEST(RuleParser, spaceRule)
+TEST(regular_RuleParser, spaceRule)
 {
 	RuleParser rp{R"(rule ::= [ \n\t]+)"};
 	RuleList rules = rp.parseRules();
@@ -68,7 +68,7 @@ TEST(RuleParser, spaceRule)
 	EXPECT_EQ(R"([ \n\t]+)", rules[0].pattern);
 }
 
-TEST(RuleParser, stringRule)
+TEST(regular_RuleParser, stringRule)
 {
 	RuleParser rp{R"(rule ::= \"[^\"]*\")"};
 	RuleList rules = rp.parseRules();
@@ -76,7 +76,7 @@ TEST(RuleParser, stringRule)
 	EXPECT_EQ(R"(\"[^\"]*\")", rules[0].pattern);
 }
 
-TEST(RuleParser, ref)
+TEST(regular_RuleParser, ref)
 {
 	RuleParser rp{R"(
     Foo(ref) ::= foo
@@ -88,7 +88,7 @@ TEST(RuleParser, ref)
 	EXPECT_EQ("(foo)_(bar)", rules[0].pattern);
 }
 
-TEST(RuleParser, ref_duplicated)
+TEST(regular_RuleParser, ref_duplicated)
 {
 	RuleParser rp{R"(
     Foo(ref) ::= foo
@@ -98,7 +98,7 @@ TEST(RuleParser, ref_duplicated)
 	EXPECT_THROW(rp.parseRules(), RuleParser::DuplicateRule);
 }
 
-TEST(RuleParser, multiline_alt)
+TEST(regular_RuleParser, multiline_alt)
 {
 	RuleParser rp{R"(
     Rule1       ::= foo
@@ -114,7 +114,7 @@ TEST(RuleParser, multiline_alt)
 	EXPECT_EQ("(fnord|hard)|(fnord|hard)", rules[1].pattern);
 }
 
-TEST(RuleParser, condition1)
+TEST(regular_RuleParser, condition1)
 {
 	RuleParser rp{R"(
     <foo>Rule1    ::= foo
@@ -133,7 +133,7 @@ TEST(RuleParser, condition1)
 	EXPECT_EQ("bar", rules[1].conditions[0]);
 }
 
-TEST(RuleParser, condition2)
+TEST(regular_RuleParser, condition2)
 {
 	RuleParser rp{R"(
     <foo>Rule1      ::= foo
@@ -154,7 +154,7 @@ TEST(RuleParser, condition2)
 	EXPECT_EQ("foo", rules[1].conditions[1]);
 }
 
-TEST(RuleParser, conditional_star)
+TEST(regular_RuleParser, conditional_star)
 {
 	RuleParser rp{R"(
     Zero      ::= zero
@@ -185,7 +185,7 @@ TEST(RuleParser, conditional_star)
 	EXPECT_EQ("two", rules[3].conditions[2]);
 }
 
-TEST(RuleParser, grouped_conditions)
+TEST(regular_RuleParser, grouped_conditions)
 {
 	RuleParser rp{R"(
     Rule1       ::= foo
@@ -203,18 +203,18 @@ TEST(RuleParser, grouped_conditions)
 	EXPECT_EQ("blah", rules[1].conditions[0]);
 }
 
-TEST(RuleParser, InvalidRefRuleWithConditions)
+TEST(regular_RuleParser, InvalidRefRuleWithConditions)
 {
 	ASSERT_THROW(RuleParser{"<cond>main(ref) ::= blah\n"}.parseRules(),
 				 RuleParser::InvalidRefRuleWithConditions);
 }
 
-TEST(RuleParser, InvalidRuleOption)
+TEST(regular_RuleParser, InvalidRuleOption)
 {
 	ASSERT_THROW(RuleParser{"A(invalid) ::= a\n"}.parseRules(), RuleParser::InvalidRuleOption);
 }
 
-TEST(RuleParser, DuplicateRule)
+TEST(regular_RuleParser, DuplicateRule)
 {
 	RuleParser rp{R"(
     foo ::= abc
@@ -223,13 +223,13 @@ TEST(RuleParser, DuplicateRule)
 	ASSERT_THROW(rp.parseRules(), RuleParser::DuplicateRule);
 }
 
-TEST(RuleParser, UnexpectedChar)
+TEST(regular_RuleParser, UnexpectedChar)
 {
 	ASSERT_THROW(RuleParser{"A :="}.parseRules(), RuleParser::UnexpectedChar);
 	ASSERT_THROW(RuleParser{"<x A ::= a"}.parseRules(), RuleParser::UnexpectedChar);
 }
 
-TEST(RuleParser, UnexpectedToken)
+TEST(regular_RuleParser, UnexpectedToken)
 {
 	ASSERT_THROW(RuleParser{"<x,y,> A ::= a"}.parseRules(), RuleParser::UnexpectedToken);
 	ASSERT_THROW(RuleParser{"<> A ::= a"}.parseRules(), RuleParser::UnexpectedToken);

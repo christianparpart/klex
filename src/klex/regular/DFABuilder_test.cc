@@ -15,7 +15,7 @@
 
 using namespace klex::regular;
 
-TEST(DFABuilder, shadowing) {
+TEST(regular_DFABuilder, shadowing) {
   Compiler cc;
   cc.parse(std::make_unique<std::stringstream>(R"(
     Identifier  ::= [a-z][a-z0-9]*
