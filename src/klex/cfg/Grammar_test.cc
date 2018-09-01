@@ -24,7 +24,7 @@ TEST(cfg_Grammar, missing_production) {
 	// TODO: assert actgual error message
 }
 
-TEST(cfg_Grammar, metadata_right_recursive) {
+TEST(cfg_Grammar, right_recursive) {
 	ConsoleReport report;
 	Grammar grammar = GrammarParser(GrammarLexer{
 		R"(`token {
@@ -100,7 +100,7 @@ TEST(cfg_Grammar, with_complex_tokens) {
 	ASSERT_EQ("[0-9]+", get<regular::Rule>(get<Terminal>(grammar.productions[8].handle.symbols[0]).literal).pattern);
 }
 
-TEST(cfg_Grammar, DISABLED_metadata_left_recursive) {
+TEST(cfg_Grammar, left_recursive) {
 	ConsoleReport report;
 	Grammar grammar = GrammarParser(GrammarLexer{
 		R"(`Start     ::= Expr "<<EOF>>";

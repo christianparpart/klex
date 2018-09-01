@@ -5,8 +5,8 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/cfg/GrammarValidator.h>
 #include <klex/cfg/Grammar.h>
+#include <klex/cfg/GrammarValidator.h>
 #include <variant>
 
 using namespace std;
@@ -19,7 +19,8 @@ void GrammarValidator::validate(const Grammar& G)
 		for (const Symbol& b : p.handle.symbols)
 			if (holds_alternative<NonTerminal>(b))
 				if (!G.containsProduction(get<NonTerminal>(b)))
-					report_->typeError(SourceLocation{}, "Non-terminal {} is missing a production rule.", b);
+					report_->typeError(SourceLocation{/*TODO: b.location()*/},
+									   "Non-terminal {} is missing a production rule.", b);
 
 	// TODO: check for unwanted infinite recursions
 	// such as: E ::= E
