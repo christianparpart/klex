@@ -20,7 +20,7 @@ using namespace klex::util::literals;
 
 TEST(cfg_ll_SyntaxTable, construct_right_recursive)
 {
-	ConsoleReport report;
+	BufferedReport report;
 	Grammar grammar = GrammarParser(GrammarLexer{
 		R"(`token {
 		   `  Spacing(ignore) ::= [\s\t]+
