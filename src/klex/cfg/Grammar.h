@@ -61,18 +61,39 @@ using Symbol = std::variant<NonTerminal, Terminal>;
 //! @returns true if symbol @p a is by string-comparison smaller then symbol @p b.
 bool operator<(const Symbol& a, const Symbol& b);
 
+struct Action {
+	std::string id;
+};
+
 /**
  * Handle is the right-hand-side of a Production rule.
  *
  * @see Production, Terminal, NonTerminal
  */
-struct Handle {
-	using Action = std::string;
-	using Element = std::variant<Symbol, Action>;
-
+struct OldHandle {
 	std::vector<Symbol> symbols;
 };
-// using Handle = std::vector<std::variant<Symbol, Action>>;
+using NewHandle = std::vector<std::variant<Symbol, Action>>;
+using Handle = OldHandle;
+
+struct _Symbols {
+	const NewHandle& handle;
+	struct iterator {
+		NewHandle::const_iterator i;
+		const Symbol& operator*() const { return std::get<Symbol>(*i); }
+		iterator& operator++() {
+			do i++;
+			while (!std::holds_alternative<Symbol>(*i));
+			return *this;
+		}
+		bool operator==(const iterator& rhs) const noexcept { return i == rhs.i; }
+		bool operator!=(const iterator& rhs) const noexcept { return i != rhs.i; }
+	};
+
+	iterator begin() { return iterator{handle.cbegin()}; }
+	iterator end() { return iterator{handle.cend()}; }
+};
+inline _Symbols symbols(const NewHandle& handle) { return _Symbols{handle}; }
 
 //! @returns a human readable form of @p handle.
 std::string to_string(const Handle& handle);
