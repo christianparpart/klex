@@ -18,9 +18,9 @@
 #include <vector>
 
 using namespace std;
-using namespace klex;
-using namespace klex::cfg;
 using klex::util::reversed;
+
+namespace klex::cfg {
 
 // {{{ helper
 namespace {
@@ -60,7 +60,7 @@ inline bool merge(vector<T>* target, vector<T> source)
 }  // namespace
 // }}} helper
 
-bool klex::cfg::operator<(const Symbol& a, const Symbol& b)
+bool operator<(const Symbol& a, const Symbol& b)
 {
 	using namespace std;
 	const string& lhs = holds_alternative<Terminal>(a)
@@ -76,22 +76,24 @@ bool klex::cfg::operator<(const Symbol& a, const Symbol& b)
 	return lhs < rhs;
 }
 
-std::string klex::cfg::to_string(const Handle& handle)
+string to_string(const Handle& handle)
 {
-	std::stringstream sstr;
+	stringstream sstr;
 
 	int i = 0;
-	for (const klex::cfg::Symbol& symbol : handle.symbols)
+	for (const Symbol& symbol : handle.symbols)
 	{
 		if (i++)
 			sstr << ' ';
 		sstr << fmt::format("{}", symbol);
 	}
 
-	if (!handle.ref.empty())
-		sstr << " {" << handle.ref << "}";
-
 	return sstr.str();
+}
+
+string to_string(const Production& p)
+{
+	return fmt::format("{} ::= {};", p.name, p.handle);
 }
 
 vector<Terminal> Production::first1() const
@@ -152,7 +154,7 @@ vector<Terminal> Grammar::followOf(const NonTerminal& nt) const
 void Grammar::injectEof()
 {
 	productions[0].handle.symbols.emplace_back(
-		Terminal{regular::Rule{0, 0, /*TODO:tag*/ 0, {"INITIAL"}, "EOF", "<<EOF>>"}, "EOF"});
+		Terminal{regular::Rule(0, 0, /*TODO:tag*/ 0, {"INITIAL"}, "EOF", "<<EOF>>"), "EOF"});
 }
 
 struct ProductionIdBuilder {
@@ -291,5 +293,7 @@ string Grammar::dump() const
 	}
 	return move(sstr.str());
 }
+
+} // namespace klex::cfg
 
 // vim:ts=4:sw=4:noet

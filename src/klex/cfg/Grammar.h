@@ -67,9 +67,12 @@ bool operator<(const Symbol& a, const Symbol& b);
  * @see Production, Terminal, NonTerminal
  */
 struct Handle {
+	using Action = std::string;
+	using Element = std::variant<Symbol, Action>;
+
 	std::vector<Symbol> symbols;
-	std::string ref;
 };
+// using Handle = std::vector<std::variant<Symbol, Action>>;
 
 //! @returns a human readable form of @p handle.
 std::string to_string(const Handle& handle);
@@ -90,6 +93,9 @@ struct Production {
 
 	std::vector<Terminal> first1() const;  //!< @returns the FIRST+-set of this production's handle.
 };
+
+//! @returns a human readable form of Production @p p.
+std::string to_string(const Production& p);
 
 /**
  * Context-free grammar.
@@ -246,7 +252,7 @@ struct formatter<klex::cfg::Production> {
 	template <typename FormatContext>
 	constexpr auto format(const klex::cfg::Production& v, FormatContext& ctx)
 	{
-		return format_to(ctx.begin(), "{:} ::= {};", v.name, v.handle);
+		return format_to(ctx.begin(), "{}", v.name, v.handle);
 	}
 };
 

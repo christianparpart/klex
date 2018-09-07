@@ -130,7 +130,7 @@ Handle GrammarParser::parseHandle()
 			case Token::SetOpen:
 			{
 				consumeToken();
-				handle.ref = currentLiteral();
+				// TODO handle.ref = currentLiteral();
 				consumeToken(Token::Identifier);
 				consumeToken(Token::SetClose);
 				return move(handle);
