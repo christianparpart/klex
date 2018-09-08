@@ -9,6 +9,7 @@
 
 #include <klex/regular/Rule.h>
 
+#include <iterator>
 #include <map>
 #include <optional>
 #include <set>
@@ -106,14 +107,7 @@ struct _Symbols {
 		bool operator!=(const const_iterator& rhs) const noexcept { return i != rhs.i; }
 	};
 
-	size_t size() const noexcept
-	{
-		size_t n = 0;
-		for (const auto& x : handle)
-			if (std::holds_alternative<Terminal>(x) || std::holds_alternative<NonTerminal>(x))
-				++n;
-		return n;
-	}
+	size_t size() const noexcept;
 
 	Symbol operator[](size_t i) const
 	{
@@ -265,6 +259,19 @@ struct Grammar {
 };
 
 }  // namespace klex::cfg
+
+namespace std {
+
+template <>
+struct iterator_traits<klex::cfg::_Symbols::const_iterator> {
+	using difference_type = std::ptrdiff_t;
+	using value_type = klex::cfg::Symbol;
+	using pointer = value_type*;
+	using reference = value_type&;
+	using iterator_category = std::forward_iterator_tag;
+};
+
+}  // namespace std
 
 // {{{ fmtlib integration
 namespace fmt {
@@ -457,5 +464,7 @@ struct formatter<std::set<klex::cfg::NonTerminal>> {
 }  // namespace fmt
 
 // }}}
+
+#include <klex/cfg/Grammar-inl.h>
 
 // vim:ts=4:sw=4:noet
