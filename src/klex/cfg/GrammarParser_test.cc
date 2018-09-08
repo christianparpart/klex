@@ -27,7 +27,7 @@ const static std::string simpleGrammarSpec =
 
 TEST(cfg_GrammarParser, parserSimple)
 {
-	BufferedReport report;
+	ConsoleReport report;
 	GrammarParser parser(GrammarLexer{simpleGrammarSpec}, &report);
 	Grammar grammar = parser.parse();
 	ASSERT_EQ(5, grammar.productions.size());
@@ -89,7 +89,7 @@ TEST(cfg_GrammarParser, customTokens)
 	ASSERT_TRUE(any_of(begin(grammar.terminals), end(grammar.terminals), CheckTerminalPattern{")"}));
 
 	// verify production rule to be in the form as the input mandates
-	const auto& symbols = grammar.productions[0].handle.symbols;
+	const auto symbols = klex::cfg::symbols(grammar.productions[0].handle);
 	ASSERT_EQ(4, symbols.size());
 
 	ASSERT_TRUE(holds_alternative<Terminal>(symbols[0]));

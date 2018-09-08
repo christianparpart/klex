@@ -117,20 +117,20 @@ Handle GrammarParser::parseHandle()
 		switch (currentToken())
 		{
 			case Token::Literal:
-				handle.symbols.emplace_back(Terminal{currentLiteral(), ""});
+				handle.emplace_back(Terminal{currentLiteral(), ""});
 				consumeToken();
 				break;
 			case Token::Identifier:
 				if (optional<const regular::Rule*> r = findExplicitTerminal(currentLiteral()); r.has_value())
-					handle.symbols.emplace_back(Terminal{**r, currentLiteral()});
+					handle.emplace_back(Terminal{**r, currentLiteral()});
 				else
-					handle.symbols.emplace_back(NonTerminal{currentLiteral()});
+					handle.emplace_back(NonTerminal{currentLiteral()});
 				consumeToken();
 				break;
 			case Token::SetOpen:
 			{
 				consumeToken();
-				// TODO handle.ref = currentLiteral();
+				handle.emplace_back(Action{currentLiteral()});
 				consumeToken(Token::Identifier);
 				consumeToken(Token::SetClose);
 				return move(handle);

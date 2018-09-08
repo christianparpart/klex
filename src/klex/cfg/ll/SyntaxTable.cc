@@ -113,9 +113,9 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 	for (const Production& p : grammar.productions)
 	{
 		SyntaxTable::Expression expr;
-		expr.reserve(p.handle.symbols.size());
+		expr.reserve(symbols(p.handle).size());
 
-		for (const Symbol& b : p.handle.symbols)
+		for (const Symbol b : symbols(p.handle))
 			if (holds_alternative<NonTerminal>(b))
 				expr.emplace_back(idNonTerminals[get<NonTerminal>(b)]);
 			else

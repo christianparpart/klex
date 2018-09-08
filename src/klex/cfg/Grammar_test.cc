@@ -17,6 +17,17 @@ using namespace klex;
 using namespace klex::cfg;
 using namespace klex::util::literals;
 
+TEST(cfg_Grammar, handle_symbols) {
+	Handle h;
+	h.emplace_back(Terminal{"a", ""});
+	h.emplace_back(Action{"a1"});
+	h.emplace_back(NonTerminal{"A"});
+
+	ASSERT_TRUE(holds_alternative<Terminal>(symbols(h)[0]));
+	ASSERT_TRUE(holds_alternative<NonTerminal>(symbols(h)[1]));
+	ASSERT_EQ(2, symbols(h).size());
+}
+
 TEST(cfg_Grammar, missing_production) {
 	BufferedReport report;
 	Grammar grammar = GrammarParser(GrammarLexer{"Start ::= Expr;"}, &report).parse();
@@ -93,11 +104,11 @@ TEST(cfg_Grammar, with_complex_tokens) {
 
 	ASSERT_EQ(9, grammar.productions.size());
 
-	ASSERT_EQ(1, grammar.productions.back().handle.symbols.size());
+	ASSERT_EQ(1, symbols(grammar.productions.back().handle).size());
 	// ASSERT_EQ("[0-9]+", get<Terminal>(grammar.productions.back().handle.symbols.front()).pattern());
-	ASSERT_TRUE(holds_alternative<Terminal>(grammar.productions[8].handle.symbols[0]));
-	ASSERT_TRUE(holds_alternative<regular::Rule>(get<Terminal>(grammar.productions[8].handle.symbols[0]).literal));
-	ASSERT_EQ("[0-9]+", get<regular::Rule>(get<Terminal>(grammar.productions[8].handle.symbols[0]).literal).pattern);
+	ASSERT_TRUE(holds_alternative<Terminal>(symbols(grammar.productions[8].handle)[0]));
+	ASSERT_TRUE(holds_alternative<regular::Rule>(get<Terminal>(symbols(grammar.productions[8].handle)[0]).literal));
+	ASSERT_EQ("[0-9]+", get<regular::Rule>(get<Terminal>(symbols(grammar.productions[8].handle)[0]).literal).pattern);
 }
 
 TEST(cfg_Grammar, left_recursive) {

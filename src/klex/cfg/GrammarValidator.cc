@@ -16,7 +16,7 @@ using namespace klex::cfg;
 void GrammarValidator::validate(const Grammar& G)
 {
 	for (const Production& p : G.productions)
-		for (const Symbol& b : p.handle.symbols)
+		for (const Symbol b : symbols(p.handle))
 			if (holds_alternative<NonTerminal>(b))
 				if (!G.containsProduction(get<NonTerminal>(b)))
 					report_->typeError(SourceLocation{/*TODO: b.location()*/},

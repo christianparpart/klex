@@ -81,11 +81,11 @@ string to_string(const Handle& handle)
 	stringstream sstr;
 
 	int i = 0;
-	for (const Symbol& symbol : handle.symbols)
+	for (const auto& x : handle)
 	{
 		if (i++)
 			sstr << ' ';
-		sstr << fmt::format("{}", symbol);
+		sstr << fmt::format("{}", x);
 	}
 
 	return sstr.str();
@@ -153,7 +153,7 @@ vector<Terminal> Grammar::followOf(const NonTerminal& nt) const
 
 void Grammar::injectEof()
 {
-	productions[0].handle.symbols.emplace_back(
+	productions[0].handle.emplace_back(
 		Terminal{regular::Rule(0, 0, /*TODO:tag*/ 0, {"INITIAL"}, "EOF", "<<EOF>>"), "EOF"});
 }
 
@@ -209,7 +209,7 @@ void Grammar::finalize()
 	terminals = [&]() {
 		set<Terminal> terminals;
 		for (const Production& production : productions)
-			for (const Symbol& b : production.handle.symbols)
+			for (const Symbol b : symbols(production.handle))
 				if (holds_alternative<Terminal>(b))
 					terminals.insert(get<Terminal>(b));
 
@@ -232,11 +232,11 @@ void Grammar::finalize()
 		for (Production& production : productions)
 		{
 			const NonTerminal nt{production.name};
-			const vector<Symbol>& expression = production.handle.symbols;
+			const Handle& expression = production.handle;
 
 			// FIRST-set
 			bool found = false;
-			for (const Symbol& b : expression)
+			for (const Symbol b : symbols(expression))
 			{
 				updated |= merge(&production.first, firstOf(b));
 				if (!containsEpsilon(b))
@@ -250,7 +250,7 @@ void Grammar::finalize()
 
 			// FOLLOW-set
 			vector<Terminal> trailer = followOf(nt);
-			for (const Symbol& b : reversed(expression))
+			for (const Symbol b : reversed(symbols(expression)))
 			{
 				if (holds_alternative<Terminal>(b))
 					trailer = firstOf(b);

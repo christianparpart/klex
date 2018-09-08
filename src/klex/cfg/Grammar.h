@@ -65,35 +65,109 @@ struct Action {
 	std::string id;
 };
 
+using HandleElement = std::variant<Terminal, NonTerminal, Action>;
+
 /**
  * Handle is the right-hand-side of a Production rule.
  *
  * @see Production, Terminal, NonTerminal
  */
-struct OldHandle {
-	std::vector<Symbol> symbols;
-};
-using NewHandle = std::vector<std::variant<Symbol, Action>>;
-using Handle = OldHandle;
+using Handle = std::vector<HandleElement>;
 
 struct _Symbols {
-	const NewHandle& handle;
-	struct iterator {
-		NewHandle::const_iterator i;
-		const Symbol& operator*() const { return std::get<Symbol>(*i); }
-		iterator& operator++() {
-			do i++;
-			while (!std::holds_alternative<Symbol>(*i));
+	const Handle& handle;
+	struct const_iterator {
+		Handle::const_iterator i;
+		Handle::const_iterator e;
+
+		Symbol operator*() const
+		{
+			if (std::holds_alternative<Terminal>(*i))
+				return std::get<Terminal>(*i);
+			else
+				return std::get<NonTerminal>(*i);
+		}
+
+		const_iterator& operator++(int)
+		{
+			++*this;
 			return *this;
 		}
-		bool operator==(const iterator& rhs) const noexcept { return i == rhs.i; }
-		bool operator!=(const iterator& rhs) const noexcept { return i != rhs.i; }
+
+		const_iterator& operator++()
+		{
+			i++;
+			while (i != e && std::holds_alternative<Action>(*i))
+				i++;
+			return *this;
+		}
+
+		bool operator==(const const_iterator& rhs) const noexcept { return i == rhs.i; }
+		bool operator!=(const const_iterator& rhs) const noexcept { return i != rhs.i; }
 	};
 
-	iterator begin() { return iterator{handle.cbegin()}; }
-	iterator end() { return iterator{handle.cend()}; }
+	size_t size() const noexcept
+	{
+		size_t n = 0;
+		for (const auto& x : handle)
+			if (std::holds_alternative<Terminal>(x) || std::holds_alternative<NonTerminal>(x))
+				++n;
+		return n;
+	}
+
+	Symbol operator[](size_t i) const
+	{
+		for (const auto& x : handle)
+			if (std::holds_alternative<Terminal>(x) || std::holds_alternative<NonTerminal>(x))
+			{
+				if (i > 0)
+					i--;
+				else if (std::holds_alternative<Terminal>(x))
+					return std::get<Terminal>(x);
+				else
+					return std::get<NonTerminal>(x);
+			}
+
+		throw std::runtime_error{"Range error"};
+	}
+
+	const_iterator begin() const { return const_iterator{handle.cbegin(), handle.cend()}; }
+	const_iterator end() const { return const_iterator{handle.cend(), handle.cend()}; }
+
+	struct const_reverse_iterator {
+		Handle::const_reverse_iterator i;
+		Handle::const_reverse_iterator e;
+		Symbol operator*() const
+		{
+			if (std::holds_alternative<Terminal>(*i))
+				return std::get<Terminal>(*i);
+			else
+				return std::get<NonTerminal>(*i);
+		}
+
+		const_reverse_iterator& operator++()
+		{
+			i++;
+			while (i != e && std::holds_alternative<Action>(*i))
+				i++;
+			return *this;
+		}
+		bool operator==(const const_reverse_iterator& rhs) const noexcept { return i == rhs.i; }
+		bool operator!=(const const_reverse_iterator& rhs) const noexcept { return i != rhs.i; }
+	};
+
+	const_reverse_iterator crbegin() const
+	{
+		return const_reverse_iterator{handle.crbegin(), handle.crend()};
+	}
+
+	const_reverse_iterator crend() const { return const_reverse_iterator{handle.crend(), handle.crend()}; }
 };
-inline _Symbols symbols(const NewHandle& handle) { return _Symbols{handle}; }
+
+inline _Symbols symbols(const Handle& handle)
+{
+	return _Symbols{handle};
+}
 
 //! @returns a human readable form of @p handle.
 std::string to_string(const Handle& handle);
@@ -226,6 +300,41 @@ struct formatter<klex::cfg::NonTerminal> {
 	constexpr auto format(const klex::cfg::NonTerminal& v, FormatContext& ctx)
 	{
 		return format_to(ctx.begin(), "{}", v.name);
+	}
+};
+
+template <>
+struct formatter<klex::cfg::Action> {
+	template <typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
+
+	template <typename FormatContext>
+	constexpr auto format(const klex::cfg::Action& v, FormatContext& ctx)
+	{
+		return format_to(ctx.begin(), "{{{}}}", v.id);
+	}
+};
+
+template <>
+struct formatter<klex::cfg::HandleElement> {
+	template <typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
+
+	template <typename FormatContext>
+	constexpr auto format(const klex::cfg::HandleElement& v, FormatContext& ctx)
+	{
+		if (std::holds_alternative<klex::cfg::Terminal>(v))
+			return format_to(ctx.begin(), "{}", std::get<klex::cfg::Terminal>(v));
+		else if (std::holds_alternative<klex::cfg::NonTerminal>(v))
+			return format_to(ctx.begin(), "{}", std::get<klex::cfg::NonTerminal>(v));
+		else
+			return format_to(ctx.begin(), "{}", std::get<klex::cfg::Action>(v));
 	}
 };
 
