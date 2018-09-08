@@ -27,15 +27,17 @@ template <typename SemanticValue>
 class Analyzer {
   public:
 	using Terminal = typename regular::Lexer<regular::Tag>::value_type;
-	using NonTerminal = int;
-	using StackValue = std::variant<Terminal, NonTerminal>;
+	using NonTerminal = unsigned int;
+	using Action = long long int;
+	using StackValue = std::variant<Terminal, NonTerminal, Action>;
 
 	Analyzer(SyntaxTable table, Report* report, std::string input);
 
 	void analyze();
 
   private:
-	std::optional<SyntaxTable::Expression> getHandleFor(int nonterminal, int currentTerminal) const;
+	std::optional<SyntaxTable::Expression> getHandleFor(NonTerminal nonterminal,
+														Terminal currentTerminal) const;
 
   private:
 	const SyntaxTable def_;
@@ -53,8 +55,8 @@ Analyzer<SemanticValue>::Analyzer(SyntaxTable _st, Report* _report, std::string 
 }
 
 template <typename SemanticValue>
-std::optional<SyntaxTable::Expression> Analyzer<SemanticValue>::getHandleFor(int nonterminal,
-																			 int currentTerminal) const
+std::optional<SyntaxTable::Expression> Analyzer<SemanticValue>::getHandleFor(NonTerminal nonterminal,
+																			 Terminal currentTerminal) const
 {
 	if (std::optional<int> p_i = def_.lookup(nonterminal, currentTerminal); p_i.has_value())
 	{
@@ -74,11 +76,13 @@ void Analyzer<SemanticValue>::analyze()
 	const auto eof = lexer_.end();
 	auto currentToken = lexer_.begin();
 
+	// TODO: put start symbol onto stack
+
 	for (;;)
 	{
 		if (currentToken == eof && stack_.empty())
-		// if (currentToken == eof && holds_alternative<Terminal>(X) && get<Terminal>(X) == *currentToken)
-		// if (X == *currentToken && currentToken == eof)
+			// if (currentToken == eof && holds_alternative<Terminal>(X) && get<Terminal>(X) == *currentToken)
+			// if (X == *currentToken && currentToken == eof)
 			return;  // fully parsed program, and success
 
 		const StackValue X = stack_.top();
@@ -88,18 +92,18 @@ void Analyzer<SemanticValue>::analyze()
 			stack_.pop();
 			++currentToken;
 		}
-		else  // if (holds_alternative<NonTerminal>(X))
+		else if (holds_alternative<NonTerminal>(X))
 		{
 			assert(holds_alternative<NonTerminal>(X));
 
-			optional<SyntaxTable::Expression> handle = getHandleFor(X, *currentToken);
-			if (handle.has_value())
+			if (optional<SyntaxTable::Expression> handle = getHandleFor(get<NonTerminal>(X), *currentToken);
+				handle.has_value())
 			{
 				// XXX applying production ``X -> handle``
 				stack_.pop();
-				for (const auto symbol : reversed(*handle))
+				for (const auto x : reversed(*handle))
 				{
-					;  // stack_.push(symbol);
+					;  // stack_.push(x);
 				}
 			}
 			else
@@ -108,6 +112,11 @@ void Analyzer<SemanticValue>::analyze()
 				report_->syntaxError(SourceLocation{/*TODO*/},
 									 "Syntax error detected.");  // TODO: more elaborated diagnostics
 			}
+		}
+		else if (holds_alternative<Action>(X))
+		{
+			// TODO: run action
+			stack_.pop();
 		}
 	}
 }

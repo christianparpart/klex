@@ -57,7 +57,7 @@ TEST(cfg_ll_Analyzer, ETF)
 
 	Analyzer<int> parser(move(st), &report, "2 + 3 * 4");
 
-	// parser.analyze();
+	parser.analyze();
 }
 
 // vim:ts=4:sw=4:noet
