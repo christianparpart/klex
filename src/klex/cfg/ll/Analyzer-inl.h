@@ -8,26 +8,21 @@
 #include <klex/regular/LexerDef.h>
 #include <klex/util/iterator.h>
 #include <algorithm>
+#include <functional>
 
 namespace klex::cfg::ll {
 
+// --------------------------------------------------------------------------------------------------------
+
 template <typename SemanticValue>
 Analyzer<SemanticValue>::Analyzer(SyntaxTable _st, Report* _report, std::string _source)
-	: def_{std::move(_st)}, lexer_{def_.lexerDef, std::move(_source)}, report_{_report}, stack_{}
+	: def_{std::move(_st)},
+	  lexer_{def_.lexerDef, std::move(_source),
+			 std::bind(&Analyzer<SemanticValue>::log, this, std::placeholders::_1)},
+	  report_{_report},
+	  stack_{}
 {
-}
-
-template <typename SemanticValue>
-std::optional<SyntaxTable::Expression> Analyzer<SemanticValue>::getHandleFor(NonTerminal nonterminal,
-																			 Terminal currentTerminal) const
-{
-	if (std::optional<int> p_i = def_.lookup(nonterminal, currentTerminal); p_i.has_value())
-	{
-		const SyntaxTable::Expression& p = def_.productions[*p_i];
-		// TODO
-	}
-
-	return std::nullopt;
+	log(def_.lexerDef.to_string());
 }
 
 template <typename SemanticValue>
@@ -40,48 +35,91 @@ void Analyzer<SemanticValue>::analyze()
 	auto currentToken = lexer_.begin();
 
 	// TODO: put start symbol onto stack
+	stack_.push(def_.startSymbol);
 
 	for (;;)
 	{
 		if (currentToken == eof && stack_.empty())
-			// if (currentToken == eof && holds_alternative<Terminal>(X) && get<Terminal>(X) == *currentToken)
+			// if (currentToken == eof && isTerminal(X) && X == *currentToken)
 			// if (X == *currentToken && currentToken == eof)
 			return;  // fully parsed program, and success
 
 		const StackValue X = stack_.top();
 
-		if (holds_alternative<Terminal>(X) && get<Terminal>(X) == *currentToken)
+		if (isTerminal(X))
 		{
 			stack_.pop();
+			if (X != *currentToken)
+			{
+				report_->syntaxError(SourceLocation{/*TODO*/},
+									 "Unexpected token {}. Expeted token {} instead.", *currentToken, X);
+				// TODO: proper error recovery
+			}
+
+			log(fmt::format("eat terminal: {}\n", X));
 			++currentToken;
 		}
-		else if (holds_alternative<NonTerminal>(X))
+		else if (isNonTerminal(X))
 		{
-			assert(holds_alternative<NonTerminal>(X));
-
-			if (optional<SyntaxTable::Expression> handle = getHandleFor(get<NonTerminal>(X), *currentToken);
-				handle.has_value())
+			if (optional<SyntaxTable::Expression> handle = getHandleFor(X, *currentToken); handle.has_value())
 			{
-				// XXX applying production ``X -> handle``
+				log(fmt::format("apply production for non-terminal {} and terminal {}.\n", X, *currentToken));
 				stack_.pop();
-				for (const auto x : reversed(*handle))
-				{
-					;  // stack_.push(x);
-				}
+				for (const int x : reversed(*handle))
+					stack_.push(x);
 			}
 			else
 			{
 				// XXX parse error. Cannot reduce non-terminal X. No production found.
 				report_->syntaxError(SourceLocation{/*TODO*/},
-									 "Syntax error detected.");  // TODO: more elaborated diagnostics
+									 "Syntax error detected at non-terminal {} with terminal {}.", X,
+									 *currentToken);  // TODO: more elaborated diagnostics
+				return;
 			}
 		}
-		else if (holds_alternative<Action>(X))
+		else  // if (isAction(X))
 		{
-			// TODO: run action
+			assert(isAction(X));
 			stack_.pop();
+
+			// TODO: run action
+			log(fmt::format("run action: {}\n", X));
 		}
 	}
+}
+
+template <typename SemanticValue>
+std::optional<SyntaxTable::Expression> Analyzer<SemanticValue>::getHandleFor(NonTerminal nonterminal,
+																			 Terminal currentTerminal) const
+{
+	if (std::optional<int> p_i = def_.lookup(nonterminal, currentTerminal); p_i.has_value())
+		return def_.productions[*p_i];
+
+	return std::nullopt;
+}
+
+template <typename SemanticValue>
+bool Analyzer<SemanticValue>::isTerminal(StackValue v) const noexcept
+{
+	return def_.isTerminal(v);
+}
+
+template <typename SemanticValue>
+bool Analyzer<SemanticValue>::isNonTerminal(StackValue v) const noexcept
+{
+	return def_.isNonTerminal(v);
+}
+
+template <typename SemanticValue>
+bool Analyzer<SemanticValue>::isAction(StackValue v) const noexcept
+{
+	return def_.isAction(v);
+}
+
+template <typename SemanticValue>
+void Analyzer<SemanticValue>::log(const std::string& msg)
+{
+	fmt::print("Analyzer: {}\n", msg);
 }
 
 }  // namespace klex::cfg::ll

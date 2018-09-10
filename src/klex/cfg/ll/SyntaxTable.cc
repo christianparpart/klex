@@ -86,6 +86,8 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 
 		regular::Compiler::OvershadowMap overshadows;
 		regular::LexerDef lexerDef = rgc.compileMulti(&overshadows);
+		// TODO: care about `overshadows`
+		assert(overshadows.empty() && "Overshadowing lexical rules found.");
 
 		st.lexerDef = move(lexerDef);
 	}
@@ -124,6 +126,10 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 		st.productionNames.emplace_back(p.name);
 		st.productions.emplace_back(move(expr));
 	}
+
+	// TODO: action names
+
+	st.startSymbol = idNonTerminals[NonTerminal{grammar.productions[0].name}];
 
 	return move(st);
 }

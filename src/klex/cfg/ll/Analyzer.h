@@ -21,22 +21,28 @@ namespace klex::cfg::ll {
 template <typename SemanticValue>
 class Analyzer {
   public:
-	using Terminal = typename regular::Lexer<regular::Tag>::value_type;
-	using NonTerminal = unsigned int;
-	using Action = long long int;
-	using StackValue = std::variant<Terminal, NonTerminal, Action>;
+	using Terminal = regular::Tag; // typename regular::Lexer<regular::Tag>::value_type;
+	using NonTerminal = int;
+	using Action = int;
+	using StackValue = int;
 
 	Analyzer(SyntaxTable table, Report* report, std::string input);
 
 	void analyze();
 
   private:
-	std::optional<SyntaxTable::Expression> getHandleFor(NonTerminal nonterminal,
+	std::optional<SyntaxTable::Expression> getHandleFor(StackValue nonterminal,
 														Terminal currentTerminal) const;
+
+	bool isAction(StackValue v) const noexcept;
+	bool isTerminal(StackValue v) const noexcept;
+	bool isNonTerminal(StackValue v) const noexcept;
+
+	void log(const std::string& msg);
 
   private:
 	const SyntaxTable def_;
-	regular::Lexer<regular::Tag> lexer_;
+	regular::Lexer<regular::Tag, regular::StateId, true, true> lexer_;
 	Report* report_;
 	std::stack<StackValue> stack_;
 };

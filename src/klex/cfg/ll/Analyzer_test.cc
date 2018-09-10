@@ -40,7 +40,7 @@ TEST(cfg_ll_Analyzer, ETF)
 		   `Term      ::= Factor Term_;
 		   `Term_     ::= '*' Factor Term_
 		   `            | ;
-		   `Factor    ::= "NUMBER"
+		   `Factor    ::= Number
 		   `            | '(' Expr ')'
 		   `            ;
 		   `)"_multiline}, &report).parse();

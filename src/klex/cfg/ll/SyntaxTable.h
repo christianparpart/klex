@@ -36,15 +36,37 @@ struct SyntaxTable {
 	std::vector<std::string> terminalNames;
 	std::vector<std::string> nonterminalNames;
 	std::vector<std::string> productionNames;
+	std::vector<std::string> actionNames;
 	ProductionVec productions;
 	NonTerminalMap table;
+	int startSymbol;
 	regular::LexerDef lexerDef;
 
 	std::optional<int> lookup(int nonterminal, int lookahead) const;
 
-	size_t nonterminalCount() const { return nonterminalNames.size(); }
-	bool isNonTerminal(int id) const { return id < static_cast<int>(nonterminalNames.size()); }
-	bool isTerminal(int id) const { return !isNonTerminal(id); }
+	size_t nonterminalCount() const noexcept { return nonterminalNames.size(); }
+	size_t terminalCount() const noexcept { return terminalNames.size(); }
+
+	bool isNonTerminal(int id) const noexcept
+	{
+		const int minValue = 0;
+		const int maxValue = minValue + static_cast<int>(nonterminalCount()) - 1;
+		return id >= minValue && id <= maxValue;
+	}
+
+	bool isTerminal(int id) const noexcept
+	{
+		const int minValue = nonterminalCount();
+		const int maxValue = minValue + static_cast<int>(terminalCount()) - 1;
+		return id >= minValue && id <= maxValue;
+	}
+
+	bool isAction(int id) const noexcept
+	{
+		const int minValue = static_cast<int>(terminalCount() + nonterminalCount());
+		const int maxValue = minValue + actionNames.size() - 1;
+		return id >= minValue && id <= maxValue;
+	}
 
 	std::string dump(const Grammar& grammar) const;
 
