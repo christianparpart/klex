@@ -47,6 +47,23 @@ struct SyntaxTable {
 	size_t nonterminalCount() const noexcept { return nonterminalNames.size(); }
 	size_t terminalCount() const noexcept { return terminalNames.size(); }
 
+	size_t nonterminalMin() const noexcept { return 0; }
+	size_t nonterminalMax() const noexcept { return nonterminalMin() + nonterminalNames.size() - 1; }
+
+	size_t terminalMin() const noexcept { return nonterminalMax() + 1; }
+	size_t terminalMax() const noexcept { return terminalMin() + terminalNames.size() - 1; }
+
+	size_t actionMin() const noexcept { return terminalMax() + 1; }
+
+	const std::string& terminalName(int s) const noexcept { return terminalNames[s - terminalMin()]; }
+
+	const std::string& nonterminalName(int s) const noexcept
+	{
+		return nonterminalNames[s - nonterminalMin()];
+	}
+
+	const std::string& actionName(int s) const noexcept { return actionNames[s - actionMin()]; }
+
 	bool isNonTerminal(int id) const noexcept
 	{
 		const int minValue = 0;

@@ -52,13 +52,21 @@ struct TerminalRuleBuilder {
 	regular::Rule operator()(const Terminal& w)
 	{
 		if (holds_alternative<regular::Rule>(w.literal))
-			// st.terminalNames.emplace_back(get<regular::Rule>(w.literal).pattern);
-			return get<regular::Rule>(w.literal);
-
-		const string rule = fmt::format("{} ::= \"{}\"", w.name, get<string>(w.literal));
-		regular::RuleList rules = regular::RuleParser{rule, nextTerminalId++}.parseRules();
-		// st.terminalNames.emplace_back(rules.front().pattern);
-		return rules.front();
+		{
+			regular::Rule literal = get<regular::Rule>(w.literal);
+			if (literal.tag != regular::IgnoreTag)
+				literal.tag = nextTerminalId++;
+			return literal;
+		}
+		else
+		{
+			const string rule = fmt::format("{} ::= \"{}\"", w.name, get<string>(w.literal));
+			regular::RuleList rules = regular::RuleParser{rule, nextTerminalId}.parseRules();
+			assert(rules.size() == 1 && "Only one rule expected.");
+			assert(rules.front().tag == static_cast<regular::Tag>(nextTerminalId));
+			nextTerminalId++;
+			return rules.front();
+		}
 	}
 };
 

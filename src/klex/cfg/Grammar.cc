@@ -19,6 +19,7 @@
 
 using namespace std;
 using klex::util::reversed;
+using klex::util::indexed;
 
 namespace klex::cfg {
 
@@ -80,10 +81,9 @@ string to_string(const Handle& handle)
 {
 	stringstream sstr;
 
-	int i = 0;
-	for (const auto& x : handle)
+	for (const auto && [i, x] : indexed(handle))
 	{
-		if (i++)
+		if (i)
 			sstr << ' ';
 		sstr << fmt::format("{}", x);
 	}

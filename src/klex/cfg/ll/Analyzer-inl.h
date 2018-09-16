@@ -9,6 +9,7 @@
 #include <klex/util/iterator.h>
 #include <algorithm>
 #include <functional>
+#include <sstream>
 
 namespace klex::cfg::ll {
 
@@ -31,42 +32,46 @@ void Analyzer<SemanticValue>::analyze()
 	using namespace std;
 	using ::klex::util::reversed;
 
-	const auto eof = lexer_.end();
-	auto currentToken = lexer_.begin();
+	const auto eof = std::end(lexer_);
+	auto currentToken = std::begin(lexer_);
 
-	// TODO: put start symbol onto stack
-	stack_.push(def_.startSymbol);
+	// put start symbol onto stack
+	stack_.emplace_back(def_.startSymbol);
 
 	for (;;)
 	{
+		log(fmt::format("currentToken: {}, stack: {}", def_.terminalName(*currentToken), dumpStack()));
+
 		if (currentToken == eof && stack_.empty())
 			// if (currentToken == eof && isTerminal(X) && X == *currentToken)
 			// if (X == *currentToken && currentToken == eof)
 			return;  // fully parsed program, and success
 
-		const StackValue X = stack_.top();
+		const StackValue X = stack_.back();
 
 		if (isTerminal(X))
 		{
-			stack_.pop();
+			stack_.pop_back();
 			if (X != *currentToken)
 			{
 				report_->syntaxError(SourceLocation{/*TODO*/},
-									 "Unexpected token {}. Expeted token {} instead.", *currentToken, X);
+									 "Unexpected token {}. Expected token {} instead.",
+									 def_.terminalName(*currentToken), def_.terminalName(X));
 				// TODO: proper error recovery
 			}
 
-			log(fmt::format("eat terminal: {}\n", X));
+			// log(fmt::format("- eat terminal: {}", def_.terminalName(X)));
 			++currentToken;
 		}
 		else if (isNonTerminal(X))
 		{
 			if (optional<SyntaxTable::Expression> handle = getHandleFor(X, *currentToken); handle.has_value())
 			{
-				log(fmt::format("apply production for non-terminal {} and terminal {}.\n", X, *currentToken));
-				stack_.pop();
+				// log(fmt::format("- apply production for: ({}, {}) -> {}", def_.nonterminalName(X),
+				// 				def_.terminalName(*currentToken), handleString(*handle)));
+				stack_.pop_back();
 				for (const int x : reversed(*handle))
-					stack_.push(x);
+					stack_.push_back(StackValue{x});
 			}
 			else
 			{
@@ -80,16 +85,16 @@ void Analyzer<SemanticValue>::analyze()
 		else  // if (isAction(X))
 		{
 			assert(isAction(X));
-			stack_.pop();
+			stack_.pop_back();
 
 			// TODO: run action
-			log(fmt::format("run action: {}\n", X));
+			log(fmt::format("run action: {}", X));
 		}
 	}
 }
 
 template <typename SemanticValue>
-std::optional<SyntaxTable::Expression> Analyzer<SemanticValue>::getHandleFor(NonTerminal nonterminal,
+std::optional<SyntaxTable::Expression> Analyzer<SemanticValue>::getHandleFor(StackValue nonterminal,
 																			 Terminal currentTerminal) const
 {
 	if (std::optional<int> p_i = def_.lookup(nonterminal, currentTerminal); p_i.has_value())
@@ -120,6 +125,47 @@ template <typename SemanticValue>
 void Analyzer<SemanticValue>::log(const std::string& msg)
 {
 	fmt::print("Analyzer: {}\n", msg);
+}
+
+template <typename SemanticValue>
+std::string Analyzer<SemanticValue>::dumpStack() const
+{
+	std::stringstream os;
+	for (const auto&& [i, sv] : util::indexed(stack_))
+	{
+		if (i)
+			os << ' ';
+
+		os << stackValue(sv);
+	}
+	return os.str();
+}
+
+template <typename SemanticValue>
+std::string Analyzer<SemanticValue>::stackValue(StackValue sv) const
+{
+	assert(isNonTerminal(sv) || isTerminal(sv) || isAction(sv));
+
+	if (isNonTerminal(sv))
+		return fmt::format("<{}>", def_.nonterminalName(sv));
+	else if (isTerminal(sv))
+		return def_.terminalName(sv);
+	else
+		return fmt::format("!{}", def_.actionName(sv));
+}
+
+template <typename SemanticValue>
+std::string Analyzer<SemanticValue>::handleString(const SyntaxTable::Expression& handle) const
+{
+	std::stringstream os;
+
+	for (const auto&& [i, v] : util::indexed(handle))
+		if (i)
+			os << ' ' << stackValue(StackValue{v});
+		else
+			os << stackValue(StackValue{v});
+
+	return os.str();
 }
 
 }  // namespace klex::cfg::ll
