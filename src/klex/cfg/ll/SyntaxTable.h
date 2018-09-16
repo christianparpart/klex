@@ -47,13 +47,21 @@ struct SyntaxTable {
 	size_t nonterminalCount() const noexcept { return nonterminalNames.size(); }
 	size_t terminalCount() const noexcept { return terminalNames.size(); }
 
-	size_t nonterminalMin() const noexcept { return 0; }
-	size_t nonterminalMax() const noexcept { return nonterminalMin() + nonterminalNames.size() - 1; }
+	int nonterminalMin() const noexcept { return 0; }
+	int nonterminalMax() const noexcept
+	{
+		return nonterminalMin() + static_cast<int>(nonterminalNames.size()) - 1;
+	}
 
-	size_t terminalMin() const noexcept { return nonterminalMax() + 1; }
-	size_t terminalMax() const noexcept { return terminalMin() + terminalNames.size() - 1; }
+	int terminalMin() const noexcept { return nonterminalMax() + 1; }
+	int terminalMax() const noexcept { return terminalMin() + static_cast<int>(terminalNames.size()) - 1; }
 
-	size_t actionMin() const noexcept { return terminalMax() + 1; }
+	int actionMin() const noexcept { return terminalMax() + 1; }
+	int actionMax() const noexcept { return actionMin() + static_cast<int>(actionNames.size()) - 1; }
+
+	bool isNonTerminal(int id) const noexcept { return id >= nonterminalMin() && id <= nonterminalMax(); }
+	bool isTerminal(int id) const noexcept { return id >= terminalMin() && id <= terminalMax(); }
+	bool isAction(int id) const noexcept { return id >= actionMin() && id <= actionMax(); }
 
 	const std::string& terminalName(int s) const noexcept { return terminalNames[s - terminalMin()]; }
 
@@ -63,27 +71,6 @@ struct SyntaxTable {
 	}
 
 	const std::string& actionName(int s) const noexcept { return actionNames[s - actionMin()]; }
-
-	bool isNonTerminal(int id) const noexcept
-	{
-		const int minValue = 0;
-		const int maxValue = minValue + static_cast<int>(nonterminalCount()) - 1;
-		return id >= minValue && id <= maxValue;
-	}
-
-	bool isTerminal(int id) const noexcept
-	{
-		const int minValue = nonterminalCount();
-		const int maxValue = minValue + static_cast<int>(terminalCount()) - 1;
-		return id >= minValue && id <= maxValue;
-	}
-
-	bool isAction(int id) const noexcept
-	{
-		const int minValue = static_cast<int>(terminalCount() + nonterminalCount());
-		const int maxValue = minValue + actionNames.size() - 1;
-		return id >= minValue && id <= maxValue;
-	}
 
 	std::string dump(const Grammar& grammar) const;
 
