@@ -118,6 +118,7 @@ if(KLEX_TESTS)
       src/klex/regular/State_test.cc
       src/klex/regular/Symbols_test.cc
       src/klex/util/AnsiColor.cc
+      src/klex/util/iterator_test.cc
       src/klex/util/testing.cc
       )
 
