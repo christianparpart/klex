@@ -25,6 +25,7 @@ class GrammarParser
 {
   public:
 	GrammarParser(GrammarLexer lexer, Report* report);
+	GrammarParser(std::string source, Report* report);
 
 	Grammar parse();
 	void parseRule();

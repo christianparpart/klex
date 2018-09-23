@@ -28,6 +28,10 @@ GrammarParser::GrammarParser(GrammarLexer _lexer, Report* _report) : report_{_re
 {
 }
 
+GrammarParser::GrammarParser(string source, Report* _report) : report_{_report}, lexer_{move(source)}
+{
+}
+
 Grammar GrammarParser::parse()
 {
 	consumeToken();
@@ -147,8 +151,6 @@ Handle GrammarParser::parseHandle()
 				return move(handle);
 		}
 	}
-
-	// TODO: parse '{' Identifier '}'
 }
 
 void GrammarParser::parseTokenBlock()

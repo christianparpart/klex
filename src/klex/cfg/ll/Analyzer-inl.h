@@ -38,6 +38,9 @@ void Analyzer<SemanticValue>::analyze()
 	// put start symbol onto stack
 	stack_.emplace_back(def_.startSymbol);
 
+	for (const auto && [i, t] : util::indexed(def_.terminalNames))
+		log(fmt::format("terminal[{}] = {}", i, t));
+
 	for (;;)
 	{
 		log(fmt::format("currentToken: {}, stack: {}", def_.terminalName(*currentToken), dumpStack()));

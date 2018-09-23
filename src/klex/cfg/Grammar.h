@@ -50,6 +50,7 @@ struct NonTerminal {
 	std::string name;  // such as "IfStmt"
 
 	bool operator==(const std::string& other) const { return name == other; }
+	bool operator==(const NonTerminal& other) const { return name == other.name; }
 };
 
 /**
@@ -107,6 +108,7 @@ struct _Symbols {
 		bool operator!=(const const_iterator& rhs) const noexcept { return i != rhs.i; }
 	};
 
+	bool empty() const noexcept;
 	size_t size() const noexcept;
 
 	Symbol operator[](size_t i) const
@@ -157,6 +159,8 @@ struct _Symbols {
 
 	const_reverse_iterator crend() const { return const_reverse_iterator{handle.crend(), handle.crend()}; }
 };
+
+std::optional<NonTerminal> firstNonTerminal(const Handle& h);
 
 inline _Symbols symbols(const Handle& handle)
 {
@@ -257,6 +261,11 @@ struct Grammar {
 	//! @returns the state of this Grammar in a print-compatbile form.
 	std::string dump() const;
 };
+
+std::vector<Terminal> terminals(const Grammar& grammar);
+std::vector<NonTerminal> nonterminals(const Grammar& grammar);
+
+bool isLeftRecursive(const Grammar& grammar);
 
 }  // namespace klex::cfg
 

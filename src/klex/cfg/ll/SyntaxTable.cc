@@ -81,8 +81,12 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 	SyntaxTable st;
 
 	// terminals
-	transform(begin(grammar.terminals), end(grammar.terminals), back_inserter(st.terminalNames),
-			  [](const Terminal& w) { return w.name; });
+	for (const Terminal& terminal : grammar.terminals)
+		if (holds_alternative<string>(terminal.literal)
+			|| get<regular::Rule>(terminal.literal).tag != regular::IgnoreTag)
+			st.terminalNames.emplace_back(terminal.name);
+	// transform(begin(grammar.terminals), end(grammar.terminals), back_inserter(st.terminalNames),
+	// 		  [](const Terminal& w) { return w.name; });  // TODO:back_insert only if non-ignoring!
 	{
 		regular::RuleList terminalRules;
 		transform(begin(grammar.terminals), end(grammar.terminals), back_inserter(terminalRules),

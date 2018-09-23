@@ -6,6 +6,7 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/cfg/Grammar.h>
+#include <klex/cfg/LeftRecursionEliminator.h>
 #include <klex/util/iterator.h>
 
 #include <fmt/format.h>
@@ -89,6 +90,15 @@ string to_string(const Handle& handle)
 	}
 
 	return sstr.str();
+}
+
+optional<NonTerminal> firstNonTerminal(const Handle& handle)
+{
+	for (const Symbol b : symbols(handle))
+		if (holds_alternative<NonTerminal>(b))
+			return get<NonTerminal>(b);
+
+	return nullopt;
 }
 
 string to_string(const Production& p)
@@ -198,32 +208,8 @@ void Grammar::finalize()
 
 	for_each(begin(productions), end(productions), ProductionIdBuilder{});
 
-	nonterminals = [&]() {
-		vector<NonTerminal> nonterminals;
-		for (const Production& production : productions)
-			if (find(begin(nonterminals), end(nonterminals), production.name) == end(nonterminals))
-				nonterminals.emplace_back(NonTerminal{production.name});
-		return move(nonterminals);
-	}();
-
-	terminals = [&]() {
-		set<Terminal> terminals;
-		for (const Production& production : productions)
-			for (const Symbol b : symbols(production.handle))
-				if (holds_alternative<Terminal>(b))
-					terminals.insert(get<Terminal>(b));
-
-		vector<Terminal> terms = to_vector(move(terminals));
-
-		for_each(begin(terms), end(terms), TerminalNameCurator{});
-
-		// Add those explicit terminals that are flagged as "ignore".
-		for (regular::Rule& rule : explicitTerminals)
-			if (rule.isIgnored())
-				terms.emplace_back(Terminal{rule, rule.name});
-
-		return move(terms);
-	}();
+	terminals = cfg::terminals(*this);
+	nonterminals = cfg::nonterminals(*this);
 
 	while (true)
 	{
@@ -292,6 +278,42 @@ string Grammar::dump() const
 			sstr << '\n';
 	}
 	return move(sstr.str());
+}
+
+vector<Terminal> terminals(const Grammar& grammar)
+{
+	set<Terminal> terminals;
+	for (const Production& production : grammar.productions)
+		for (const Symbol b : symbols(production.handle))
+			if (holds_alternative<Terminal>(b))
+				terminals.insert(get<Terminal>(b));
+
+	vector<Terminal> terms = to_vector(move(terminals));
+
+	for_each(begin(terms), end(terms), TerminalNameCurator{});
+
+	// Add those explicit terminals that are flagged as "ignore".
+	for (const regular::Rule& rule : grammar.explicitTerminals)
+		if (rule.isIgnored())
+			terms.emplace_back(Terminal{rule, rule.name});
+
+	return move(terms);
+}
+
+vector<NonTerminal> nonterminals(const Grammar& grammar)
+{
+	vector<NonTerminal> nts;
+
+	for (const Production& production : grammar.productions)
+		if (find(begin(nts), end(nts), production.name) == end(nts))
+			nts.emplace_back(NonTerminal{production.name});
+
+	return move(nts);
+}
+
+bool isLeftRecursive(const Grammar& grammar)
+{
+	return LeftRecursionEliminator::isLeftRecursive(grammar);
 }
 
 } // namespace klex::cfg
