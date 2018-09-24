@@ -22,7 +22,7 @@ before_script:
 
 script:
   - cmake --build .
-  - ./klex_test
+  - ./klex_test -v
   - ../cmdlineTests.sh
 
 after_success:
