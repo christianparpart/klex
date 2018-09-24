@@ -61,7 +61,7 @@ struct CheckTerminalPattern {
 	bool operator()(const Terminal& w) const { return pattern == w.pattern(); }
 };
 
-TEST(cfg_GrammarParser, DISABLED_customTokens)
+TEST(cfg_GrammarParser, customTokens)
 {
 	BufferedReport report;
 	Grammar grammar = GrammarParser(GrammarLexer{

@@ -14,7 +14,7 @@ namespace klex::util {
 
 template <typename Container>
 struct _reversed {
-	const Container& container;
+	const Container container;
 
 	auto begin() { return container.crbegin(); }
 	auto end() { return container.crend(); }
