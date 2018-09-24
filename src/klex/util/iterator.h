@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstdint>
+#include <type_traits>
 #include <utility>
 
 namespace klex::util {
@@ -21,9 +22,12 @@ struct _reversed {
 };
 
 template <typename Container>
-inline auto reversed(const Container& c)
+inline auto reversed(Container&& c)
 {
-	return _reversed<Container>{c};
+	if constexpr (std::is_reference<Container>::value)
+		return _reversed<Container&>{std::forward<Container>(c)};
+	else
+		return _reversed<Container>{std::forward<Container>(c)};
 }
 
 template <typename Container>
