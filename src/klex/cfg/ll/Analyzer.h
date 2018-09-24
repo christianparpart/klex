@@ -60,7 +60,6 @@ class Analyzer {
 
 namespace fmt {
 template <>
-template <>
 struct formatter<typename klex::cfg::ll::Analyzer<int>::StackValue> {
 	template <typename ParseContext>
 	constexpr auto parse(ParseContext& ctx)
