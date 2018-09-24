@@ -47,7 +47,7 @@ optional<int> SyntaxTable::lookup(int nonterminal, int lookahead) const
 }
 
 struct TerminalRuleBuilder {
-	size_t nextTerminalId;
+	int nextTerminalId;
 
 	regular::Rule operator()(const Terminal& w)
 	{
@@ -90,7 +90,7 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 	{
 		regular::RuleList terminalRules;
 		transform(begin(grammar.terminals), end(grammar.terminals), back_inserter(terminalRules),
-				  TerminalRuleBuilder{grammar.nonterminals.size()});
+				  TerminalRuleBuilder{static_cast<int>(grammar.nonterminals.size())});
 
 		// compile terminals
 		regular::Compiler rgc;
