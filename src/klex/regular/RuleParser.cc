@@ -17,7 +17,7 @@
 
 namespace klex::regular {
 
-RuleParser::RuleParser(std::unique_ptr<std::istream> input, size_t firstTag)
+RuleParser::RuleParser(std::unique_ptr<std::istream> input, int firstTag)
 	: stream_{std::move(input)},
 	  refRules_{},
 	  lastParsedRule_{nullptr},
@@ -31,7 +31,7 @@ RuleParser::RuleParser(std::unique_ptr<std::istream> input, size_t firstTag)
 	consumeChar();
 }
 
-RuleParser::RuleParser(std::string input, size_t firstTag)
+RuleParser::RuleParser(std::string input, int firstTag)
 	: RuleParser{std::make_unique<std::stringstream>(std::move(input)), firstTag}
 {
 }
