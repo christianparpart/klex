@@ -9,7 +9,7 @@ struct SourceLocation {
 	size_t offset;
 	size_t count;
 
-	int compare(const SourceLocation& other) const noexcept
+	long long int compare(const SourceLocation& other) const noexcept
 	{
 		if (filename == other.filename)
 			return offset - other.offset;

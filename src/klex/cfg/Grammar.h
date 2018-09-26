@@ -82,6 +82,12 @@ struct _Symbols {
 		Handle::const_iterator i;
 		Handle::const_iterator e;
 
+		const_iterator(Handle::const_iterator _i, Handle::const_iterator _e) : i{_i}, e{_e}
+		{
+			while (i != e && std::holds_alternative<Action>(*i))
+				++i;
+		}
+
 		Symbol operator*() const
 		{
 			if (std::holds_alternative<Terminal>(*i))
@@ -135,6 +141,13 @@ struct _Symbols {
 	struct const_reverse_iterator {
 		Handle::const_reverse_iterator i;
 		Handle::const_reverse_iterator e;
+
+		const_reverse_iterator(Handle::const_reverse_iterator _i, Handle::const_reverse_iterator _e) : i{_i}, e{_e}
+		{
+			while (i != e && std::holds_alternative<Action>(*i))
+				++i;
+		}
+
 		Symbol operator*() const
 		{
 			if (std::holds_alternative<Terminal>(*i))

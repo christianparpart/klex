@@ -27,16 +27,14 @@ TEST(cfg_Grammar, handle_symbols) {
 	ASSERT_TRUE(holds_alternative<NonTerminal>(symbols(h)[1]));
 	ASSERT_EQ(2, symbols(h).size());
 
+	// Make sure symbols() still reports as expected when handle doesn't contain symbols (but an action).
 	h.clear();
 	h.emplace_back(Action{"a1"});
 	auto syms = symbols(h);
 	EXPECT_EQ(0, syms.size());
 	EXPECT_TRUE(syms.begin() == syms.end());
 	for (const Symbol sym : syms)
-	{
 		REPORT_ERROR("Should have never been invoked");
-		fmt::print("sym: '{}'\n", sym);
-	}
 }
 
 TEST(cfg_Grammar, missing_production) {
