@@ -56,12 +56,20 @@ TEST(cfg_GrammarParser, unresolved_nonterminals)
 	// TODO: make sure the failure reported is the unresolved-nonterminals case.
 }
 
-TEST(cfg_GrammarParser, actions)
+TEST(cfg_GrammarParser, action)
 {
 	ConsoleReport report;
-	GrammarParser parser = GrammarParser("E ::= 'a' {a} | 'b' {b} | {c};", &report);
+	GrammarParser parser = GrammarParser("E ::= 'a' {a};", &report);
 	Grammar grammar = parser.parse();
-	ASSERT_TRUE(report.containsFailures());
+	ASSERT_FALSE(report.containsFailures());
+}
+
+TEST(cfg_GrammarParser, action_on_epsilon)
+{
+	ConsoleReport report;
+	GrammarParser parser = GrammarParser("Rule ::= {action};", &report);
+	Grammar grammar = parser.parse();
+	ASSERT_FALSE(report.containsFailures());
 }
 
 struct CheckTerminalPattern {

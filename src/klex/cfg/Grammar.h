@@ -86,8 +86,10 @@ struct _Symbols {
 		{
 			if (std::holds_alternative<Terminal>(*i))
 				return std::get<Terminal>(*i);
-			else
+			else if (std::holds_alternative<NonTerminal>(*i))
 				return std::get<NonTerminal>(*i);
+			else
+				return Symbol();
 		}
 
 		const_iterator& operator++(int)

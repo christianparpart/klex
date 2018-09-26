@@ -69,6 +69,12 @@ namespace klex::util::testing {
 
 #define EXPECT_NEAR(expected, actual, diff)       // TODO
 
+#define REPORT_ERROR(message)                                                 \
+	do {                                                                      \
+		::klex::util::testing::UnitTest::instance()->reportMessage(           \
+			__FILE__, __LINE__, false, (message));                            \
+	} while (0)
+
 #define EXPECT_ERROR_CODE_SUCCESS(errorCode)                                  \
   if (errorCode) {                                                            \
     ::klex::util::testing::UnitTest::instance()->reportError(                 \
@@ -376,6 +382,7 @@ class UnitTest {
                 const char* actual);
 
   void reportMessage(const std::string& message, bool fatal);
+  void reportMessage(const char* fileName, int lineNo, bool fatal, const std::string& message);
 
   void log(const std::string& message);
 

@@ -483,6 +483,11 @@ void UnitTest::reportEH(const char* fileName,
   reportMessage(message, fatal);
 }
 
+void UnitTest::reportMessage(const char* fileName, int lineNo, bool fatal, const std::string& msg) {
+	std::string message = fmt::format("{}:{}: {}\n", fileName, lineNo, msg);
+	reportMessage(message, fatal);
+}
+
 void UnitTest::reportMessage(const std::string& message, bool fatal) {
   printf("%s%s%s\n",
       colorsError.c_str(),
