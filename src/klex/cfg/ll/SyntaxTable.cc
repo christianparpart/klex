@@ -74,11 +74,15 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 {
 	map<NonTerminal, int> idNonTerminals = createIdMap(grammar.nonterminals, 0);
 	map<Terminal, int> idTerminals = createIdMap(grammar.terminals, (int) grammar.nonterminals.size());
+	map<Action, int> idActions = createIdMap(actions(grammar), static_cast<int>(grammar.nonterminals.size() + grammar.terminals.size()));
 	map<NonTerminal, int> idProductionsByName;
 	for (auto i = begin(grammar.productions); i != end(grammar.productions); ++i)
 		idProductionsByName[NonTerminal{i->name}] = static_cast<int>(distance(begin(grammar.productions), i));
 
 	SyntaxTable st;
+
+	for (const Action& act : actions(grammar))
+		st.actionNames.emplace_back(act.id);
 
 	// terminals
 	for (const Terminal& terminal : grammar.terminals)
@@ -129,11 +133,13 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 		SyntaxTable::Expression expr;
 		expr.reserve(symbols(p.handle).size());
 
-		for (const Symbol b : symbols(p.handle))
+		for (const HandleElement b : p.handle)
 			if (holds_alternative<NonTerminal>(b))
 				expr.emplace_back(idNonTerminals[get<NonTerminal>(b)]);
-			else
+			else if (holds_alternative<Terminal>(b))
 				expr.emplace_back(idTerminals[get<Terminal>(b)]);
+			else
+				expr.emplace_back(idActions[get<Action>(b)]);
 
 		st.productionNames.emplace_back(p.name);
 		st.productions.emplace_back(move(expr));

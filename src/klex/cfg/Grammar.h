@@ -65,6 +65,10 @@ bool operator<(const Symbol& a, const Symbol& b);
 
 struct Action {
 	std::string id;
+
+	bool operator==(const Action& other) const noexcept { return id == other.id; }
+	bool operator!=(const Action& other) const noexcept { return id != other.id; }
+	bool operator<(const Action& other) const noexcept { return id < other.id; }
 };
 
 using HandleElement = std::variant<Terminal, NonTerminal, Action>;
@@ -279,6 +283,7 @@ struct Grammar {
 
 std::vector<Terminal> terminals(const Grammar& grammar);
 std::vector<NonTerminal> nonterminals(const Grammar& grammar);
+std::vector<Action> actions(const Grammar& grammar);
 
 bool isLeftRecursive(const Grammar& grammar);
 

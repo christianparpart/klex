@@ -41,6 +41,9 @@ void Analyzer<SemanticValue>::analyze()
 	for (const auto && [i, t] : util::indexed(def_.terminalNames))
 		log(fmt::format("terminal[{}] = {}", i, t));
 
+	for (const auto && [i, a] : util::indexed(def_.actionNames))
+		log(fmt::format("action[{}] = {}", i, a));
+
 	for (;;)
 	{
 		log(fmt::format("currentToken: {}, stack: {}", def_.terminalName(*currentToken), dumpStack()));

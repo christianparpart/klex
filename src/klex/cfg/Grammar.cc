@@ -311,6 +311,18 @@ vector<NonTerminal> nonterminals(const Grammar& grammar)
 	return move(nts);
 }
 
+vector<Action> actions(const Grammar& grammar)
+{
+	set<Action> acts;
+
+	for (const Production& production : grammar.productions)
+		for (const HandleElement& e : production.handle)
+			if (holds_alternative<Action>(e))
+				acts.insert(get<Action>(e));
+
+	return to_vector(move(acts));
+}
+
 bool isLeftRecursive(const Grammar& grammar)
 {
 	return LeftRecursion::isLeftRecursive(grammar);
