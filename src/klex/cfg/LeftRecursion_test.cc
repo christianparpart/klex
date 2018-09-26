@@ -1,6 +1,6 @@
 #include <klex/Report.h>
 #include <klex/cfg/GrammarParser.h>
-#include <klex/cfg/LeftRecursionEliminator.h>
+#include <klex/cfg/LeftRecursion.h>
 #include <klex/util/literals.h>
 #include <klex/util/testing.h>
 
@@ -17,7 +17,7 @@ Grammar makeGrammar(string G)
 	return move(grammar);
 }
 
-TEST(cfg_LeftRecursionEliminator, isLeftRecursive)
+TEST(cfg_LeftRecursion, isLeftRecursive)
 {
 	BufferedReport report;
 
@@ -37,7 +37,7 @@ TEST(cfg_LeftRecursionEliminator, isLeftRecursive)
 	ASSERT_FALSE(isLeftRecursive(neinor));
 }
 
-TEST(cfg_LeftRecursionEliminator, simple)
+TEST(cfg_LeftRecursion, simple)
 {
 	ConsoleReport report;
 	Grammar grammar = GrammarParser(R"(`S ::= A;
@@ -50,7 +50,7 @@ TEST(cfg_LeftRecursionEliminator, simple)
 	ASSERT_FALSE(report.containsFailures());
 	ASSERT_TRUE(isLeftRecursive(grammar));
 
-	LeftRecursionEliminator{grammar}.direct();
+	LeftRecursion{grammar}.direct();
 
 	grammar.finalize();
 	logf("grammar: {}", grammar.dump());
@@ -58,7 +58,7 @@ TEST(cfg_LeftRecursionEliminator, simple)
 	ASSERT_FALSE(isLeftRecursive(grammar));
 }
 
-TEST(cfg_LeftRecursionEliminator, ETF)
+TEST(cfg_LeftRecursion, ETF)
 {
 	BufferedReport report;
 	Grammar grammar = GrammarParser(R"(`token {
@@ -83,7 +83,7 @@ TEST(cfg_LeftRecursionEliminator, ETF)
 	ASSERT_FALSE(report.containsFailures());
 	ASSERT_TRUE(isLeftRecursive(grammar));
 
-	LeftRecursionEliminator{grammar}.direct();
+	LeftRecursion{grammar}.direct();
 
 	grammar.finalize();
 	logf("grammar: {}", grammar.dump());

@@ -44,11 +44,12 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/klex/sysconfig.h.cmake
 # ----------------------------------------------------------------------------
 add_library(klex STATIC
     src/klex/Report.cc
+    src/klex/SourceLocation.cc
     src/klex/cfg/Grammar.cc
     src/klex/cfg/GrammarLexer.cc
     src/klex/cfg/GrammarParser.cc
     src/klex/cfg/GrammarValidator.cc
-    src/klex/cfg/LeftRecursionEliminator.cc
+    src/klex/cfg/LeftRecursion.cc
     src/klex/cfg/ll/SyntaxTable.cc
     src/klex/regular/Alphabet.cc
     src/klex/regular/Compiler.cc
@@ -107,7 +108,7 @@ if(KLEX_TESTS)
       src/klex/cfg/GrammarLexer_test.cc
       src/klex/cfg/GrammarParser_test.cc
       src/klex/cfg/Grammar_test.cc
-      src/klex/cfg/LeftRecursionEliminator_test.cc
+      src/klex/cfg/LeftRecursion_test.cc
       src/klex/cfg/ll/Analyzer_test.cc
       src/klex/cfg/ll/SyntaxTable_test.cc
       src/klex/klex_test.cc

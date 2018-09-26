@@ -6,18 +6,18 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/cfg/Grammar.h>
-#include <klex/cfg/LeftRecursionEliminator.h>
+#include <klex/cfg/LeftRecursion.h>
 #include <algorithm>
 
 using namespace std;
 
 namespace klex::cfg {
 
-LeftRecursionEliminator::LeftRecursionEliminator(Grammar& _grammar) : grammar_{_grammar}
+LeftRecursion::LeftRecursion(Grammar& _grammar) : grammar_{_grammar}
 {
 }
 
-bool LeftRecursionEliminator::isLeftRecursive(const Grammar& grammar)
+bool LeftRecursion::isLeftRecursive(const Grammar& grammar)
 {
 	const vector<NonTerminal> nonterminals = cfg::nonterminals(grammar);
 
@@ -33,13 +33,13 @@ bool LeftRecursionEliminator::isLeftRecursive(const Grammar& grammar)
 	});
 }
 
-void LeftRecursionEliminator::direct()
+void LeftRecursion::direct()
 {
 	for (const NonTerminal& nt : cfg::nonterminals(grammar_))
 		eliminateDirect(nt);
 }
 
-void LeftRecursionEliminator::indirect()
+void LeftRecursion::indirect()
 {
 	const vector<NonTerminal> nonterminals = cfg::nonterminals(grammar_);
 
@@ -61,7 +61,7 @@ void LeftRecursionEliminator::indirect()
 	}
 }
 
-list<Production*> LeftRecursionEliminator::select(const NonTerminal& lhs, const NonTerminal& first)
+list<Production*> LeftRecursion::select(const NonTerminal& lhs, const NonTerminal& first)
 {
 	list<Production*> out;
 
@@ -72,7 +72,7 @@ list<Production*> LeftRecursionEliminator::select(const NonTerminal& lhs, const 
 	return move(out);
 }
 
-void LeftRecursionEliminator::eliminateDirect(const NonTerminal& nt)
+void LeftRecursion::eliminateDirect(const NonTerminal& nt)
 {
 	if (auto [head, tail] = split(grammar_.getProductions(nt)); !tail.empty())
 	{
@@ -94,7 +94,7 @@ void LeftRecursionEliminator::eliminateDirect(const NonTerminal& nt)
 	}
 }
 
-NonTerminal LeftRecursionEliminator::createRelatedNonTerminal(const NonTerminal& nt) const
+NonTerminal LeftRecursion::createRelatedNonTerminal(const NonTerminal& nt) const
 {
 	string tail = nt.name + "_";
 
@@ -105,7 +105,7 @@ NonTerminal LeftRecursionEliminator::createRelatedNonTerminal(const NonTerminal&
 	return NonTerminal{tail};
 }
 
-pair<vector<Production*>, vector<Production*>> LeftRecursionEliminator::split(
+pair<vector<Production*>, vector<Production*>> LeftRecursion::split(
 	vector<Production*> productions) const
 {
 	vector<Production*> head;

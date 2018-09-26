@@ -19,9 +19,9 @@ namespace klex::cfg {
  *
  * @note This transformation is required for LL parsers.
  */
-class LeftRecursionEliminator {
+class LeftRecursion {
   public:
-	explicit LeftRecursionEliminator(Grammar& _grammar);
+	explicit LeftRecursion(Grammar& _grammar);
 
 	static bool isLeftRecursive(const Grammar& grammar);
 

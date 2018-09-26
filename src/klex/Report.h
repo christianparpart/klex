@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <klex/SourceLocation.h>
 #include <fmt/format.h>
 
 #include <algorithm>
@@ -16,28 +17,6 @@
 #include <vector>
 
 namespace klex {
-
-struct SourceLocation {
-	std::string filename;
-	size_t offset;
-	size_t count;
-
-	int compare(const SourceLocation& other) const noexcept
-	{
-		if (filename == other.filename)
-			return offset - other.offset;
-		else if (filename < other.filename)
-			return -1;
-		else
-			return 1;
-	}
-
-	bool operator==(const SourceLocation& other) const noexcept { return compare(other) == 0; }
-	bool operator<=(const SourceLocation& other) const noexcept { return compare(other) <= 0; }
-	bool operator>=(const SourceLocation& other) const noexcept { return compare(other) >= 0; }
-	bool operator<(const SourceLocation& other) const noexcept { return compare(other) < 0; }
-	bool operator>(const SourceLocation& other) const noexcept { return compare(other) > 0; }
-};
 
 class Report {
   public:

@@ -6,7 +6,7 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/cfg/Grammar.h>
-#include <klex/cfg/LeftRecursionEliminator.h>
+#include <klex/cfg/LeftRecursion.h>
 #include <klex/util/iterator.h>
 
 #include <fmt/format.h>
@@ -313,7 +313,7 @@ vector<NonTerminal> nonterminals(const Grammar& grammar)
 
 bool isLeftRecursive(const Grammar& grammar)
 {
-	return LeftRecursionEliminator::isLeftRecursive(grammar);
+	return LeftRecursion::isLeftRecursive(grammar);
 }
 
 } // namespace klex::cfg
