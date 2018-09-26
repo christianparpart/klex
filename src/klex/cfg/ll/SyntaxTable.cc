@@ -29,7 +29,7 @@ inline map<T, V> createIdMap(const vector<T>& items, V first)
 {
 	map<T, V> out;
 	for (auto i = begin(items); i != end(items); ++i)
-		out[*i] = first + distance(begin(items), i);
+		out[*i] = first + static_cast<V>(distance(begin(items), i));
 	return move(out);
 }
 
@@ -76,7 +76,7 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 	map<Terminal, int> idTerminals = createIdMap(grammar.terminals, (int) grammar.nonterminals.size());
 	map<NonTerminal, int> idProductionsByName;
 	for (auto i = begin(grammar.productions); i != end(grammar.productions); ++i)
-		idProductionsByName[NonTerminal{i->name}] = distance(begin(grammar.productions), i);
+		idProductionsByName[NonTerminal{i->name}] = static_cast<int>(distance(begin(grammar.productions), i));
 
 	SyntaxTable st;
 
