@@ -62,4 +62,45 @@ TEST(cfg_ll_Analyzer, ETF)
 	ASSERT_FALSE(report.containsFailures());
 }
 
+TEST(cfg_ll_Analyzer, ETF_with_actions)
+{
+	BufferedReport report;
+	Grammar grammar = GrammarParser(GrammarLexer{
+		R"(`token {
+		   `  Spacing(ignore) ::= [\s\t\n]+
+		   `  Number          ::= [0-9]+
+		   `}
+		   `Start     ::= Expr;
+		   `Expr      ::= Term Expr_       {expr}
+		   `            ;
+		   `Expr_     ::= '+' Term Expr_   {add}
+		   `            |                  {addEps}
+		   `            ;
+		   `Term      ::= Factor Term_     {term}
+		   `            ;
+		   `Term_     ::= '*' Factor Term_ {mul}
+		   `            |                  {mulEps}
+		   `            ;
+		   `Factor    ::= Number           {num}
+		   `            | '(' Expr ')'     {braces}
+		   `            ;
+		   `)"_multiline}, &report).parse();
+
+	ASSERT_FALSE(report.containsFailures());
+	grammar.finalize();
+	log("GRAMMAR:");
+	log(grammar.dump());
+
+	SyntaxTable st = SyntaxTable::construct(grammar);
+
+	log("SYNTAX TABLE:");
+	log(st.dump(grammar));
+
+	Analyzer<int> parser(move(st), &report, "2 + 3 * 4");
+
+	parser.analyze();
+
+	ASSERT_FALSE(report.containsFailures());
+}
+
 // vim:ts=4:sw=4:noet
