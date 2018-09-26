@@ -56,6 +56,14 @@ TEST(cfg_GrammarParser, unresolved_nonterminals)
 	// TODO: make sure the failure reported is the unresolved-nonterminals case.
 }
 
+TEST(cfg_GrammarParser, actions)
+{
+	ConsoleReport report;
+	GrammarParser parser = GrammarParser("E ::= 'a' {a} | 'b' {b} | {c};", &report);
+	Grammar grammar = parser.parse();
+	ASSERT_TRUE(report.containsFailures());
+}
+
 struct CheckTerminalPattern {
 	string pattern;
 	bool operator()(const Terminal& w) const { return pattern == w.pattern(); }
