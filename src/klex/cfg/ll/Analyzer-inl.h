@@ -28,12 +28,12 @@ Analyzer<SemanticValue>::Analyzer(SyntaxTable _st, Report* _report, std::string 
 	log(def_.lexerDef.to_string());
 }
 
-template<typename Container>
+template <typename Container>
 std::string containerToString(const Container& values)
 {
 	std::stringstream sstr;
 
-	for (auto && [i, value] : util::indexed(values))
+	for (auto&& [i, value] : util::indexed(values))
 		if (i)
 			sstr << ", " << value;
 		else
@@ -51,8 +51,11 @@ void Analyzer<SemanticValue>::analyze()
 	const auto eof = std::end(lexer_);
 	auto currentToken = std::begin(lexer_);
 
+	deque<vector<SemanticValue>> valueStack;
+
 	// put start symbol onto stack
 	stack_.emplace_back(def_.startSymbol);
+	valueStack.emplace_back(vector<SemanticValue>());
 
 	for (const auto&& [i, t] : util::indexed(def_.terminalNames))
 		log(fmt::format("terminal[{}] = {}", i, t));
@@ -60,7 +63,6 @@ void Analyzer<SemanticValue>::analyze()
 	for (const auto&& [i, a] : util::indexed(def_.actionNames))
 		log(fmt::format("action[{}] = {}", i, a));
 
-	stack<vector<SemanticValue>> valueStack;
 	for (;;)
 	{
 		log(fmt::format("currentToken: {}, stack: {}", def_.terminalName(*currentToken), dumpStack()));
@@ -74,9 +76,17 @@ void Analyzer<SemanticValue>::analyze()
 
 		if (X < 0)
 		{
-			log(fmt::format("Rewind value-stack to depth={}: {}.", valueStack.size() - 1, containerToString(valueStack)));
-			valueStack.pop();
+			log(fmt::format("Rewind value-stack to depth={}: {}.", valueStack.size() - 1,
+							containerToString(valueStack.back())));
 			stack_.pop_back();
+			if (valueStack.back().empty())
+				valueStack.pop_back();
+			else
+			{
+				SemanticValue v = valueStack.back().back();
+				valueStack.pop_back();
+				valueStack.back().emplace_back(v);
+			}
 		}
 		else if (isTerminal(X))
 		{
@@ -101,8 +111,8 @@ void Analyzer<SemanticValue>::analyze()
 								def_.terminalName(*currentToken), handleString(*handle)));
 				stack_.pop_back();
 
-				stack_.push_back(-1); // XXX magic
-				valueStack.emplace(vector<SemanticValue>());
+				stack_.push_back(-1);  // XXX magic
+				valueStack.emplace_back(vector<SemanticValue>());
 
 				for (const int x : reversed(*handle))
 					stack_.push_back(StackValue{x});
@@ -120,8 +130,10 @@ void Analyzer<SemanticValue>::analyze()
 		{
 			assert(isAction(X));
 			stack_.pop_back();
+			log(fmt::format("Run action {} at valueStack depth={}: {}.", actionName(X),
+							valueStack.size(), containerToString(valueStack.back())));
 			if (actionHandler_)
-				valueStack.emplace(actionHandler_(X, *this));
+				valueStack.back().emplace_back(actionHandler_(X, *this));
 		}
 	}
 }
@@ -180,7 +192,7 @@ std::string Analyzer<SemanticValue>::stackValue(StackValue sv) const
 	assert(isNonTerminal(sv) || isTerminal(sv) || isAction(sv) || sv < 0);
 
 	if (sv < 0)
-		return "#"; // XXX rewind-tag
+		return "#";  // XXX rewind-tag
 
 	if (isNonTerminal(sv))
 		return fmt::format("<{}>", def_.nonterminalName(sv));
