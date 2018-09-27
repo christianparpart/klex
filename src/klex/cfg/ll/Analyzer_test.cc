@@ -69,8 +69,7 @@ TEST(cfg_ll_Analyzer, ETF_with_actions)
 {
 	BufferedReport report;
 	Grammar grammar = GrammarParser(
-						  GrammarLexer{
-							  R"(`token {
+						  R"(`token {
 		   `  Spacing(ignore) ::= [\s\t\n]+
 		   `  Number          ::= [0-9]+
 		   `}
@@ -88,7 +87,7 @@ TEST(cfg_ll_Analyzer, ETF_with_actions)
 		   `F         ::= Number      {num}
 		   `            | '(' E ')'
 		   `            ;
-		   `)"_multiline},
+		   `)"_multiline,
 						  &report)
 						  .parse();
 
