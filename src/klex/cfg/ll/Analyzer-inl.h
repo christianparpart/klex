@@ -16,7 +16,8 @@ namespace klex::cfg::ll {
 // --------------------------------------------------------------------------------------------------------
 
 template <typename SemanticValue>
-Analyzer<SemanticValue>::Analyzer(SyntaxTable _st, Report* _report, std::string _source, ActionHandler actionHandler)
+Analyzer<SemanticValue>::Analyzer(SyntaxTable _st, Report* _report, std::string _source,
+								  ActionHandler actionHandler)
 	: def_{std::move(_st)},
 	  lexer_{def_.lexerDef, std::move(_source),
 			 std::bind(&Analyzer<SemanticValue>::log, this, std::placeholders::_1)},
@@ -25,6 +26,20 @@ Analyzer<SemanticValue>::Analyzer(SyntaxTable _st, Report* _report, std::string 
 	  actionHandler_{move(actionHandler)}
 {
 	log(def_.lexerDef.to_string());
+}
+
+template<typename Container>
+std::string containerToString(const Container& values)
+{
+	std::stringstream sstr;
+
+	for (auto && [i, value] : util::indexed(values))
+		if (i)
+			sstr << ", " << value;
+		else
+			sstr << value;
+
+	return sstr.str();
 }
 
 template <typename SemanticValue>
@@ -39,12 +54,13 @@ void Analyzer<SemanticValue>::analyze()
 	// put start symbol onto stack
 	stack_.emplace_back(def_.startSymbol);
 
-	for (const auto && [i, t] : util::indexed(def_.terminalNames))
+	for (const auto&& [i, t] : util::indexed(def_.terminalNames))
 		log(fmt::format("terminal[{}] = {}", i, t));
 
-	for (const auto && [i, a] : util::indexed(def_.actionNames))
+	for (const auto&& [i, a] : util::indexed(def_.actionNames))
 		log(fmt::format("action[{}] = {}", i, a));
 
+	stack<vector<SemanticValue>> valueStack;
 	for (;;)
 	{
 		log(fmt::format("currentToken: {}, stack: {}", def_.terminalName(*currentToken), dumpStack()));
@@ -56,7 +72,13 @@ void Analyzer<SemanticValue>::analyze()
 
 		const StackValue X = stack_.back();
 
-		if (isTerminal(X))
+		if (X < 0)
+		{
+			log(fmt::format("Rewind value-stack to depth={}: {}.", valueStack.size() - 1, containerToString(valueStack)));
+			valueStack.pop();
+			stack_.pop_back();
+		}
+		else if (isTerminal(X))
 		{
 			stack_.pop_back();
 			if (X != *currentToken)
@@ -75,9 +97,13 @@ void Analyzer<SemanticValue>::analyze()
 		{
 			if (optional<SyntaxTable::Expression> handle = getHandleFor(X, *currentToken); handle.has_value())
 			{
-				// log(fmt::format("- apply production for: ({}, {}) -> {}", def_.nonterminalName(X),
-				// 				def_.terminalName(*currentToken), handleString(*handle)));
+				log(fmt::format("Apply production for: ({}, {}) -> {}", def_.nonterminalName(X),
+								def_.terminalName(*currentToken), handleString(*handle)));
 				stack_.pop_back();
+
+				stack_.push_back(-1); // XXX magic
+				valueStack.emplace(vector<SemanticValue>());
+
 				for (const int x : reversed(*handle))
 					stack_.push_back(StackValue{x});
 			}
@@ -95,7 +121,7 @@ void Analyzer<SemanticValue>::analyze()
 			assert(isAction(X));
 			stack_.pop_back();
 			if (actionHandler_)
-				track_.emplace_back(actionHandler_(X, *this));
+				valueStack.emplace(actionHandler_(X, *this));
 		}
 	}
 }
@@ -151,7 +177,10 @@ std::string Analyzer<SemanticValue>::dumpStack() const
 template <typename SemanticValue>
 std::string Analyzer<SemanticValue>::stackValue(StackValue sv) const
 {
-	assert(isNonTerminal(sv) || isTerminal(sv) || isAction(sv));
+	assert(isNonTerminal(sv) || isTerminal(sv) || isAction(sv) || sv < 0);
+
+	if (sv < 0)
+		return "#"; // XXX rewind-tag
 
 	if (isNonTerminal(sv))
 		return fmt::format("<{}>", def_.nonterminalName(sv));

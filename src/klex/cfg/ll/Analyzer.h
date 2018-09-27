@@ -63,7 +63,6 @@ class Analyzer {
 	const SyntaxTable def_;
 	Lexer lexer_;
 	std::string lastLiteral_;
-	std::vector<SemanticValue> track_;
 	Report* report_;
 	std::deque<StackValue> stack_;
 	ActionHandler actionHandler_;
