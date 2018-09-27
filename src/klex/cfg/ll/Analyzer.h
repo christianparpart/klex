@@ -12,9 +12,10 @@
 #include <klex/regular/Lexer.h>
 
 #include <deque>
+#include <functional>
 #include <optional>
 #include <utility>
-#include <variant>
+#include <vector>
 
 namespace klex::cfg::ll {
 
@@ -25,6 +26,7 @@ class Analyzer {
 	using NonTerminal = int;
 	using Action = int;
 	using Lexer = regular::Lexer<regular::Tag, regular::StateId, true, false>;
+	using ActionHandler = std::function<SemanticValue(int, const Analyzer<SemanticValue>&)>;
 
 	struct StackValue {
 		int value;
@@ -32,10 +34,14 @@ class Analyzer {
 		StackValue(int _value) : value{_value} {}
 	};
 
-	Analyzer(SyntaxTable table, Report* report, std::string input);
+	Analyzer(SyntaxTable table, Report* report, std::string input,
+			ActionHandler actionHandler = ActionHandler());
 
 	const Lexer& lexer() const noexcept { return lexer_; }
 	const std::string& lastLiteral() const noexcept { return lastLiteral_; }
+
+	const std::string& actionName(int id) const noexcept {
+		return def_.actionNames[id - def_.actionMin()]; }
 
 	void analyze();
 
@@ -57,8 +63,10 @@ class Analyzer {
 	const SyntaxTable def_;
 	Lexer lexer_;
 	std::string lastLiteral_;
+	std::vector<SemanticValue> track_;
 	Report* report_;
 	std::deque<StackValue> stack_;
+	ActionHandler actionHandler_;
 };
 
 }  // namespace klex::cfg::ll

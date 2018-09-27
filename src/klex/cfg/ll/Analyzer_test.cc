@@ -5,16 +5,16 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/util/testing.h>
-#include <klex/util/literals.h>
+#include <klex/Report.h>
+#include <klex/cfg/Grammar.h>
+#include <klex/cfg/GrammarLexer.h>
+#include <klex/cfg/GrammarParser.h>
 #include <klex/cfg/ll/Analyzer.h>
 #include <klex/cfg/ll/SyntaxTable.h>
-#include <klex/cfg/GrammarParser.h>
-#include <klex/cfg/GrammarLexer.h>
-#include <klex/cfg/Grammar.h>
 #include <klex/regular/Compiler.h>
 #include <klex/regular/Lexer.h>
-#include <klex/Report.h>
+#include <klex/util/literals.h>
+#include <klex/util/testing.h>
 #include <variant>
 
 using namespace std;
@@ -28,8 +28,9 @@ const std::string balancedParentheses = "A ::= '(' A ')' | '(' ')'";
 TEST(cfg_ll_Analyzer, ETF)
 {
 	ConsoleReport report;
-	Grammar grammar = GrammarParser(GrammarLexer{
-		R"(`token {
+	Grammar grammar = GrammarParser(
+						  GrammarLexer{
+							  R"(`token {
 		   `  Spacing(ignore) ::= [\s\t\n]+
 		   `  Number          ::= [0-9]+
 		   `}
@@ -43,7 +44,9 @@ TEST(cfg_ll_Analyzer, ETF)
 		   `Factor    ::= Number
 		   `            | '(' Expr ')'
 		   `            ;
-		   `)"_multiline}, &report).parse();
+		   `)"_multiline},
+						  &report)
+						  .parse();
 
 	ASSERT_FALSE(report.containsFailures());
 	grammar.finalize();
@@ -65,8 +68,9 @@ TEST(cfg_ll_Analyzer, ETF)
 TEST(cfg_ll_Analyzer, ETF_with_actions)
 {
 	BufferedReport report;
-	Grammar grammar = GrammarParser(GrammarLexer{
-		R"(`token {
+	Grammar grammar = GrammarParser(
+						  GrammarLexer{
+							  R"(`token {
 		   `  Spacing(ignore) ::= [\s\t\n]+
 		   `  Number          ::= [0-9]+
 		   `}
@@ -84,7 +88,9 @@ TEST(cfg_ll_Analyzer, ETF_with_actions)
 		   `F         ::= Number      {num}
 		   `            | '(' E ')'
 		   `            ;
-		   `)"_multiline}, &report).parse();
+		   `)"_multiline},
+						  &report)
+						  .parse();
 
 	ASSERT_FALSE(report.containsFailures());
 	grammar.finalize();
@@ -96,7 +102,45 @@ TEST(cfg_ll_Analyzer, ETF_with_actions)
 	log("SYNTAX TABLE:");
 	log(st.dump(grammar));
 
-	Analyzer<int> parser(move(st), &report, "2 + 3 * 4");
+	// map<int, Analyzer<int>::ActionHandler> actionMap;
+	// actionMap[st.actionId("add")] = [&]() -> int {
+	// };
+
+	stack<int> stack;
+	Analyzer<int> parser(move(st), &report, "2 * 3 + 4",
+						 [&](int actionId, const Analyzer<int>& analyzer) -> int {
+							 const string& action = analyzer.actionName(actionId);
+							 log(fmt::format("-> run action({}): {}", actionId, action));
+							 if (action == "num")
+								 stack.push(stoi(analyzer.lastLiteral()));
+							 else if (action == "add")
+							 {
+								 int a = stack.top();
+								 stack.pop();
+								 int b = stack.top();
+								 stack.pop();
+								 stack.push(a + b);
+							 }
+							 else if (action == "mul")
+							 {
+								 int a = stack.top();
+								 stack.pop();
+								 int b = stack.top();
+								 stack.pop();
+								 stack.push(a * b);
+							 }
+							 else if (action == "print")
+							 {
+								 int a = stack.top();
+								 stack.pop();
+								 printf("Result: %d\n", a);
+							 }
+
+							 // handle action
+							 // log(fmt::format("run action: {} (last literal: '{}')", def_.names[id],
+							 // lastLiteral_));
+							 return 0;
+						 });
 
 	parser.analyze();
 
