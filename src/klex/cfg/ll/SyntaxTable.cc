@@ -81,8 +81,19 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 
 	SyntaxTable st;
 
-	for (const Action& act : actions(grammar))
-		st.actionNames.emplace_back(act.id);
+	for (auto && [nt, id] : idNonTerminals)
+		fmt::print("nonterminal[{}; {}] = {}\n", id, id, nt);
+
+	for (auto && [t, id] : idTerminals)
+		fmt::print("terminals[{}; {}] = {}\n", id - idNonTerminals.size(), id, t);
+
+	st.actionNames.resize(idActions.size());
+	for (auto && [act, id] : idActions)
+	{
+		size_t i = id - grammar.nonterminals.size() - grammar.terminals.size();
+		fmt::print("action[{}; {}] -> {}\n", i, id, act.id);
+		st.actionNames[i] = act.id;
+	}
 
 	// terminals
 	for (const Terminal& terminal : grammar.terminals)
