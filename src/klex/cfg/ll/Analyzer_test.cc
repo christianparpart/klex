@@ -74,7 +74,7 @@ TEST(cfg_ll_Analyzer, ETF_with_actions)
 		   `  Spacing(ignore) ::= [\s\t\n]+
 		   `  Number          ::= [0-9]+
 		   `}
-		   `Start     ::= E {print};
+		   `Start     ::= E;
 		   `E         ::= T E_
 		   `            ;
 		   `E_        ::= '+' T E_    {add}
@@ -94,57 +94,55 @@ TEST(cfg_ll_Analyzer, ETF_with_actions)
 
 	ASSERT_FALSE(report.containsFailures());
 	grammar.finalize();
-	log("GRAMMAR:");
-	log(grammar.dump());
+	// log("GRAMMAR:");
+	// log(grammar.dump());
 
 	SyntaxTable st = SyntaxTable::construct(grammar);
-
-	log("SYNTAX TABLE:");
-	log(st.dump(grammar));
-
-	// map<int, Analyzer<int>::ActionHandler> actionMap;
-	// actionMap[st.actionId("add")] = [&]() -> int {
-	// };
+	// log("SYNTAX TABLE:");
+	// log(st.dump(grammar));
 
 	stack<int> stack;
-	Analyzer<int> parser(move(st), &report, "2 * 3 + 4",
-						 [&](int actionId, const Analyzer<int>& analyzer) -> int {
-							 const string& action = analyzer.actionName(actionId);
-							 log(fmt::format("-> run action({}): {}", actionId, action));
-							 if (action == "num")
-								 stack.push(stoi(analyzer.lastLiteral()));
-							 else if (action == "add")
-							 {
-								 int a = stack.top();
-								 stack.pop();
-								 int b = stack.top();
-								 stack.pop();
-								 stack.push(a + b);
-							 }
-							 else if (action == "mul")
-							 {
-								 int a = stack.top();
-								 stack.pop();
-								 int b = stack.top();
-								 stack.pop();
-								 stack.push(a * b);
-							 }
-							 else if (action == "print")
-							 {
-								 int a = stack.top();
-								 stack.pop();
-								 printf("Result: %d\n", a);
-							 }
+	const map<int, function<int(const Analyzer<int>&)>> actionMap{
+		{st.actionId("num"),
+		 [&](const Analyzer<int>& analyzer) -> int {
+			 stack.push(stoi(analyzer.lastLiteral()));
+			 return stack.top();
+		 }},
+		{st.actionId("add"),
+		 [&](const Analyzer<int>& analyzer) -> int {
+			 const int a = stack.top();
+			 stack.pop();
+			 const int b = stack.top();
+			 stack.pop();
+			 stack.push(a + b);
+			 return stack.top();
+		 }},
+		{st.actionId("mul"),
+		 [&](const Analyzer<int>& analyzer) -> int {
+			 const int a = stack.top();
+			 stack.pop();
+			 const int b = stack.top();
+			 stack.pop();
+			 stack.push(a * b);
+			 return stack.top();
+		 }},
+	};
 
-							 // handle action
-							 // log(fmt::format("run action: {} (last literal: '{}')", def_.names[id],
-							 // lastLiteral_));
-							 return 0;
-						 });
+	const auto actionHandler = [&](int id, const Analyzer<int>& analyzer) -> int {
+		if (const auto x = actionMap.find(id); x != actionMap.end())
+		{
+			log(fmt::format("-> run action({}): {}", id, analyzer.actionName(id)));
+			return x->second(analyzer);
+		}
+		return 0;
+	};
 
+	Analyzer<int> parser(move(st), &report, "2 + 3 * 4", actionHandler);
 	parser.analyze();
 
 	ASSERT_FALSE(report.containsFailures());
+	ASSERT_EQ(1, stack.size());
+	EXPECT_EQ(14, stack.top());
 }
 
 // vim:ts=4:sw=4:noet

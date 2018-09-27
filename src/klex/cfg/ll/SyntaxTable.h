@@ -43,6 +43,13 @@ struct SyntaxTable {
 	int startSymbol;
 	regular::LexerDef lexerDef;
 
+	int actionId(const std::string& name) const
+	{
+		return actionMin() + std::distance(std::begin(actionNames),
+				std::find_if(std::begin(actionNames), std::end(actionNames),
+							 [&](const std::string& n) { return n == name; }));
+	}
+
 	std::optional<int> lookup(int nonterminal, int lookahead) const;
 
 	size_t nonterminalCount() const noexcept { return nonterminalNames.size(); }
