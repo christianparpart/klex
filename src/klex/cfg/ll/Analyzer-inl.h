@@ -66,7 +66,8 @@ void Analyzer<SemanticValue>::analyze()
 				// TODO: proper error recovery
 			}
 
-			// log(fmt::format("- eat terminal: {}", def_.terminalName(X)));
+			// log(fmt::format("- eat terminal: {} '{}'", def_.terminalName(X), currentToken.literal));
+			lastLiteral_ = currentToken.literal;
 			++currentToken;
 		}
 		else if (isNonTerminal(X))
@@ -94,7 +95,7 @@ void Analyzer<SemanticValue>::analyze()
 			stack_.pop_back();
 
 			// TODO: run action
-			log(fmt::format("run action: {}", X));
+			log(fmt::format("run action: {} (last literal: '{}')", def_.names[X], lastLiteral_));
 		}
 	}
 }

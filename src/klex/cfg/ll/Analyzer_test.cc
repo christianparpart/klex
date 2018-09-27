@@ -70,19 +70,19 @@ TEST(cfg_ll_Analyzer, ETF_with_actions)
 		   `  Spacing(ignore) ::= [\s\t\n]+
 		   `  Number          ::= [0-9]+
 		   `}
-		   `Start     ::= Expr;
-		   `Expr      ::= Term Expr_       {expr}
+		   `Start     ::= E {print};
+		   `E         ::= T E_
 		   `            ;
-		   `Expr_     ::= '+' Term Expr_   {add}
-		   `            |                  {addEps}
+		   `E_        ::= '+' T E_    {add}
+		   `            |
 		   `            ;
-		   `Term      ::= Factor Term_     {term}
+		   `T         ::= F T_
 		   `            ;
-		   `Term_     ::= '*' Factor Term_ {mul}
-		   `            |                  {mulEps}
+		   `T_        ::= '*' F T_    {mul}
+		   `            |
 		   `            ;
-		   `Factor    ::= Number           {num}
-		   `            | '(' Expr ')'     {braces}
+		   `F         ::= Number      {num}
+		   `            | '(' E ')'
 		   `            ;
 		   `)"_multiline}, &report).parse();
 

@@ -11,9 +11,11 @@
 #include <klex/regular/LexerDef.h>
 #include <klex/regular/Rule.h>
 #include <klex/regular/RuleParser.h>
+#include <klex/util/iterator.h>
 
 #include <algorithm>
 #include <cstdarg>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -24,12 +26,13 @@ using namespace klex;
 using namespace klex::cfg;
 using namespace klex::cfg::ll;
 
-template <typename T, typename V = int>
-inline map<T, V> createIdMap(const vector<T>& items, V first)
+template <typename T, typename V = int, typename F = std::function<bool(const T&)>>
+inline map<T, V> createIdMap(const vector<T>& items, V first, F select = [](const T&) { return true; })
 {
 	map<T, V> out;
 	for (auto i = begin(items); i != end(items); ++i)
-		out[*i] = first + static_cast<V>(distance(begin(items), i));
+		if (select(*i))
+			out[*i] = first + static_cast<V>(distance(begin(items), i));
 	return move(out);
 }
 
@@ -73,27 +76,37 @@ struct TerminalRuleBuilder {
 SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 {
 	map<NonTerminal, int> idNonTerminals = createIdMap(grammar.nonterminals, 0);
-	map<Terminal, int> idTerminals = createIdMap(grammar.terminals, (int) grammar.nonterminals.size());
-	map<Action, int> idActions = createIdMap(actions(grammar), static_cast<int>(grammar.nonterminals.size() + grammar.terminals.size()));
+	map<Terminal, int> idTerminals =
+		createIdMap(grammar.terminals, (int) grammar.nonterminals.size(), [](const Terminal& w) -> bool {
+			return !holds_alternative<regular::Rule>(w.literal)
+				   || get<regular::Rule>(w.literal).tag != regular::IgnoreTag;
+		});
+	map<Action, int> idActions =
+		createIdMap(actions(grammar), static_cast<int>(idNonTerminals.size() + idTerminals.size()));
 	map<NonTerminal, int> idProductionsByName;
 	for (auto i = begin(grammar.productions); i != end(grammar.productions); ++i)
 		idProductionsByName[NonTerminal{i->name}] = static_cast<int>(distance(begin(grammar.productions), i));
 
 	SyntaxTable st;
 
-	for (auto && [nt, id] : idNonTerminals)
-		fmt::print("nonterminal[{}; {}] = {}\n", id, id, nt);
+	st.names.resize(idNonTerminals.size() + idTerminals.size() + idActions.size());
 
-	for (auto && [t, id] : idTerminals)
-		fmt::print("terminals[{}; {}] = {}\n", id - idNonTerminals.size(), id, t);
+	for (auto&& [nt, id] : idNonTerminals)
+		st.names[id] = nt.name;
+
+	for (auto&& [t, id] : idTerminals)
+		st.names[id] = t.name;
 
 	st.actionNames.resize(idActions.size());
-	for (auto && [act, id] : idActions)
+	for (auto&& [act, id] : idActions)
 	{
-		size_t i = id - grammar.nonterminals.size() - grammar.terminals.size();
-		fmt::print("action[{}; {}] -> {}\n", i, id, act.id);
+		st.names[id] = act.id;
+		const size_t i = id - idNonTerminals.size() - idTerminals.size();
 		st.actionNames[i] = act.id;
 	}
+
+	for (const auto [i, name] : util::indexed(st.names))
+		fmt::print("names[{}] = {}\n", i, name);
 
 	// terminals
 	for (const Terminal& terminal : grammar.terminals)
@@ -125,6 +138,7 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 	{
 		const int nt_ = idNonTerminals[nt];
 		st.nonterminalNames[nt_] = nt.name;
+		st.names[nt_] = nt.name;
 		for (const Production* p : grammar.getProductions(nt))
 		{
 			for (const Terminal& w : p->first1())

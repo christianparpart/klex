@@ -24,6 +24,7 @@ class Analyzer {
 	using Terminal = regular::Tag;  // typename regular::Lexer<regular::Tag>::value_type;
 	using NonTerminal = int;
 	using Action = int;
+	using Lexer = regular::Lexer<regular::Tag, regular::StateId, true, false>;
 
 	struct StackValue {
 		int value;
@@ -32,6 +33,9 @@ class Analyzer {
 	};
 
 	Analyzer(SyntaxTable table, Report* report, std::string input);
+
+	const Lexer& lexer() const noexcept { return lexer_; }
+	const std::string& lastLiteral() const noexcept { return lastLiteral_; }
 
 	void analyze();
 
@@ -51,7 +55,8 @@ class Analyzer {
 
   private:
 	const SyntaxTable def_;
-	regular::Lexer<regular::Tag, regular::StateId, true, false> lexer_;
+	Lexer lexer_;
+	std::string lastLiteral_;
 	Report* report_;
 	std::deque<StackValue> stack_;
 };

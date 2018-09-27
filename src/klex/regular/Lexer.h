@@ -164,8 +164,9 @@ class Lexer {
 
 	struct iterator {
 		Lexer& lx;
-		Token token;
 		int end;
+		Token token;
+		std::string literal;
 
 		Token operator*() const { return token; }
 
@@ -173,7 +174,10 @@ class Lexer {
 		{
 			if (lx.eof())
 				++end;
+
 			token = lx.recognize();
+			literal = lx.word();
+
 			return *this;
 		}
 
@@ -185,10 +189,10 @@ class Lexer {
 	iterator begin()
 	{
 		const Token t = recognize();
-		return iterator{*this, t, 0};
+		return iterator{*this, 0, t, word()};
 	}
 
-	iterator end() { return iterator{*this, 0, 2}; }
+	iterator end() { return iterator{*this, 2, 0, ""}; }
 
 	bool eof() const { return !stream_->good(); }
 

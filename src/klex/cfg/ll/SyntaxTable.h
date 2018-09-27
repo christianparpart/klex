@@ -33,10 +33,11 @@ struct SyntaxTable {
 	using NonTerminalMap = std::unordered_map<int /*nonterminals*/, LookAheadMap>;
 	using ProductionVec = std::vector<Expression>;
 
+	std::vector<std::string> names;
 	std::vector<std::string> terminalNames;
 	std::vector<std::string> nonterminalNames;
-	std::vector<std::string> productionNames;
 	std::vector<std::string> actionNames;
+	std::vector<std::string> productionNames;
 	ProductionVec productions;
 	NonTerminalMap table;
 	int startSymbol;
