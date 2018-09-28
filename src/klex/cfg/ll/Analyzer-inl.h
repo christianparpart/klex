@@ -107,8 +107,8 @@ void Analyzer<SemanticValue>::analyze()
 		{
 			if (optional<SyntaxTable::Expression> handle = getHandleFor(X, *currentToken); handle.has_value())
 			{
-				log(fmt::format("Apply production for: ({}, {}) -> {}", def_.nonterminalName(X),
-								def_.terminalName(*currentToken), handleString(*handle)));
+				// log(fmt::format("Apply production for: ({}, {}) -> {}", def_.nonterminalName(X),
+				// 				def_.terminalName(*currentToken), handleString(*handle)));
 				stack_.pop_back();
 
 				stack_.push_back(-1);  // XXX magic
