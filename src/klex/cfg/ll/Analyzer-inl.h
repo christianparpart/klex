@@ -74,20 +74,19 @@ void Analyzer<SemanticValue>::analyze()
 		if (X < 0)
 		{
 			stack_.pop_back();
-			valueStack_.resize(valueStackBase_);
-			if (valueStack.back().empty())
-			{
-				log(fmt::format("[valueStack depth: {}] Rewind empty value-stack: {}.", valueStack.size() - 1,
-								containerToString(valueStack.back())));
-				valueStack.pop_back();
-			}
-			else
+			valueStack_.resize(valueStack_.size() - valueStackBase_);
+			if (!valueStack_.empty())
 			{
 				log(fmt::format("[valueStack depth: {}] Rewind & merge value-stack: {}.", valueStack.size() - 1,
 								containerToString(valueStack.back())));
 				SemanticValue v = valueStack.back().back();
 				valueStack.pop_back();
-				valueStack.back().emplace_back(v); }
+				valueStack.back().emplace_back(v);
+
+				// restore base
+				valueStackBase_ = valueStack_.back();
+				valueStack_.pop();
+			}
 		}
 		else if (isTerminal(X))
 		{
@@ -117,7 +116,7 @@ void Analyzer<SemanticValue>::analyze()
 				valueStack_.push_back(valueStackBase_);
 				valueStackBase_ = valueStack_.size();
 
-				stack_.push_back(-1);  // XXX valueStack rewind-magic
+				stack_.push_back(-handle->size());  // XXX valueStack rewind-magic
 				for (const int x : reversed(*handle))
 					stack_.push_back(StackValue{x});
 			}
