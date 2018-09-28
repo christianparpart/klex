@@ -35,17 +35,24 @@ class Analyzer {
 	};
 
 	Analyzer(SyntaxTable table, Report* report, std::string input,
-			ActionHandler actionHandler = ActionHandler());
+			 ActionHandler actionHandler = ActionHandler());
 
 	const Lexer& lexer() const noexcept { return lexer_; }
 	const std::string& lastLiteral() const noexcept { return lastLiteral_; }
 
-	const std::string& actionName(int id) const noexcept {
-		return def_.actionNames[id - def_.actionMin()]; }
+	const std::string& actionName(int id) const noexcept { return def_.actionNames[id - def_.actionMin()]; }
+
+	const SemanticValue& value(int offset) const
+	{
+		return valueStack_[valueStackBase_ + static_cast<size_t>(offset)];
+	}
 
 	void analyze();
 
   private:
+	std::vector<SemanticValue> valueStack_;
+	size_t valueStackBase_;
+
 	std::optional<SyntaxTable::Expression> getHandleFor(StackValue nonterminal,
 														Terminal currentTerminal) const;
 

@@ -65,6 +65,50 @@ TEST(cfg_ll_Analyzer, ETF)
 	ASSERT_FALSE(report.containsFailures());
 }
 
+TEST(cfg_ll_Analyzer, action1)
+{
+	BufferedReport report;
+	Grammar grammar = GrammarParser(R"(`
+			   `token {
+			   `  Spacing(ignore) ::= [\s\t\n]+
+			   `  Number          ::= [0-9]+
+			   `}
+			   `Start     ::= F '+' F    {add};
+			   `F         ::= Number     {num};
+			   `)"_multiline, &report).parse();
+	ASSERT_FALSE(report.containsFailures());
+	grammar.finalize();
+
+	SyntaxTable st = SyntaxTable::construct(grammar);
+
+	deque<vector<int>> valueStack;
+	valueStack.emplace_back(vector<int>());
+	const auto actionHandler = [&](int id, const Analyzer<int>& analyzer) -> int {
+		log(fmt::format("-> run action({}): {}", id, analyzer.actionName(id)));
+		if (analyzer.actionName(id) == "add")
+		{
+			assert(valueStack.back().size() == 2);
+			const int a = valueStack.back()[0];
+			const int b = valueStack.back()[1];
+			valueStack.back().emplace_back(a + b);
+			log(fmt::format("!!! ADD {} = {} + {}", valueStack.back().back(), a, b));
+		}
+		else if (analyzer.actionName(id) == "num")
+		{
+			valueStack.back().emplace_back(stoi(analyzer.lastLiteral()));
+			log(fmt::format("!!! NUM {}", valueStack.back().back()));
+		}
+		else
+		{
+			log("!!! UNKNOWN ACTION !!!");
+		}
+		return 0;
+	};
+
+	Analyzer<int> parser(move(st), &report, "2 + 3", actionHandler);
+	parser.analyze();
+}
+
 TEST(cfg_ll_Analyzer, ETF_with_actions)
 {
 	BufferedReport report;
@@ -141,7 +185,7 @@ TEST(cfg_ll_Analyzer, ETF_with_actions)
 
 	ASSERT_FALSE(report.containsFailures());
 	ASSERT_EQ(1, stack.size());
-//	EXPECT_EQ(14, stack.top());
+	//	EXPECT_EQ(14, stack.top());
 }
 
 // vim:ts=4:sw=4:noet
