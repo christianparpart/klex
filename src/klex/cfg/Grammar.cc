@@ -19,8 +19,9 @@
 #include <vector>
 
 using namespace std;
-using klex::util::reversed;
 using klex::util::indexed;
+using klex::util::reversed;
+using klex::util::find_last;
 
 namespace klex::cfg {
 
@@ -82,7 +83,7 @@ string to_string(const Handle& handle)
 {
 	stringstream sstr;
 
-	for (const auto && [i, x] : indexed(handle))
+	for (const auto&& [i, x] : indexed(handle))
 	{
 		if (i)
 			sstr << ' ';
@@ -163,8 +164,17 @@ vector<Terminal> Grammar::followOf(const NonTerminal& nt) const
 
 void Grammar::injectEof()
 {
-	productions[0].handle.emplace_back(
-		Terminal{regular::Rule(0, 0, /*TODO:tag*/ 0, {"INITIAL"}, "EOF", "<<EOF>>"), "EOF"});
+	Production& start = productions[0];
+	Handle& handle = start.handle;
+
+	auto i = find_last(handle, [](const HandleElement& e) {
+		return holds_alternative<Terminal>(e) || holds_alternative<NonTerminal>(e);
+	});
+
+	if (i != end(handle))
+		++i;
+
+	handle.insert(i, Terminal{regular::Rule(0, 0, /*TODO:tag*/ 0, {"INITIAL"}, "EOF", "<<EOF>>"), "EOF"});
 }
 
 struct ProductionIdBuilder {
@@ -328,6 +338,6 @@ bool isLeftRecursive(const Grammar& grammar)
 	return LeftRecursion::isLeftRecursive(grammar);
 }
 
-} // namespace klex::cfg
+}  // namespace klex::cfg
 
 // vim:ts=4:sw=4:noet
