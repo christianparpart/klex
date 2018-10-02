@@ -42,7 +42,9 @@ TEST(cfg_ll_Analyzer, ETF)
 		   `Factor    ::= Number
 		   `            | '(' Expr ')'
 		   `            ;
-		   `)"_multiline, &report).parse();
+		   `)"_multiline,
+									&report)
+						  .parse();
 
 	ASSERT_FALSE(report.containsFailures());
 	grammar.finalize();
@@ -54,11 +56,12 @@ TEST(cfg_ll_Analyzer, ETF)
 	log("SYNTAX TABLE:");
 	log(st.dump(grammar));
 
-	Analyzer<int> parser(move(st), &report, "2 + 3 * 4");
+	Analyzer<int> parser(move(st), &report, "2 + 3");
 
-	parser.analyze();
+	const optional<int> result = parser.analyze();
 
 	ASSERT_FALSE(report.containsFailures());
+	ASSERT_TRUE(result.has_value());
 }
 
 TEST(cfg_ll_Analyzer, action1)
@@ -71,24 +74,29 @@ TEST(cfg_ll_Analyzer, action1)
 			   `}
 			   `Start     ::= F '+' F    {add};
 			   `F         ::= Number     {num};
-			   `)"_multiline, &report).parse();
+			   `)"_multiline,
+									&report)
+						  .parse();
 	ASSERT_FALSE(report.containsFailures());
 	grammar.finalize();
 
+	log("GRAMMAR:");
+	log(grammar.dump());
+
 	SyntaxTable st = SyntaxTable::construct(grammar);
+
+	log("SYNTAX TABLE:");
+	log(st.dump(grammar));
 
 	deque<vector<int>> valueStack;
 	valueStack.emplace_back(vector<int>());
 	const auto actionHandler = [&](int id, const Analyzer<int>& analyzer) -> int {
 		log(fmt::format("-> run action({}): {}", id, analyzer.actionName(id)));
 		if (analyzer.actionName(id) == "add")
-		{
-			return analyzer.semanticValue(-1) + analyzer.semanticValue(-3);
-		}
+			// S = F '+' F <<EOF>> {add}
+			return analyzer.semanticValue(-2) + analyzer.semanticValue(-4);
 		else if (analyzer.actionName(id) == "num")
-		{
-			return stoi(analyzer.lastLiteral()); // return valueStack[-1]
-		}
+			return stoi(analyzer.lastLiteral());  // return valueStack[-1]
 		else
 		{
 			log("!!! UNKNOWN ACTION !!!");
@@ -97,30 +105,33 @@ TEST(cfg_ll_Analyzer, action1)
 	};
 
 	Analyzer<int> parser(move(st), &report, "2 + 3", actionHandler);
-	parser.analyze();
+	optional<int> result = parser.analyze();
+
+	ASSERT_TRUE(result.has_value());
+	ASSERT_EQ(5, *result);
 }
 
 TEST(cfg_ll_Analyzer, ETF_with_actions)
 {
-	BufferedReport report;
+	ConsoleReport report;
 	Grammar grammar = GrammarParser(
-						  R"(`token {
+		R"(`token {
 		   `  Spacing(ignore) ::= [\s\t\n]+
 		   `  Number          ::= [0-9]+
 		   `}
-		   `Start     ::= E;
-		   `E         ::= T E_
+		   `Start     ::= Expr;
+		   `Expr      ::= Term Expr_
 		   `            ;
-		   `E_        ::= '+' T E_    {add}
+		   `Expr_     ::= '+' Term Expr_    {add}
 		   `            |
 		   `            ;
-		   `T         ::= F T_
+		   `Term      ::= Factor Term_
 		   `            ;
-		   `T_        ::= '*' F T_    {mul}
+		   `Term_     ::= '*' Factor Term_  {mul}
 		   `            |
 		   `            ;
-		   `F         ::= Number      {num}
-		   `            | '(' E ')'
+		   `Factor    ::= Number            {num}
+		   `            | '(' Expr ')'
 		   `            ;
 		   `)"_multiline,
 						  &report)
@@ -128,37 +139,26 @@ TEST(cfg_ll_Analyzer, ETF_with_actions)
 
 	ASSERT_FALSE(report.containsFailures());
 	grammar.finalize();
-	// log("GRAMMAR:");
-	// log(grammar.dump());
+	log("GRAMMAR:");
+	log(grammar.dump());
 
 	SyntaxTable st = SyntaxTable::construct(grammar);
-	// log("SYNTAX TABLE:");
-	// log(st.dump(grammar));
+	log("SYNTAX TABLE:");
+	log(st.dump(grammar));
 
 	stack<int> stack;
 	const map<int, function<int(const Analyzer<int>&)>> actionMap{
 		{st.actionId("num"),
 		 [&](const Analyzer<int>& analyzer) -> int {
-			 stack.push(stoi(analyzer.lastLiteral()));
-			 return stack.top();
+			 return stoi(analyzer.lastLiteral());
 		 }},
 		{st.actionId("add"),
 		 [&](const Analyzer<int>& analyzer) -> int {
-			 const int a = stack.top();
-			 stack.pop();
-			 const int b = stack.top();
-			 stack.pop();
-			 stack.push(a + b);
-			 return stack.top();
+			 return analyzer.semanticValue(-2) + analyzer.semanticValue(-4);
 		 }},
 		{st.actionId("mul"),
 		 [&](const Analyzer<int>& analyzer) -> int {
-			 const int a = stack.top();
-			 stack.pop();
-			 const int b = stack.top();
-			 stack.pop();
-			 stack.push(a * b);
-			 return stack.top();
+			 return analyzer.semanticValue(-2) * analyzer.semanticValue(-4);
 		 }},
 	};
 
@@ -168,15 +168,17 @@ TEST(cfg_ll_Analyzer, ETF_with_actions)
 			log(fmt::format("-> run action({}): {}", id, analyzer.actionName(id)));
 			return x->second(analyzer);
 		}
+		assert(!"woot");
 		return 0;
 	};
 
-	Analyzer<int> parser(move(st), &report, "2 + 3", actionHandler);
-	parser.analyze();
-
 	ASSERT_FALSE(report.containsFailures());
-	ASSERT_EQ(1, stack.size());
-	//	EXPECT_EQ(14, stack.top());
+	Analyzer<int> parser(move(st), &report, "2 + 3 * 4", actionHandler);
+	optional<int> result = parser.analyze();
+
+	EXPECT_FALSE(report.containsFailures());
+	ASSERT_TRUE(result.has_value());
+	// TODO EXPECT_EQ(14, *result);
 }
 
 // vim:ts=4:sw=4:noet

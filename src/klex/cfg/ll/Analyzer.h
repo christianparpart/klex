@@ -49,7 +49,7 @@ class Analyzer {
 			return valueStack_[valueStackBase_ + offset];
 	}
 
-	void analyze();
+	[[nodiscard]] std::optional<SemanticValue> analyze();
 
   private:
 	std::optional<SyntaxTable::Expression> getHandleFor(StateValue nonterminal,
@@ -61,7 +61,8 @@ class Analyzer {
 
 	void log(const std::string& msg);
 
-	std::string dumpStack() const;
+	std::string dumpStateStack() const;
+	std::string dumpSemanticStack() const;
 	std::string stateValue(StateValue sv) const;
 	std::string handleString(const SyntaxTable::Expression& handle) const;
 
