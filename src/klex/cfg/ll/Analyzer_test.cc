@@ -28,9 +28,7 @@ const std::string balancedParentheses = "A ::= '(' A ')' | '(' ')'";
 TEST(cfg_ll_Analyzer, ETF)
 {
 	ConsoleReport report;
-	Grammar grammar = GrammarParser(
-						  GrammarLexer{
-							  R"(`token {
+	Grammar grammar = GrammarParser(R"(`token {
 		   `  Spacing(ignore) ::= [\s\t\n]+
 		   `  Number          ::= [0-9]+
 		   `}
@@ -44,9 +42,7 @@ TEST(cfg_ll_Analyzer, ETF)
 		   `Factor    ::= Number
 		   `            | '(' Expr ')'
 		   `            ;
-		   `)"_multiline},
-						  &report)
-						  .parse();
+		   `)"_multiline, &report).parse();
 
 	ASSERT_FALSE(report.containsFailures());
 	grammar.finalize();
@@ -87,22 +83,17 @@ TEST(cfg_ll_Analyzer, action1)
 		log(fmt::format("-> run action({}): {}", id, analyzer.actionName(id)));
 		if (analyzer.actionName(id) == "add")
 		{
-			assert(valueStack.back().size() == 2);
-			const int a = valueStack.back()[0];
-			const int b = valueStack.back()[1];
-			valueStack.back().emplace_back(a + b);
-			log(fmt::format("!!! ADD {} = {} + {}", valueStack.back().back(), a, b));
+			return analyzer.semanticValue(-1) + analyzer.semanticValue(-3);
 		}
 		else if (analyzer.actionName(id) == "num")
 		{
-			valueStack.back().emplace_back(stoi(analyzer.lastLiteral()));
-			log(fmt::format("!!! NUM {}", valueStack.back().back()));
+			return stoi(analyzer.lastLiteral()); // return valueStack[-1]
 		}
 		else
 		{
 			log("!!! UNKNOWN ACTION !!!");
+			return -1;
 		}
-		return 0;
 	};
 
 	Analyzer<int> parser(move(st), &report, "2 + 3", actionHandler);

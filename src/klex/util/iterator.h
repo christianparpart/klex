@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <klex/util/iterator-detail.h>
 #include <cstdint>
 #include <type_traits>
 #include <utility>
@@ -14,99 +15,56 @@
 namespace klex::util {
 
 template <typename Container>
-struct _reversed {
-	const Container container;
-
-	auto begin() { return container.crbegin(); }
-	auto end() { return container.crend(); }
-};
-
-template <typename Container>
 inline auto reversed(Container&& c)
 {
 	if constexpr (std::is_reference<Container>::value)
-		return _reversed<Container&>{std::forward<Container>(c)};
+		return detail::reversed<Container&>{std::forward<Container>(c)};
 	else
-		return _reversed<Container>{std::forward<Container>(c)};
+		return detail::reversed<Container>{std::forward<Container>(c)};
 }
-
-template <typename Container>
-struct _indexed {
-	Container& container;
-
-	struct iterator {
-		typename Container::iterator iter;
-		std::size_t index = 0;
-
-		iterator& operator++()
-		{
-			++iter;
-			++index;
-			return *this;
-		}
-
-		iterator& operator++(int)
-		{
-			++*this;
-			return *this;
-		}
-
-		auto operator*() const { return std::make_pair(index, *iter); }
-
-		bool operator==(const iterator& rhs) const noexcept { return iter == rhs.iter; }
-		bool operator!=(const iterator& rhs) const noexcept { return iter != rhs.iter; }
-	};
-
-	struct const_iterator {
-		typename Container::const_iterator iter;
-		std::size_t index = 0;
-
-		const_iterator& operator++()
-		{
-			++iter;
-			++index;
-			return *this;
-		}
-
-		const_iterator& operator++(int)
-		{
-			++*this;
-			return *this;
-		}
-
-		auto operator*() const { return std::make_pair(index, *iter); }
-
-		bool operator==(const const_iterator& rhs) const noexcept { return iter == rhs.iter; }
-		bool operator!=(const const_iterator& rhs) const noexcept { return iter != rhs.iter; }
-	};
-
-	auto begin() const
-	{
-		if constexpr (std::is_const<Container>::value)
-			return const_iterator{container.cbegin()};
-		else
-			return iterator{container.begin()};
-	}
-
-	auto end() const
-	{
-		if constexpr (std::is_const<Container>::value)
-			return const_iterator{container.cend()};
-		else
-			return iterator{container.end()};
-	}
-};
 
 template <typename Container>
 inline auto indexed(const Container& c)
 {
-	return typename std::add_const<_indexed<const Container>>::type{c};
+	return typename std::add_const<detail::indexed<const Container>>::type{c};
 }
 
 template <typename Container>
 inline auto indexed(Container& c)
 {
-	return _indexed<Container>{c};
+	return detail::indexed<Container>{c};
+}
+
+// template <typename Container>
+// inline std::string join(const Container& container, const std::string& separator = ", ")
+// {
+// 	std::stringstream out;
+//
+// 	for (const auto && [i, v] : indexed(container))
+// 		if (i)
+// 			out << separator << v;
+// 		else
+// 			out << v;
+//
+// 	return out.str();
+// }
+
+template <typename T, typename Lambda>
+inline auto filter(std::initializer_list<T> && c, Lambda proc)
+{
+	return typename std::add_const<detail::filter<const std::initializer_list<T>, Lambda>>::type{c, proc};
+}
+
+template <typename Container, typename Lambda>
+inline auto filter(const Container& c, Lambda proc)
+{
+	return typename std::add_const<detail::filter<const Container, Lambda>>::type{c, proc};
+}
+
+template <typename Container, typename Lambda>
+inline auto filter(Container& c, Lambda proc)
+{
+	return detail::filter<Container, Lambda>{c, proc};
 }
 
 }  // namespace klex::util

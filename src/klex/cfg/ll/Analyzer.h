@@ -28,10 +28,10 @@ class Analyzer {
 	using Lexer = regular::Lexer<regular::Tag, regular::StateId, true, false>;
 	using ActionHandler = std::function<SemanticValue(int, const Analyzer<SemanticValue>&)>;
 
-	struct StackValue {
+	struct StateValue {
 		int value;
 		operator int() const noexcept { return value; }
-		StackValue(int _value) : value{_value} {}
+		StateValue(int _value) : value{_value} {}
 	};
 
 	Analyzer(SyntaxTable table, Report* report, std::string input,
@@ -42,28 +42,27 @@ class Analyzer {
 
 	const std::string& actionName(int id) const noexcept { return def_.actionNames[id - def_.actionMin()]; }
 
-	const SemanticValue& value(int offset) const
-	{
-		return valueStack_[valueStackBase_ + static_cast<size_t>(offset)];
+	const SemanticValue& semanticValue(int offset) const {
+		if (offset < 0)
+			return valueStack_[valueStack_.size() + offset];
+		else
+			return valueStack_[valueStackBase_ + offset];
 	}
 
 	void analyze();
 
   private:
-	std::vector<SemanticValue> valueStack_;
-	size_t valueStackBase_;
-
-	std::optional<SyntaxTable::Expression> getHandleFor(StackValue nonterminal,
+	std::optional<SyntaxTable::Expression> getHandleFor(StateValue nonterminal,
 														Terminal currentTerminal) const;
 
-	bool isAction(StackValue v) const noexcept;
-	bool isTerminal(StackValue v) const noexcept;
-	bool isNonTerminal(StackValue v) const noexcept;
+	bool isAction(StateValue v) const noexcept;
+	bool isTerminal(StateValue v) const noexcept;
+	bool isNonTerminal(StateValue v) const noexcept;
 
 	void log(const std::string& msg);
 
 	std::string dumpStack() const;
-	std::string stackValue(StackValue sv) const;
+	std::string stateValue(StateValue sv) const;
 	std::string handleString(const SyntaxTable::Expression& handle) const;
 
   private:
@@ -71,7 +70,9 @@ class Analyzer {
 	Lexer lexer_;
 	std::string lastLiteral_;
 	Report* report_;
-	std::deque<StackValue> stack_;
+	std::deque<StateValue> stack_;
+	std::deque<SemanticValue> valueStack_;
+	size_t valueStackBase_;
 	ActionHandler actionHandler_;
 };
 
@@ -79,7 +80,7 @@ class Analyzer {
 
 namespace fmt {
 template <>
-struct formatter<typename klex::cfg::ll::Analyzer<int>::StackValue> {
+struct formatter<typename klex::cfg::ll::Analyzer<int>::StateValue> {
 	template <typename ParseContext>
 	constexpr auto parse(ParseContext& ctx)
 	{
@@ -87,7 +88,7 @@ struct formatter<typename klex::cfg::ll::Analyzer<int>::StackValue> {
 	}
 
 	template <typename FormatContext>
-	constexpr auto format(const klex::cfg::ll::Analyzer<int>::StackValue& v, FormatContext& ctx)
+	constexpr auto format(const klex::cfg::ll::Analyzer<int>::StateValue& v, FormatContext& ctx)
 	{
 		return format_to(ctx.begin(), "{}", "hello");
 	}

@@ -101,3 +101,26 @@ TEST(util_iterator_indexed, range_based_for_loop)
 	for (const auto && [index, value] : indexed(v2))
 		logf("index {}, value {}", index, value);
 }
+
+TEST(util_iterator_filter, for_range)
+{
+	const vector<int> nums = {1, 2, 3, 4};
+	vector<int> odds;
+	for (const int i : filter(nums, [](int x) { return x % 2 != 0; }))
+		odds.push_back(i);
+
+	ASSERT_EQ(2, odds.size());
+	EXPECT_EQ(1, odds[0]);
+	EXPECT_EQ(3, odds[1]);
+}
+
+TEST(util_iterator_filter, for_range_initializer_list)
+{
+	vector<int> odds;
+	for (const int i : filter({1, 2, 3, 4}, [](int x) { return x % 2 != 0; }))
+		odds.push_back(i);
+
+	ASSERT_EQ(2, odds.size());
+	EXPECT_EQ(1, odds[0]);
+	EXPECT_EQ(3, odds[1]);
+}

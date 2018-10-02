@@ -69,24 +69,17 @@ void Analyzer<SemanticValue>::analyze()
 			// if (X == *currentToken && currentToken == eof)
 			return;  // fully parsed program, and success
 
-		const StackValue X = stack_.back();
+		const StateValue X = stack_.back();
 
 		if (X < 0)
 		{
 			stack_.pop_back();
-			valueStack_.resize(valueStack_.size() - valueStackBase_);
-			if (!valueStack_.empty())
-			{
-				log(fmt::format("[valueStack depth: {}] Rewind & merge value-stack: {}.", valueStack.size() - 1,
-								containerToString(valueStack.back())));
-				SemanticValue v = valueStack.back().back();
-				valueStack.pop_back();
-				valueStack.back().emplace_back(v);
-
-				// restore base
-				valueStackBase_ = valueStack_.back();
-				valueStack_.pop();
-			}
+			SemanticValue y = valueStack_.back();
+			valueStack_.resize(valueStack_.size() + X);
+			valueStack_.emplace_back(move(y));
+			log(fmt::format("[valueStack depth: {}/{}] Rewind & merge value-stack: {}.",
+							valueStack_.size(), X,
+							containerToString(valueStack_)));
 		}
 		else if (isTerminal(X))
 		{
@@ -99,6 +92,11 @@ void Analyzer<SemanticValue>::analyze()
 				// TODO: proper error recovery
 			}
 
+			if (currentToken != eof) // XXX not working?
+				valueStack_.emplace_back(SemanticValue{});
+			else
+				valueStack_.emplace_back(valueStack_.back()); // DUP? FIXME
+
 			// log(fmt::format("- eat terminal: {} '{}'", def_.terminalName(X), currentToken.literal));
 			lastLiteral_ = currentToken.literal;
 			++currentToken;
@@ -108,17 +106,14 @@ void Analyzer<SemanticValue>::analyze()
 			if (optional<SyntaxTable::Expression> handle = getHandleFor(X, *currentToken); handle.has_value())
 			{
 				log(fmt::format("[valueStack depth: {}] Apply production for: ({}, {}) -> {}",
-								valueStack.size() + 1,
+								valueStack_.size(),
 								def_.nonterminalName(X),
 								def_.terminalName(*currentToken), handleString(*handle)));
 				stack_.pop_back();
 
-				valueStack_.push_back(valueStackBase_);
-				valueStackBase_ = valueStack_.size();
-
 				stack_.push_back(-handle->size());  // XXX valueStack rewind-magic
 				for (const int x : reversed(*handle))
-					stack_.push_back(StackValue{x});
+					stack_.push_back(StateValue{x});
 			}
 			else
 			{
@@ -133,16 +128,18 @@ void Analyzer<SemanticValue>::analyze()
 		{
 			assert(isAction(X));
 			stack_.pop_back();
-			log(fmt::format("Run action {} at valueStack depth={}: {}.", actionName(X),
-							valueStack_.size(), containerToString(valueStack)));
 			if (actionHandler_)
-				valueStack.back().emplace_back(actionHandler_(X, *this));
+				valueStack_.emplace_back(actionHandler_(X, *this));
+			else
+				valueStack_.emplace_back(SemanticValue{});
+			log(fmt::format("Run action {} -> depth={}; {}.", actionName(X),
+							valueStack_.size(), containerToString(valueStack_)));
 		}
 	}
 }
 
 template <typename SemanticValue>
-std::optional<SyntaxTable::Expression> Analyzer<SemanticValue>::getHandleFor(StackValue nonterminal,
+std::optional<SyntaxTable::Expression> Analyzer<SemanticValue>::getHandleFor(StateValue nonterminal,
 																			 Terminal currentTerminal) const
 {
 	if (std::optional<int> p_i = def_.lookup(nonterminal, currentTerminal); p_i.has_value())
@@ -152,19 +149,19 @@ std::optional<SyntaxTable::Expression> Analyzer<SemanticValue>::getHandleFor(Sta
 }
 
 template <typename SemanticValue>
-bool Analyzer<SemanticValue>::isTerminal(StackValue v) const noexcept
+bool Analyzer<SemanticValue>::isTerminal(StateValue v) const noexcept
 {
 	return def_.isTerminal(v);
 }
 
 template <typename SemanticValue>
-bool Analyzer<SemanticValue>::isNonTerminal(StackValue v) const noexcept
+bool Analyzer<SemanticValue>::isNonTerminal(StateValue v) const noexcept
 {
 	return def_.isNonTerminal(v);
 }
 
 template <typename SemanticValue>
-bool Analyzer<SemanticValue>::isAction(StackValue v) const noexcept
+bool Analyzer<SemanticValue>::isAction(StateValue v) const noexcept
 {
 	return def_.isAction(v);
 }
@@ -184,18 +181,18 @@ std::string Analyzer<SemanticValue>::dumpStack() const
 		if (i)
 			os << ' ';
 
-		os << stackValue(sv);
+		os << stateValue(sv);
 	}
 	return os.str();
 }
 
 template <typename SemanticValue>
-std::string Analyzer<SemanticValue>::stackValue(StackValue sv) const
+std::string Analyzer<SemanticValue>::stateValue(StateValue sv) const
 {
 	assert(isNonTerminal(sv) || isTerminal(sv) || isAction(sv) || sv < 0);
 
-	if (sv < 0)
-		return "#";  // XXX rewind-tag
+	if (sv < 0) // XXX rewind-tag
+		return fmt::format("#{}", (int) sv);
 
 	if (isNonTerminal(sv))
 		return fmt::format("<{}>", def_.nonterminalName(sv));
@@ -212,9 +209,9 @@ std::string Analyzer<SemanticValue>::handleString(const SyntaxTable::Expression&
 
 	for (const auto&& [i, v] : util::indexed(handle))
 		if (i)
-			os << ' ' << stackValue(StackValue{v});
+			os << ' ' << stateValue(StateValue{v});
 		else
-			os << stackValue(StackValue{v});
+			os << stateValue(StateValue{v});
 
 	return os.str();
 }
