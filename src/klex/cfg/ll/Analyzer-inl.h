@@ -91,7 +91,7 @@ std::optional<SemanticValue> Analyzer<SemanticValue>::analyze()
 				// TODO: proper error recovery
 			}
 
-			valueStack_.emplace_back(SemanticValue{});
+			valueStack_.emplace_back(SemanticValue{}); // TODO: FIXME <<EOF>> handling
 
 			log(fmt::format("    eat terminal: {} '{}'", def_.terminalName(X), currentToken.literal));
 			lastLiteral_ = currentToken.literal;
@@ -113,9 +113,9 @@ std::optional<SemanticValue> Analyzer<SemanticValue>::analyze()
 				}
 				else
 				{
-					// Since there is nothing to expand'n'reduce later, we've to put an %empty%
-					// value on the semantic value stack.
-					valueStack_.emplace_back(SemanticValue{});
+					// epsilon-rule being applied
+					assert(!valueStack_.empty());
+					valueStack_.emplace_back(move(valueStack_.back()));
 				}
 			}
 			else
