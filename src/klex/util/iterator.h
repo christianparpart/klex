@@ -9,8 +9,10 @@
 
 #include <klex/util/iterator-detail.h>
 #include <cstdint>
+#include <sstream>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace klex::util {
 
@@ -35,22 +37,35 @@ inline auto indexed(Container& c)
 	return detail::indexed<Container>{c};
 }
 
-// template <typename Container>
-// inline std::string join(const Container& container, const std::string& separator = ", ")
-// {
-// 	std::stringstream out;
-//
-// 	for (const auto && [i, v] : indexed(container))
-// 		if (i)
-// 			out << separator << v;
-// 		else
-// 			out << v;
-//
-// 	return out.str();
-// }
+template <typename Container, typename Lambda>
+inline auto translate(const Container& container, Lambda mapfn) {
+	using T = decltype(mapfn(*std::cbegin(container)));
+
+	std::vector<T> out;
+	out.reserve(std::distance(std::begin(container), std::end(container)));
+
+	for (const auto& v : container)
+		out.emplace_back(mapfn(v));
+
+	return std::move(out);
+}
+
+template <typename Container>
+inline std::string join(const Container& container, const std::string& separator = ", ")
+{
+	std::stringstream out;
+
+	for (const auto&& [i, v] : indexed(container))
+		if (i)
+			out << separator << v;
+		else
+			out << v;
+
+	return out.str();
+}
 
 template <typename T, typename Lambda>
-inline auto filter(std::initializer_list<T> && c, Lambda proc)
+inline auto filter(std::initializer_list<T>&& c, Lambda proc)
 {
 	return typename std::add_const<detail::filter<const std::initializer_list<T>, Lambda>>::type{c, proc};
 }
@@ -65,6 +80,27 @@ template <typename Container, typename Lambda>
 inline auto filter(Container& c, Lambda proc)
 {
 	return detail::filter<Container, Lambda>{c, proc};
+}
+
+/**
+ * Finds the last occurence of a given element satisfying @p test.
+ *
+ * @returns the iterator representing the last item satisfying @p test or @p end if none found.
+ */
+template<typename Container, typename Test>
+auto find_last(const Container& container, Test test) -> decltype(std::cbegin(container))
+{
+	auto begin = std::cbegin(container);
+	auto end = std::cend(container);
+
+	for (auto i = std::prev(end); i != begin; --i)
+		if (test(*i))
+			return i;
+
+	if (test(*begin))
+		return begin;
+	else
+		return end;
 }
 
 }  // namespace klex::util
