@@ -105,9 +105,6 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 		st.actionNames[i] = act.id;
 	}
 
-	for (const auto [i, name] : util::indexed(st.names))
-		fmt::print("names[{}] = {}\n", i, name);
-
 	// terminals
 	for (const Terminal& terminal : grammar.terminals)
 		if (holds_alternative<string>(terminal.literal)
@@ -202,12 +199,11 @@ string SyntaxTable::dump(const Grammar& grammar) const
 		for (const auto& b : p)
 		{
 			if (isNonTerminal(b))
-				bprintf(" %s", nonterminalNames[b].c_str());
+				bprintf(" %s", nonterminalName(b).c_str());
 			else if (isTerminal(b))
-			{
-				assert(b >= static_cast<int>(nonterminalNames.size()));
-				bprintf(" %s", terminalNames[b - nonterminalNames.size()].c_str());
-			}
+				bprintf(" %s", terminalName(b).c_str());
+			else if (isAction(b))
+				bprintf(" !%s", actionName(b).c_str());
 			else
 				bprintf(" %d", b);
 		}
