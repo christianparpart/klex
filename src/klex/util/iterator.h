@@ -8,6 +8,7 @@
 #pragma once
 
 #include <klex/util/iterator-detail.h>
+#include <algorithm>
 #include <cstdint>
 #include <sstream>
 #include <type_traits>
@@ -39,15 +40,14 @@ inline auto indexed(Container& c)
 
 template <typename Container, typename Lambda>
 inline auto translate(const Container& container, Lambda mapfn) {
-	using T = decltype(mapfn(*std::cbegin(container)));
+	using namespace std;
+	using T = decltype(mapfn(*begin(container)));
 
-	std::vector<T> out;
-	out.reserve(std::distance(std::begin(container), std::end(container)));
+	vector<T> out;
+	out.reserve(distance(begin(container), end(container)));
+	transform(begin(container), end(container), back_inserter(out), move(mapfn));
 
-	for (const auto& v : container)
-		out.emplace_back(mapfn(v));
-
-	return std::move(out);
+	return move(out);
 }
 
 template <typename Container>
