@@ -60,10 +60,10 @@ std::optional<SemanticValue> Analyzer<SemanticValue>::analyze()
 		log(fmt::format("  state stack    : {}", dumpStateStack()));
 		log(fmt::format("  semantic stack : {}", dumpSemanticStack()));
 
+		// if (currentToken == eof && isTerminal(X) && X == *currentToken)
+		// if (currentToken == eof && X == *currentToken)
 		if (currentToken == eof && stack_.empty())  // fully parsed program, and success?
 		{
-			// if (currentToken == eof && isTerminal(X) && X == *currentToken)
-			// if (X == *currentToken && currentToken == eof)
 			if (!valueStack_.empty())
 				return move(valueStack_.back());
 			else
