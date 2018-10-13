@@ -91,10 +91,10 @@ std::optional<SemanticValue> Analyzer<SemanticValue>::analyze()
 				// TODO: proper error recovery
 			}
 
-			valueStack_.emplace_back(SemanticValue{}); // TODO: FIXME <<EOF>> handling
+			valueStack_.emplace_back(SemanticValue{});  // TODO: FIXME <<EOF>> handling
 
-			log(fmt::format("    eat terminal: {} '{}'", def_.terminalName(X), currentToken.literal));
-			lastLiteral_ = currentToken.literal;
+			log(fmt::format("    eat terminal: {} '{}'", def_.terminalName(X), to_string(currentToken)));
+			lastLiteral_ = to_string(currentToken);
 			++currentToken;
 		}
 		else if (isNonTerminal(X))

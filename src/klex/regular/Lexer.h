@@ -241,6 +241,13 @@ class Lexer {
 	Token token_;
 };
 
+template <typename Token = Tag, typename Machine = StateId, const bool RequiresBeginOfLine = true,
+		  const bool Debug = false>
+inline const std::string& to_string(const typename Lexer<Token, Machine, RequiresBeginOfLine, Debug>::iterator& it)
+{
+	return it.literal;
+}
+
 }  // namespace klex::regular
 
 #include <klex/regular/Lexer-inl.h>
