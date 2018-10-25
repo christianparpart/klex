@@ -100,9 +100,7 @@ DFA DFABuilder::construct(OvershadowMap* overshadows)
 			if (!eclosure.empty())
 			{
 				if (int t_i = configurationNumber(Q, eclosure); t_i != -1)
-				{
 					T.insert(q_i, c, t_i);  // T[q][c] = eclosure;
-				}
 				else
 				{
 					Q.emplace_back(eclosure);
