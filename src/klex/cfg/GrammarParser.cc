@@ -60,7 +60,7 @@ Grammar GrammarParser::parse()
 
 	GrammarValidator{report_}.validate(grammar_);
 
-	return move(grammar_);
+	return grammar_;
 }
 
 void GrammarParser::consumeToken()
@@ -137,18 +137,18 @@ Handle GrammarParser::parseHandle()
 				handle.emplace_back(Action{currentLiteral()});
 				consumeToken(Token::Identifier);
 				consumeToken(Token::SetClose);
-				return move(handle);
+				return handle;
 			}
 			case Token::Semicolon:
 			case Token::Or:
-				return move(handle);
+				return handle;
 			case Token::Eof:
 			case Token::Illegal:
 			default:
 				report_->syntaxError(
 					SourceLocation{}, "Unexpected token {}. Expected instead one of: {}, {}, {}, {}.",
 					currentToken(), Token::Or, Token::Semicolon, Token::Literal, Token::Identifier);
-				return move(handle);
+				return handle;
 		}
 	}
 }

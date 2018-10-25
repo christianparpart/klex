@@ -14,7 +14,7 @@ Grammar makeGrammar(string G)
 	BufferedReport report;
 	Grammar grammar = GrammarParser(move(G), &report).parse();
 	ASSERT_FALSE(report.containsFailures());
-	return move(grammar);
+	return grammar;
 }
 
 TEST(cfg_LeftRecursion, isLeftRecursive)

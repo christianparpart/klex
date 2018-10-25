@@ -33,7 +33,7 @@ inline map<T, V> createIdMap(const vector<T>& items, V first, F select = [](cons
 	for (auto i = begin(items); i != end(items); ++i)
 		if (select(*i))
 			out[*i] = first + static_cast<V>(distance(begin(items), i));
-	return move(out);
+	return out;
 }
 
 optional<int> SyntaxTable::lookup(int nonterminal, int lookahead) const
@@ -171,7 +171,7 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 
 	st.startSymbol = idNonTerminals[NonTerminal{grammar.productions[0].name}];
 
-	return move(st);
+	return st;
 }
 
 string SyntaxTable::dump(const Grammar& grammar) const

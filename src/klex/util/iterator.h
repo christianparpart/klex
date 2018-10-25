@@ -47,7 +47,7 @@ inline auto translate(const Container& container, Lambda mapfn) {
 	out.reserve(distance(begin(container), end(container)));
 	transform(begin(container), end(container), back_inserter(out), move(mapfn));
 
-	return move(out);
+	return out;
 }
 
 template <typename Container>

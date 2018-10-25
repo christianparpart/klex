@@ -46,7 +46,7 @@ std::string Alphabet::to_string() const
 
 	sstr << '}';
 
-	return std::move(sstr.str());
+	return sstr.str();
 }
 
 }  // namespace klex::regular

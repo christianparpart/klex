@@ -69,7 +69,7 @@ list<Production*> LeftRecursion::select(const NonTerminal& lhs, const NonTermina
 		if (const optional<NonTerminal> nt = firstNonTerminal(p->handle); nt.has_value() && *nt == first)
 			out.emplace_back(p);
 
-	return move(out);
+	return out;
 }
 
 void LeftRecursion::eliminateDirect(const NonTerminal& nt)

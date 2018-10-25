@@ -38,7 +38,7 @@ Alphabet DFA::alphabet() const
 		for (const pair<Symbol, StateId>& t : state.transitions)
 			alphabet.insert(t.first);
 
-	return move(alphabet);
+	return alphabet;
 }
 
 vector<StateId> DFA::acceptStates() const
@@ -46,7 +46,7 @@ vector<StateId> DFA::acceptStates() const
 	vector<StateId> states;
 	states.reserve(acceptTags_.size());
 	for_each(begin(acceptTags_), end(acceptTags_), [&](const pair<StateId, Tag>& s) { states.push_back(s.first); });
-	return move(states);
+	return states;
 }
 
 // --------------------------------------------------------------------------
