@@ -224,7 +224,7 @@ class _TEST_CLASS_NAME(testCaseName, testName) : public ParentClass {         \
  private:                                                                     \
   virtual void TestBody();                                                    \
                                                                               \
-  static ::klex::util::testing::TestInfo* const test_info_ [[maybe_unused]];  \
+  static ::klex::util::testing::TestInfo* const test_info_;                   \
 };                                                                            \
                                                                               \
 ::klex::util::testing::TestInfo* const                                        \
