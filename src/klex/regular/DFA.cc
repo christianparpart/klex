@@ -45,8 +45,7 @@ vector<StateId> DFA::acceptStates() const
 {
 	vector<StateId> states;
 	states.reserve(acceptTags_.size());
-	for_each(acceptTags_.begin(), acceptTags_.end(), [&](const auto& s) { states.push_back(s.first); });
-
+	for_each(begin(acceptTags_), end(acceptTags_), [&](const pair<StateId, Tag>& s) { states.push_back(s.first); });
 	return move(states);
 }
 
