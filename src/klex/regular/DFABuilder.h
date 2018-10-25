@@ -40,7 +40,7 @@ class DFABuilder {
 	/**
 	 * Finds @p t in @p Q and returns its offset (aka configuration number) or -1 if not found.
 	 */
-	static int configurationNumber(const std::vector<StateIdVec>& Q, const StateIdVec& t);
+	static std::optional<StateId> configurationNumber(const std::vector<StateIdVec>& Q, const StateIdVec& t);
 
 	/**
 	 * Determines the tag to use for the deterministic state representing @p q from non-deterministic FA @p

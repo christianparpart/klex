@@ -10,6 +10,7 @@
 #include <klex/regular/NFA.h>
 #include <klex/regular/State.h>
 
+#include <algorithm>
 #include <deque>
 #include <iostream>
 #include <sstream>
@@ -34,11 +35,11 @@ namespace klex::regular {
 #endif
 
 struct DFABuilder::TransitionTable {  // {{{
-	void insert(int q, Symbol c, int t);
-	unordered_map<int, unordered_map<Symbol, int>> transitions;
+	void insert(StateId q, Symbol c, StateId t);
+	unordered_map<StateId, unordered_map<Symbol, StateId>> transitions;
 };
 
-inline void DFABuilder::TransitionTable::insert(int q, Symbol c, int t)
+inline void DFABuilder::TransitionTable::insert(StateId q, Symbol c, StateId t)
 {
 	transitions[q][c] = t;
 }
@@ -89,23 +90,22 @@ DFA DFABuilder::construct(OvershadowMap* overshadows)
 	StateIdVec delta;
 	while (!workList.empty())
 	{
-		const StateIdVec q =
-			move(workList.front());  // each set q represents a valid configuration from the NFA
+		const StateIdVec q = move(workList.front());  // each set q represents a valid configuration from the NFA
 		workList.pop_front();
-		const int q_i = configurationNumber(Q, q);
+		const StateId q_i = *configurationNumber(Q, q);
 
 		for (Symbol c : alphabet)
 		{
 			nfa_.epsilonClosure(*nfa_.delta(q, c, &delta), &eclosure);
 			if (!eclosure.empty())
 			{
-				if (int t_i = configurationNumber(Q, eclosure); t_i != -1)
-					T.insert(q_i, c, t_i);  // T[q][c] = eclosure;
+				if (optional<StateId> t_i = configurationNumber(Q, eclosure); t_i.has_value())
+					T.insert(q_i, c, *t_i);                 // T[q][c] = eclosure;
 				else
 				{
 					Q.emplace_back(eclosure);
-					t_i = static_cast<int>(Q.size()) - 1;  // equal to configurationNumber(Q, eclosure);
-					T.insert(q_i, c, t_i);                 // T[q][c] = eclosure;
+					t_i = StateId{Q.size() - 1};            // equal to configurationNumber(Q, eclosure);
+					T.insert(q_i, c, *t_i);                 // T[q][c] = eclosure;
 					workList.emplace_back(move(eclosure));
 				}
 				eclosure.clear();
@@ -126,18 +126,17 @@ DFA DFABuilder::constructDFA(const vector<StateIdVec>& Q, const TransitionTable&
 
 	// build remaps table (used as cache for quickly finding DFA StateIds from NFA StateIds)
 	unordered_map<StateId, StateId> remaps;
-	StateId q_i = 0;
-	for (const StateIdVec& q : Q)
-	{
-		for (StateId s : q)
-			remaps[s] = q_i;
-
-		q_i++;
-	}
+	for_each(begin(Q), end(Q),
+		[q_i = StateId{0}, &remaps](StateIdVec const& q) mutable
+		{
+			for_each(begin(q), end(q), [&](StateId s) { remaps[s] = q_i; });
+			q_i++;
+		}
+	);
 
 	// map q_i to d_i and flag accepting states
 	map<Tag, Tag> overshadowing;
-	q_i = 0;
+	StateId q_i = 0;
 	for (const StateIdVec& q : Q)
 	{
 		// d_i represents the corresponding state in the DFA for all states of q from the NFA
@@ -165,21 +164,9 @@ DFA DFABuilder::constructDFA(const vector<StateIdVec>& Q, const TransitionTable&
 	}
 
 	// observe mapping from q_i to d_i
-	for (const pair<int, unordered_map<Symbol, int>>& t0 : T.transitions)
-	{
-		for (const pair<Symbol, int>& t1 : t0.second)
-		{
-			const int q_i = t0.first;
-			const Symbol c = t1.first;
-			const int t_i = t1.second;
-
-			if (t_i != -1)
-			{
-				DEBUG("map d{} |--({})--> d{}", q_i, prettySymbol(c), t_i);
-				dfa.setTransition(q_i, c, t_i);
-			}
-		}
-	}
+	for (auto const& [q_i, branch] : T.transitions)
+		for (auto const [c, t_i] : branch)
+			dfa.setTransition(q_i, c, t_i);
 
 	// q_0 becomes d_0 (initial state)
 	dfa.setInitialState(0);
@@ -199,18 +186,12 @@ DFA DFABuilder::constructDFA(const vector<StateIdVec>& Q, const TransitionTable&
 	return dfa;
 }
 
-int DFABuilder::configurationNumber(const vector<StateIdVec>& Q, const StateIdVec& t)
+optional<StateId> DFABuilder::configurationNumber(const vector<StateIdVec>& Q, const StateIdVec& t)
 {
-	int i = 0;
-	for (const StateIdVec& q_i : Q)
-	{
-		if (q_i == t)
-			return i;
-
-		i++;
-	}
-
-	return -1;
+	if (auto i = find(begin(Q), end(Q), t); i != end(Q))
+		return distance(begin(Q), i);
+	else
+		return nullopt;
 }
 
 optional<Tag> DFABuilder::determineTag(const StateIdVec& qn, map<Tag, Tag>* overshadows) const
@@ -224,10 +205,10 @@ optional<Tag> DFABuilder::determineTag(const StateIdVec& qn, map<Tag, Tag>* over
 	if (tags.empty())
 		return nullopt;
 
-	sort(tags.begin(), tags.end());
+	sort(begin(tags), end(tags));
 
 	optional<Tag> lowestTag = tags.front();
-	tags.erase(tags.begin());
+	tags.erase(begin(tags));
 
 	for (Tag tag : tags)
 		(*overshadows)[tag] = *lowestTag;  // {tag} is overshadowed by {lowestTag}

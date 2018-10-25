@@ -68,14 +68,8 @@ bool DFAMinimizer::containsInitialState(const StateIdVec& S) const
 
 DFAMinimizer::PartitionVec::iterator DFAMinimizer::findGroup(StateId s)
 {
-	for (auto i = T.begin(), e = T.end(); i != e; ++i)
-	{
-		StateIdVec& group = *i;
-		if (dfa_.acceptTag(group.front()) == dfa_.acceptTag(s))
-			return i;
-	}
-
-	return T.end();
+	return find_if(begin(T), end(T),
+			[&](StateIdVec& group) { return dfa_.acceptTag(group.front()) == dfa_.acceptTag(s); });
 }
 
 int DFAMinimizer::partitionId(StateId s) const
@@ -98,13 +92,9 @@ DFAMinimizer::PartitionVec DFAMinimizer::split(const StateIdVec& S) const
 		for (StateId s : S)
 		{
 			if (const optional<StateId> t = dfa_.delta(s, c); t.has_value())
-			{
 				t_i[partitionId(*t)].push_back(s);
-			}
 			else
-			{
 				t_i[-1].push_back(s);
-			}
 		}
 		if (t_i.size() > 1)
 		{
@@ -127,18 +117,14 @@ DFAMinimizer::PartitionVec DFAMinimizer::split(const StateIdVec& S) const
 		{
 			PartitionVec result;
 			StateIdVec main;
+
 			if (isMultiInitialState(s))
-			{
 				result.emplace_back(StateIdVec{s});
-			}
 			else
-			{
 				main.emplace_back(s);
-			}
+
 			if (!main.empty())
-			{
 				result.emplace_back(move(main));
-			}
 		}
 	}
 
@@ -179,10 +165,10 @@ MultiDFA DFAMinimizer::constructMultiDFA()
 
 	// patch initialStates and the master-initial-state's transition symbol
 	MultiDFA::InitialStateMap initialStates;
-	for (auto& p : initialStates_)
+	for (const pair<const string, StateId>& p : initialStates_)
 		dfamin.removeTransition(dfamin.initialState(), static_cast<Symbol>(p.second));
 
-	for (auto& p : initialStates_)
+	for (const pair<const string, StateId>& p : initialStates_)
 	{
 		const StateId t = targetStateId(p.second);
 		initialStates[p.first] = t;

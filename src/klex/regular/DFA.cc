@@ -18,7 +18,7 @@
 #	define DEBUG(msg, ...)                                     \
 		do                                                      \
 		{                                                       \
-			std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
+			cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
 		} while (0)
 #else
 #	define DEBUG(msg, ...) \
@@ -27,25 +27,27 @@
 		} while (0)
 #endif
 
+using namespace std;
+
 namespace klex::regular {
 
 Alphabet DFA::alphabet() const
 {
 	Alphabet alphabet;
 	for (const State& state : states_)
-		for (const std::pair<Symbol, StateId>& t : state.transitions)
+		for (const pair<Symbol, StateId>& t : state.transitions)
 			alphabet.insert(t.first);
 
-	return std::move(alphabet);
+	return move(alphabet);
 }
 
-std::vector<StateId> DFA::acceptStates() const
+vector<StateId> DFA::acceptStates() const
 {
-	std::vector<StateId> states;
+	vector<StateId> states;
 	states.reserve(acceptTags_.size());
-	std::for_each(acceptTags_.begin(), acceptTags_.end(), [&](const auto& s) { states.push_back(s.first); });
+	for_each(acceptTags_.begin(), acceptTags_.end(), [&](const auto& s) { states.push_back(s.first); });
 
-	return std::move(states);
+	return move(states);
 }
 
 // --------------------------------------------------------------------------
@@ -75,9 +77,7 @@ void DFA::removeTransition(StateId from, Symbol symbol)
 {
 	State& s = states_[from];
 	if (auto i = s.transitions.find(symbol); i != s.transitions.end())
-	{
 		s.transitions.erase(i);
-	}
 }
 
 StateId DFA::append(DFA other, StateId q0)
@@ -88,7 +88,7 @@ StateId DFA::append(DFA other, StateId q0)
 
 	states_.reserve(size() + other.size() - 1);
 	states_[q0] = other.states_[0];
-	states_.insert(states_.end(), std::next(other.states_.begin()), other.states_.end());
+	states_.insert(states_.end(), next(other.states_.begin()), other.states_.end());
 	backtrackStates_.insert(other.backtrackStates_.begin(), other.backtrackStates_.end());
 	acceptTags_.insert(other.acceptTags_.begin(), other.acceptTags_.end());
 
@@ -109,18 +109,18 @@ void DFA::prepareStateIds(StateId baseId, StateId q0)
 
 	// for each state's transitions
 	for (State& state : states_)
-		for (std::pair<const Symbol, StateId>& t : state.transitions)
+		for (pair<const Symbol, StateId>& t : state.transitions)
 			t.second = transformId(t.second);
 
 	AcceptMap remapped;
 	for (auto& a : acceptTags_)
 		remapped[transformId(a.first)] = a.second;
-	acceptTags_ = std::move(remapped);
+	acceptTags_ = move(remapped);
 
 	BacktrackingMap backtracking;
 	for (const auto& bt : backtrackStates_)
 		backtracking[transformId(bt.first)] = transformId(bt.second);
-	backtrackStates_ = std::move(backtracking);
+	backtrackStates_ = move(backtracking);
 
 	initialState_ = q0;
 }
@@ -146,8 +146,8 @@ void DFA::visit(DotVisitor& v) const
 	for (StateId s = 0, sE = size(); s != sE; ++s)
 	{
 		const TransitionMap& T = states_[s].transitions;
-		std::for_each(T.begin(), T.end(), [&](const auto& t) { v.visitEdge(s, t.second, t.first); });
-		std::for_each(T.begin(), T.end(), [&](const auto& t) { v.endVisitEdge(s, t.second); });
+		for_each(T.begin(), T.end(), [&](const auto& t) { v.visitEdge(s, t.second, t.first); });
+		for_each(T.begin(), T.end(), [&](const auto& t) { v.endVisitEdge(s, t.second); });
 	}
 	v.end();
 }
