@@ -11,13 +11,15 @@
 #include <iostream>
 #include <sstream>
 
+using namespace std;
+
 namespace klex::regular {
 
 #if 0
 #	define DEBUG(msg, ...)                                     \
 		do                                                      \
 		{                                                       \
-			std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
+			cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
 		} while (0)
 #else
 #	define DEBUG(msg, ...) \
@@ -35,9 +37,9 @@ void Alphabet::insert(Symbol ch)
 	}
 }
 
-std::string Alphabet::to_string() const
+string Alphabet::to_string() const
 {
-	std::stringstream sstr;
+	stringstream sstr;
 
 	sstr << '{';
 

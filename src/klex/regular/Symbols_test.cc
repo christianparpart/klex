@@ -8,6 +8,7 @@
 #include <klex/regular/Symbols.h>
 #include <klex/util/testing.h>
 
+using namespace std;
 using klex::regular::SymbolSet;
 
 TEST(regular_SymbolSet, s0)
@@ -65,12 +66,12 @@ TEST(regular_SymbolSet, complement)
 TEST(regular_SymbolSet, range)
 {
 	SymbolSet r;
-	r.insert(std::make_pair('a', 'f'));
+	r.insert(make_pair('a', 'f'));
 
 	EXPECT_EQ(6, r.size());
 	EXPECT_EQ("a-f", r.to_string());
 
-	r.insert(std::make_pair('0', '9'));
+	r.insert(make_pair('0', '9'));
 	EXPECT_EQ(16, r.size());
 	EXPECT_EQ("0-9a-f", r.to_string());
 }
@@ -78,8 +79,8 @@ TEST(regular_SymbolSet, range)
 TEST(regular_SymbolSet, fmt_format)
 {
 	SymbolSet s;
-	s.insert(std::make_pair('0', '9'));
-	s.insert(std::make_pair('a', 'f'));
+	s.insert(make_pair('0', '9'));
+	s.insert(make_pair('a', 'f'));
 
 	EXPECT_EQ("0-9a-f", fmt::format("{}", s));
 }
@@ -90,7 +91,7 @@ TEST(regular_SymbolSet, hash_map)
 	SymbolSet s1{'a'};
 	SymbolSet s2{'a', 'b'};
 
-	std::unordered_map<SymbolSet, int> map;
+	unordered_map<SymbolSet, int> map;
 	map[s0] = 0;
 	map[s1] = 1;
 	map[s2] = 2;

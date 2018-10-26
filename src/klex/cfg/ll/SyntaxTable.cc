@@ -26,7 +26,7 @@ using namespace klex;
 using namespace klex::cfg;
 using namespace klex::cfg::ll;
 
-template <typename T, typename V = int, typename F = std::function<bool(const T&)>>
+template <typename T, typename V = int, typename F = function<bool(const T&)>>
 inline map<T, V> createIdMap(const vector<T>& items, V first, F select = [](const T&) { return true; })
 {
 	map<T, V> out;

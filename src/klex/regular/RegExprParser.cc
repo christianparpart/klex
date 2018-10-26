@@ -16,11 +16,13 @@
 
 #include <fmt/format.h>
 
+using namespace std;
+
 #if 0
 #	define DEBUG(msg, ...)                                     \
 		do                                                      \
 		{                                                       \
-			std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
+			cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
 		} while (0)
 #else
 #	define DEBUG(msg, ...) \
@@ -102,9 +104,9 @@ void RegExprParser::consume(int expected)
 	}
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parse(std::string_view expr, int line, int column)
+unique_ptr<RegExpr> RegExprParser::parse(string_view expr, int line, int column)
 {
-	input_ = std::move(expr);
+	input_ = move(expr);
 	currentChar_ = input_.begin();
 	line_ = line;
 	column_ = column;
@@ -112,69 +114,69 @@ std::unique_ptr<RegExpr> RegExprParser::parse(std::string_view expr, int line, i
 	return parseExpr();
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseExpr()
+unique_ptr<RegExpr> RegExprParser::parseExpr()
 {
 	return parseLookAheadExpr();
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseLookAheadExpr()
+unique_ptr<RegExpr> RegExprParser::parseLookAheadExpr()
 {
-	std::unique_ptr<RegExpr> lhs = parseAlternation();
+	unique_ptr<RegExpr> lhs = parseAlternation();
 
 	if (currentChar() == '/')
 	{
 		consume();
-		std::unique_ptr<RegExpr> rhs = parseAlternation();
-		lhs = std::make_unique<LookAheadExpr>(std::move(lhs), std::move(rhs));
+		unique_ptr<RegExpr> rhs = parseAlternation();
+		lhs = make_unique<LookAheadExpr>(move(lhs), move(rhs));
 	}
 
 	return lhs;
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseAlternation()
+unique_ptr<RegExpr> RegExprParser::parseAlternation()
 {
-	std::unique_ptr<RegExpr> lhs = parseConcatenation();
+	unique_ptr<RegExpr> lhs = parseConcatenation();
 
 	while (currentChar() == '|')
 	{
 		consume();
-		std::unique_ptr<RegExpr> rhs = parseConcatenation();
-		lhs = std::make_unique<AlternationExpr>(std::move(lhs), std::move(rhs));
+		unique_ptr<RegExpr> rhs = parseConcatenation();
+		lhs = make_unique<AlternationExpr>(move(lhs), move(rhs));
 	}
 
 	return lhs;
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseConcatenation()
+unique_ptr<RegExpr> RegExprParser::parseConcatenation()
 {
 	// FOLLOW-set, the set of terminal tokens that can occur right after a concatenation
-	static const std::string_view follow = "/|)";
-	std::unique_ptr<RegExpr> lhs = parseClosure();
+	static const string_view follow = "/|)";
+	unique_ptr<RegExpr> lhs = parseClosure();
 
 	while (!eof() && follow.find(currentChar()) == follow.npos)
 	{
-		std::unique_ptr<RegExpr> rhs = parseClosure();
-		lhs = std::make_unique<ConcatenationExpr>(std::move(lhs), std::move(rhs));
+		unique_ptr<RegExpr> rhs = parseClosure();
+		lhs = make_unique<ConcatenationExpr>(move(lhs), move(rhs));
 	}
 
 	return lhs;
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseClosure()
+unique_ptr<RegExpr> RegExprParser::parseClosure()
 {
-	std::unique_ptr<RegExpr> subExpr = parseAtom();
+	unique_ptr<RegExpr> subExpr = parseAtom();
 
 	switch (currentChar())
 	{
 		case '?':
 			consume();
-			return std::make_unique<ClosureExpr>(std::move(subExpr), 0, 1);
+			return make_unique<ClosureExpr>(move(subExpr), 0, 1);
 		case '*':
 			consume();
-			return std::make_unique<ClosureExpr>(std::move(subExpr), 0);
+			return make_unique<ClosureExpr>(move(subExpr), 0);
 		case '+':
 			consume();
-			return std::make_unique<ClosureExpr>(std::move(subExpr), 1);
+			return make_unique<ClosureExpr>(move(subExpr), 1);
 		case '{':
 		{
 			consume();
@@ -184,12 +186,12 @@ std::unique_ptr<RegExpr> RegExprParser::parseClosure()
 				consume();
 				int n = parseInt();
 				consume('}');
-				return std::make_unique<ClosureExpr>(std::move(subExpr), m, n);
+				return make_unique<ClosureExpr>(move(subExpr), m, n);
 			}
 			else
 			{
 				consume('}');
-				return std::make_unique<ClosureExpr>(std::move(subExpr), m, m);
+				return make_unique<ClosureExpr>(move(subExpr), m, m);
 			}
 		}
 		default:
@@ -200,7 +202,7 @@ std::unique_ptr<RegExpr> RegExprParser::parseClosure()
 unsigned RegExprParser::parseInt()
 {
 	unsigned n = 0;
-	while (std::isdigit(currentChar()))
+	while (isdigit(currentChar()))
 	{
 		n *= 10;
 		n += currentChar() - '0';
@@ -209,13 +211,13 @@ unsigned RegExprParser::parseInt()
 	return n;
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseAtom()
+unique_ptr<RegExpr> RegExprParser::parseAtom()
 {
 	switch (currentChar())
 	{
 		case -1:  // EOF
 		case ')':
-			return std::make_unique<EmptyExpr>();
+			return make_unique<EmptyExpr>();
 		case '<':
 			consume();
 			consume('<');
@@ -224,22 +226,22 @@ std::unique_ptr<RegExpr> RegExprParser::parseAtom()
 			consume('F');
 			consume('>');
 			consume('>');
-			return std::make_unique<EndOfFileExpr>();
+			return make_unique<EndOfFileExpr>();
 		case '(':
 		{
 			consume();
-			std::unique_ptr<RegExpr> subExpr = parseExpr();
+			unique_ptr<RegExpr> subExpr = parseExpr();
 			consume(')');
 			return subExpr;
 		}
 		case '"':
 		{
 			consume();
-			std::unique_ptr<RegExpr> lhs = std::make_unique<CharacterExpr>(consume());
+			unique_ptr<RegExpr> lhs = make_unique<CharacterExpr>(consume());
 			while (!eof() && currentChar() != '"')
 			{
-				std::unique_ptr<RegExpr> rhs = std::make_unique<CharacterExpr>(consume());
-				lhs = std::make_unique<ConcatenationExpr>(std::move(lhs), std::move(rhs));
+				unique_ptr<RegExpr> rhs = make_unique<CharacterExpr>(consume());
+				lhs = make_unique<ConcatenationExpr>(move(lhs), move(rhs));
 			}
 			consume('"');
 			return lhs;
@@ -248,19 +250,19 @@ std::unique_ptr<RegExpr> RegExprParser::parseAtom()
 			return parseCharacterClass();
 		case '.':
 			consume();
-			return std::make_unique<DotExpr>();
+			return make_unique<DotExpr>();
 		case '^':
 			consume();
-			return std::make_unique<BeginOfLineExpr>();
+			return make_unique<BeginOfLineExpr>();
 		case '$':
 			consume();
-			return std::make_unique<EndOfLineExpr>();
+			return make_unique<EndOfLineExpr>();
 		default:
-			return std::make_unique<CharacterExpr>(parseSingleCharacter());
+			return make_unique<CharacterExpr>(parseSingleCharacter());
 	}
 }
 
-std::unique_ptr<RegExpr> RegExprParser::parseCharacterClass()
+unique_ptr<RegExpr> RegExprParser::parseCharacterClass()
 {
 	consume();                               // '['
 	const bool complement = consumeIf('^');  // TODO
@@ -274,22 +276,22 @@ std::unique_ptr<RegExpr> RegExprParser::parseCharacterClass()
 		ss.complement();
 
 	consume(']');
-	return std::make_unique<CharacterClassExpr>(std::move(ss));
+	return make_unique<CharacterClassExpr>(move(ss));
 }
 
 void RegExprParser::parseNamedCharacterClass(SymbolSet& ss)
 {
 	consume('[');
 	consume(':');
-	std::string token;
-	while (std::isalpha(currentChar()))
+	string token;
+	while (isalpha(currentChar()))
 	{
 		token += static_cast<char>(consume());
 	}
 	consume(':');
 	consume(']');
 
-	static const std::unordered_map<std::string_view, std::function<void(SymbolSet&)>> names = {
+	static const unordered_map<string_view, function<void(SymbolSet&)>> names = {
 		{"alnum",
 		 [](SymbolSet& ss) {
 			 for (Symbol c = 'a'; c <= 'z'; c++)
@@ -314,7 +316,7 @@ void RegExprParser::parseNamedCharacterClass(SymbolSet& ss)
 		{"cntrl",
 		 [](SymbolSet& ss) {
 			 for (Symbol c = 0; c <= 255; c++)
-				 if (std::iscntrl(c))
+				 if (iscntrl(c))
 					 ss.insert(c);
 		 }},
 		{"digit",
@@ -325,7 +327,7 @@ void RegExprParser::parseNamedCharacterClass(SymbolSet& ss)
 		{"graph",
 		 [](SymbolSet& ss) {
 			 for (Symbol c = 0; c <= 255; c++)
-				 if (std::isgraph(c))
+				 if (isgraph(c))
 					 ss.insert(c);
 		 }},
 		{"lower",
@@ -336,13 +338,13 @@ void RegExprParser::parseNamedCharacterClass(SymbolSet& ss)
 		{"print",
 		 [](SymbolSet& ss) {
 			 for (Symbol c = 0; c <= 255; c++)
-				 if (std::isprint(c) || c == ' ')
+				 if (isprint(c) || c == ' ')
 					 ss.insert(c);
 		 }},
 		{"punct",
 		 [](SymbolSet& ss) {
 			 for (Symbol c = 0; c <= 255; c++)
-				 if (std::ispunct(c))
+				 if (ispunct(c))
 					 ss.insert(c);
 		 }},
 		{"space",
@@ -410,11 +412,11 @@ Symbol RegExprParser::parseSingleCharacter()
 
 			char buf[3];
 			buf[0] = consume();
-			if (!std::isxdigit(buf[0]))
-				throw UnexpectedToken{line_, column_, std::string(1, buf[0]), "[0-9a-fA-F]"};
+			if (!isxdigit(buf[0]))
+				throw UnexpectedToken{line_, column_, string(1, buf[0]), "[0-9a-fA-F]"};
 			buf[1] = consume();
-			if (!std::isxdigit(buf[1]))
-				throw UnexpectedToken{line_, column_, std::string(1, buf[1]), "[0-9a-fA-F]"};
+			if (!isxdigit(buf[1]))
+				throw UnexpectedToken{line_, column_, string(1, buf[1]), "[0-9a-fA-F]"};
 			buf[2] = 0;
 
 			return static_cast<Symbol>(strtoul(buf, nullptr, 16));
@@ -430,10 +432,10 @@ Symbol RegExprParser::parseSingleCharacter()
 			buf[0] = x0;
 			buf[1] = consume();
 			if (!(buf[1] >= '0' && buf[1] <= '7'))
-				throw UnexpectedToken{line_, column_, std::string(1, buf[1]), "[0-7]"};
+				throw UnexpectedToken{line_, column_, string(1, buf[1]), "[0-7]"};
 			buf[2] = consume();
 			if (!(buf[2] >= '0' && buf[2] <= '7'))
-				throw UnexpectedToken{line_, column_, std::string(1, buf[2]), "[0-7]"};
+				throw UnexpectedToken{line_, column_, string(1, buf[2]), "[0-7]"};
 			buf[3] = '\0';
 
 			return static_cast<Symbol>(strtoul(buf, nullptr, 8));
@@ -451,10 +453,10 @@ Symbol RegExprParser::parseSingleCharacter()
 			buf[0] = consume();
 			buf[1] = consume();
 			if (!(buf[1] >= '0' && buf[1] <= '7'))
-				throw UnexpectedToken{line_, column_, std::string(1, buf[1]), "[0-7]"};
+				throw UnexpectedToken{line_, column_, string(1, buf[1]), "[0-7]"};
 			buf[2] = consume();
 			if (!(buf[2] >= '0' && buf[2] <= '7'))
-				throw UnexpectedToken{line_, column_, std::string(1, buf[2]), "[0-7]"};
+				throw UnexpectedToken{line_, column_, string(1, buf[2]), "[0-7]"};
 			buf[3] = '\0';
 
 			return static_cast<Symbol>(strtoul(buf, nullptr, 8));

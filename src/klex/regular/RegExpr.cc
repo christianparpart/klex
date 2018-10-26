@@ -13,11 +13,13 @@
 
 #include <fmt/format.h>
 
+using namespace std;
+
 #if 0
 #	define DEBUG(msg, ...)                                     \
 		do                                                      \
 		{                                                       \
-			std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
+			cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
 		} while (0)
 #else
 #	define DEBUG(msg, ...) \
@@ -46,9 +48,9 @@ void AlternationExpr::accept(RegExprVisitor& visitor)
 	return visitor.visit(*this);
 }
 
-std::string AlternationExpr::to_string() const
+string AlternationExpr::to_string() const
 {
-	std::stringstream sstr;
+	stringstream sstr;
 
 	if (precedence() > left_->precedence())
 	{
@@ -74,9 +76,9 @@ void ConcatenationExpr::accept(RegExprVisitor& visitor)
 	return visitor.visit(*this);
 }
 
-std::string ConcatenationExpr::to_string() const
+string ConcatenationExpr::to_string() const
 {
-	std::stringstream sstr;
+	stringstream sstr;
 
 	if (precedence() > left_->precedence())
 	{
@@ -100,12 +102,12 @@ void LookAheadExpr::accept(RegExprVisitor& visitor)
 	return visitor.visit(*this);
 }
 
-std::string LookAheadExpr::to_string() const
+string LookAheadExpr::to_string() const
 {
 	assert(precedence() < left_->precedence());
 	assert(precedence() < right_->precedence());
 
-	std::stringstream sstr;
+	stringstream sstr;
 	sstr << left_->to_string() << '/' << right_->to_string();
 	return sstr.str();
 }
@@ -115,9 +117,9 @@ void CharacterExpr::accept(RegExprVisitor& visitor)
 	return visitor.visit(*this);
 }
 
-std::string CharacterExpr::to_string() const
+string CharacterExpr::to_string() const
 {
-	return std::string(1, value_);
+	return string(1, value_);
 }
 
 void EndOfFileExpr::accept(RegExprVisitor& visitor)
@@ -125,7 +127,7 @@ void EndOfFileExpr::accept(RegExprVisitor& visitor)
 	return visitor.visit(*this);
 }
 
-std::string EndOfFileExpr::to_string() const
+string EndOfFileExpr::to_string() const
 {
 	return "<<EOF>>";
 }
@@ -135,7 +137,7 @@ void BeginOfLineExpr::accept(RegExprVisitor& visitor)
 	return visitor.visit(*this);
 }
 
-std::string BeginOfLineExpr::to_string() const
+string BeginOfLineExpr::to_string() const
 {
 	return "^";
 }
@@ -145,12 +147,12 @@ void EndOfLineExpr::accept(RegExprVisitor& visitor)
 	return visitor.visit(*this);
 }
 
-std::string EndOfLineExpr::to_string() const
+string EndOfLineExpr::to_string() const
 {
 	return "$";
 }
 
-std::string CharacterClassExpr::to_string() const
+string CharacterClassExpr::to_string() const
 {
 	return value_.to_string();
 }
@@ -165,7 +167,7 @@ void DotExpr::accept(RegExprVisitor& visitor)
 	return visitor.visit(*this);
 }
 
-std::string DotExpr::to_string() const
+string DotExpr::to_string() const
 {
 	return ".";
 }
@@ -175,9 +177,9 @@ void ClosureExpr::accept(RegExprVisitor& visitor)
 	return visitor.visit(*this);
 }
 
-std::string ClosureExpr::to_string() const
+string ClosureExpr::to_string() const
 {
-	std::stringstream sstr;
+	stringstream sstr;
 
 	// TODO: optimize superfluous ()'s
 	if (precedence() > subExpr_->precedence())
@@ -187,9 +189,9 @@ std::string ClosureExpr::to_string() const
 
 	if (minimumOccurrences_ == 0 && maximumOccurrences_ == 1)
 		sstr << '?';
-	else if (minimumOccurrences_ == 0 && maximumOccurrences_ == std::numeric_limits<unsigned>::max())
+	else if (minimumOccurrences_ == 0 && maximumOccurrences_ == numeric_limits<unsigned>::max())
 		sstr << '*';
-	else if (minimumOccurrences_ == 1 && maximumOccurrences_ == std::numeric_limits<unsigned>::max())
+	else if (minimumOccurrences_ == 1 && maximumOccurrences_ == numeric_limits<unsigned>::max())
 		sstr << '+';
 	else
 		sstr << '{' << minimumOccurrences_ << ',' << maximumOccurrences_ << '}';
@@ -202,7 +204,7 @@ void EmptyExpr::accept(RegExprVisitor& visitor)
 	visitor.visit(*this);
 }
 
-std::string EmptyExpr::to_string() const
+string EmptyExpr::to_string() const
 {
 	return {};
 }

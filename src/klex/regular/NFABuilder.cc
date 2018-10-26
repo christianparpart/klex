@@ -8,6 +8,8 @@
 #include <klex/regular/DFA.h>
 #include <klex/regular/NFABuilder.h>
 
+using namespace std;
+
 namespace klex::regular {
 
 NFA NFABuilder::construct(const RegExpr* re, Tag tag)
@@ -24,38 +26,38 @@ NFA NFABuilder::construct(const RegExpr* re, Tag tag)
 		fa_.setAccept(tag);
 	}
 
-	return std::move(fa_);
+	return move(fa_);
 }
 
 NFA NFABuilder::construct(const RegExpr* re)
 {
 	const_cast<RegExpr*>(re)->accept(*this);
-	return std::move(fa_);
+	return move(fa_);
 }
 
 void NFABuilder::visit(LookAheadExpr& lookaheadExpr)
 {
-	// fa_ = std::move(construct(lookaheadExpr.leftExpr()).lookahead(construct(lookaheadExpr.rightExpr())));
+	// fa_ = move(construct(lookaheadExpr.leftExpr()).lookahead(construct(lookaheadExpr.rightExpr())));
 	NFA lhs = construct(lookaheadExpr.leftExpr());
 	NFA rhs = construct(lookaheadExpr.rightExpr());
-	lhs.lookahead(std::move(rhs));
-	fa_ = std::move(lhs);
+	lhs.lookahead(move(rhs));
+	fa_ = move(lhs);
 }
 
 void NFABuilder::visit(AlternationExpr& alternationExpr)
 {
 	NFA lhs = construct(alternationExpr.leftExpr());
 	NFA rhs = construct(alternationExpr.rightExpr());
-	lhs.alternate(std::move(rhs));
-	fa_ = std::move(lhs);
+	lhs.alternate(move(rhs));
+	fa_ = move(lhs);
 }
 
 void NFABuilder::visit(ConcatenationExpr& concatenationExpr)
 {
 	NFA lhs = construct(concatenationExpr.leftExpr());
 	NFA rhs = construct(concatenationExpr.rightExpr());
-	lhs.concatenate(std::move(rhs));
-	fa_ = std::move(lhs);
+	lhs.concatenate(move(rhs));
+	fa_ = move(lhs);
 }
 
 void NFABuilder::visit(CharacterExpr& characterExpr)
@@ -72,20 +74,20 @@ void NFABuilder::visit(ClosureExpr& closureExpr)
 {
 	const unsigned xmin = closureExpr.minimumOccurrences();
 	const unsigned xmax = closureExpr.maximumOccurrences();
-	constexpr unsigned Infinity = std::numeric_limits<unsigned>::max();
+	constexpr unsigned Infinity = numeric_limits<unsigned>::max();
 
 	if (xmin == 0 && xmax == 1)
-		fa_ = std::move(construct(closureExpr.subExpr()).optional());
+		fa_ = move(construct(closureExpr.subExpr()).optional());
 	else if (xmin == 0 && xmax == Infinity)
-		fa_ = std::move(construct(closureExpr.subExpr()).recurring());
+		fa_ = move(construct(closureExpr.subExpr()).recurring());
 	else if (xmin == 1 && xmax == Infinity)
-		fa_ = std::move(construct(closureExpr.subExpr()).positive());
+		fa_ = move(construct(closureExpr.subExpr()).positive());
 	else if (xmin < xmax)
-		fa_ = std::move(construct(closureExpr.subExpr()).repeat(xmin, xmax));
+		fa_ = move(construct(closureExpr.subExpr()).repeat(xmin, xmax));
 	else if (xmin == xmax)
-		fa_ = std::move(construct(closureExpr.subExpr()).times(xmin));
+		fa_ = move(construct(closureExpr.subExpr()).times(xmin));
 	else
-		throw std::invalid_argument{"closureExpr"};
+		throw invalid_argument{"closureExpr"};
 }
 
 void NFABuilder::visit(BeginOfLineExpr& bolExpr)
@@ -97,9 +99,9 @@ void NFABuilder::visit(EndOfLineExpr& eolExpr)
 {
 	// NFA lhs;
 	// NFA rhs{'\n'};
-	// lhs.lookahead(std::move(rhs));
-	// fa_ = std::move(lhs);
-	fa_ = std::move(NFA{}.lookahead(NFA{'\n'}));
+	// lhs.lookahead(move(rhs));
+	// fa_ = move(lhs);
+	fa_ = move(NFA{}.lookahead(NFA{'\n'}));
 }
 
 void NFABuilder::visit(EndOfFileExpr& eofExpr)

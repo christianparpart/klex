@@ -15,13 +15,15 @@
 #include <stack>
 #include <vector>
 
+using namespace std;
+
 namespace klex::regular {
 
 #if 0
 #	define DEBUG(msg, ...)                                     \
 		do                                                      \
 		{                                                       \
-			std::cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
+			cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
 		} while (0)
 #else
 #	define DEBUG(msg, ...) \
@@ -36,7 +38,7 @@ Alphabet NFA::alphabet() const
 
 	for (const TransitionMap& transitions : states_)
 	{
-		for (const std::pair<Symbol, StateIdVec>& t : transitions)
+		for (const pair<Symbol, StateIdVec>& t : transitions)
 		{
 			switch (t.first)
 			{
@@ -94,7 +96,7 @@ StateIdVec NFA::epsilonTransitions(StateId s) const
 	StateIdVec t;
 
 	const TransitionMap& transitions = stateTransitions(s);
-	for (const std::pair<Symbol, StateIdVec>& p : transitions)
+	for (const pair<Symbol, StateIdVec>& p : transitions)
 		if (p.first == Symbols::Epsilon)
 			t.insert(t.end(), p.second.begin(), p.second.end());
 
@@ -111,8 +113,8 @@ StateIdVec NFA::epsilonClosure(const StateIdVec& S) const
 void NFA::epsilonClosure(const StateIdVec& S, StateIdVec* eclosure) const
 {
 	*eclosure = S;
-	std::vector<bool> availabilityCheck(1 + size(), false);
-	std::stack<StateId> workList;
+	vector<bool> availabilityCheck(1 + size(), false);
+	stack<StateId> workList;
 	for (StateId s : S)
 	{
 		workList.push(s);
@@ -134,7 +136,7 @@ void NFA::epsilonClosure(const StateIdVec& S, StateIdVec* eclosure) const
 		}
 	}
 
-	std::sort(eclosure->begin(), eclosure->end());
+	sort(eclosure->begin(), eclosure->end());
 }
 
 void NFA::prepareStateIds(StateId baseId)
@@ -168,15 +170,15 @@ void NFA::prepareStateIds(StateId baseId)
 	AcceptMap remapped;
 	for (auto& a : acceptTags_)
 		remapped[baseId + a.first] = a.second;
-	acceptTags_ = std::move(remapped);
+	acceptTags_ = move(remapped);
 
 	BacktrackingMap backtracking;
 	for (const auto& bt : backtrackStates_)
 		backtracking[baseId + bt.first] = baseId + bt.second;
-	backtrackStates_ = std::move(backtracking);
+	backtrackStates_ = move(backtracking);
 }
 
-NFA NFA::join(const std::map<std::string, NFA>& mappings)
+NFA NFA::join(const map<string, NFA>& mappings)
 {
 	if (mappings.size() == 1)
 		return mappings.begin()->second;
@@ -210,7 +212,7 @@ NFA& NFA::lookahead(NFA rhs)
 {
 	if (empty())
 	{
-		*this = std::move(rhs);
+		*this = move(rhs);
 		backtrackStates_[acceptState_] = initialState_;
 	}
 	else
@@ -299,7 +301,7 @@ NFA& NFA::recurring()
 
 NFA& NFA::positive()
 {
-	return concatenate(std::move(clone().recurring()));
+	return concatenate(move(clone().recurring()));
 }
 
 NFA& NFA::times(unsigned factor)
@@ -326,7 +328,7 @@ NFA& NFA::repeat(unsigned minimum, unsigned maximum)
 		times(minimum);
 
 	for (unsigned n = minimum + 1; n <= maximum; n++)
-		alternate(std::move(factor.clone().times(n)));
+		alternate(move(factor.clone().times(n)));
 
 	if (minimum == 0)
 		optional();
@@ -342,7 +344,7 @@ void NFA::visit(DotVisitor& v) const
 	v.visitNode(initialState_, true, acceptTags_.find(initialState_) != acceptTags_.end());
 
 	// accepting states
-	for (std::pair<StateId, Tag> acceptTag : acceptTags_)
+	for (pair<StateId, Tag> acceptTag : acceptTags_)
 		if (acceptTag.first != initialState_)
 			v.visitNode(acceptTag.first, false, true);
 
@@ -354,16 +356,16 @@ void NFA::visit(DotVisitor& v) const
 	// transitions
 	for (StateId sourceState = 0, sE = size(); sourceState != sE; ++sourceState)
 	{
-		std::map<StateId, std::vector<Symbol>> reversed;
-		for (const std::pair<Symbol, StateIdVec>& transitions : states_[sourceState])
+		map<StateId, vector<Symbol>> reversed;
+		for (const pair<Symbol, StateIdVec>& transitions : states_[sourceState])
 			for (StateId targetState : transitions.second)
 				reversed[targetState].push_back(transitions.first /* symbol */);
 
-		for (const std::pair<StateId, std::vector<Symbol>>& tr : reversed)
+		for (const pair<StateId, vector<Symbol>>& tr : reversed)
 		{
 			StateId targetState = tr.first;
-			const std::vector<Symbol>& T = tr.second;
-			std::for_each(T.begin(), T.end(),
+			const vector<Symbol>& T = tr.second;
+			for_each(T.begin(), T.end(),
 						  [&](const Symbol t) { v.visitEdge(sourceState, targetState, t); });
 			v.endVisitEdge(sourceState, targetState);
 		}

@@ -12,21 +12,23 @@
 #include <iostream>
 #include <iomanip>
 
+using namespace std;
+
 namespace klex::util {
 
 // {{{ Flags::Error
-Flags::Error::Error(ErrorCode code, std::string arg)
-    : std::runtime_error{fmt::format("{}: {}", 
+Flags::Error::Error(ErrorCode code, string arg)
+    : runtime_error{fmt::format("{}: {}", 
           FlagsErrorCategory::get().message(static_cast<int>(code)), arg)},
       code_{code},
-      arg_{std::move(arg)} {
+      arg_{move(arg)} {
 }
 // }}}
 
 // {{{ Flag
 Flags::Flag::Flag(
-    const std::string& opt,
-    const std::string& val,
+    const string& opt,
+    const string& val,
     FlagStyle fs,
     FlagType ft)
     : type_(ft),
@@ -46,21 +48,21 @@ Flags::Flags()
 }
 
 void Flags::set(const Flag& flag) {
-  set_[flag.name()] = std::make_pair(flag.type(), flag.value());
+  set_[flag.name()] = make_pair(flag.type(), flag.value());
 }
 
-void Flags::set(const std::string& opt,
-                const std::string& val,
+void Flags::set(const string& opt,
+                const string& val,
                 FlagStyle fs,
                 FlagType ft) {
   set(Flag{opt, val, fs, ft});
 }
 
-bool Flags::isSet(const std::string& flag) const {
+bool Flags::isSet(const string& flag) const {
   return set_.find(flag) != set_.end();
 }
 
-std::string Flags::asString(const std::string& flag) const {
+string Flags::asString(const string& flag) const {
   auto i = set_.find(flag);
   if (i == set_.end())
     throw Error{ErrorCode::NotFound, flag};
@@ -68,7 +70,7 @@ std::string Flags::asString(const std::string& flag) const {
   return i->second.second;
 }
 
-std::string Flags::getString(const std::string& flag) const {
+string Flags::getString(const string& flag) const {
   auto i = set_.find(flag);
   if (i == set_.end())
     throw Error{ErrorCode::NotFound, flag};
@@ -79,7 +81,7 @@ std::string Flags::getString(const std::string& flag) const {
   return i->second.second;
 }
 
-long int Flags::getNumber(const std::string& flag) const {
+long int Flags::getNumber(const string& flag) const {
   auto i = set_.find(flag);
   if (i == set_.end())
     throw Error{ErrorCode::NotFound, flag};
@@ -87,10 +89,10 @@ long int Flags::getNumber(const std::string& flag) const {
   if (i->second.first != FlagType::Number)
     throw Error{ErrorCode::TypeMismatch, flag};
 
-  return std::stoi(i->second.second);
+  return stoi(i->second.second);
 }
 
-float Flags::getFloat(const std::string& flag) const {
+float Flags::getFloat(const string& flag) const {
   auto i = set_.find(flag);
   if (i == set_.end())
     throw Error{ErrorCode::NotFound, flag};
@@ -98,10 +100,10 @@ float Flags::getFloat(const std::string& flag) const {
   if (i->second.first != FlagType::Float)
     throw Error{ErrorCode::TypeMismatch, flag};
 
-  return std::stof(i->second.second);
+  return stof(i->second.second);
 }
 
-bool Flags::getBool(const std::string& flag) const {
+bool Flags::getBool(const string& flag) const {
   auto i = set_.find(flag);
   if (i == set_.end())
     return false;
@@ -109,19 +111,19 @@ bool Flags::getBool(const std::string& flag) const {
   return i->second.second == "true";
 }
 
-const std::vector<std::string>& Flags::parameters() const {
+const vector<string>& Flags::parameters() const {
   return raw_;
 }
 
-void Flags::setParameters(const std::vector<std::string>& v) {
+void Flags::setParameters(const vector<string>& v) {
   raw_ = v;
 }
 
-std::string Flags::to_s() const {
-  std::stringstream sstr;
+string Flags::to_s() const {
+  stringstream sstr;
 
   int i = 0;
-  for (const std::pair<std::string, FlagValue>& flag: set_) {
+  for (const pair<string, FlagValue>& flag: set_) {
     if (i)
       sstr << ' ';
 
@@ -147,14 +149,14 @@ std::string Flags::to_s() const {
 }
 
 Flags& Flags::define(
-    const std::string& longOpt,
+    const string& longOpt,
     char shortOpt,
     bool required,
     FlagType type,
-    const std::string& valuePlaceholder,
-    const std::string& helpText,
-    const std::optional<std::string>& defaultValue,
-    std::function<void(const std::string&)> callback) {
+    const string& valuePlaceholder,
+    const string& helpText,
+    const optional<string>& defaultValue,
+    function<void(const string&)> callback) {
 
   FlagDef fd;
   fd.type = type;
@@ -172,73 +174,73 @@ Flags& Flags::define(
 }
 
 Flags& Flags::defineString(
-    const std::string& longOpt,
+    const string& longOpt,
     char shortOpt,
-    const std::string& valuePlaceholder,
-    const std::string& helpText,
-    std::optional<std::string> defaultValue,
-    std::function<void(const std::string&)> callback) {
+    const string& valuePlaceholder,
+    const string& helpText,
+    optional<string> defaultValue,
+    function<void(const string&)> callback) {
 
   return define(longOpt, shortOpt, false, FlagType::String, valuePlaceholder,
                 helpText, defaultValue, callback);
 }
 
 Flags& Flags::defineNumber(
-    const std::string& longOpt,
+    const string& longOpt,
     char shortOpt,
-    const std::string& valuePlaceholder,
-    const std::string& helpText,
-    std::optional<long int> defaultValue,
-    std::function<void(long int)> callback) {
+    const string& valuePlaceholder,
+    const string& helpText,
+    optional<long int> defaultValue,
+    function<void(long int)> callback) {
 
   return define(
       longOpt, shortOpt, false, FlagType::Number, valuePlaceholder,
-      helpText, defaultValue.has_value() ? std::make_optional(std::to_string(*defaultValue))
-                                         : std::nullopt,
-      [=](const std::string& value) {
+      helpText, defaultValue.has_value() ? make_optional(to_string(*defaultValue))
+                                         : nullopt,
+      [=](const string& value) {
         if (callback) {
-          callback(std::stoi(value));
+          callback(stoi(value));
         }
       });
 }
 
 Flags& Flags::defineFloat(
-    const std::string& longOpt,
+    const string& longOpt,
     char shortOpt,
-    const std::string& valuePlaceholder,
-    const std::string& helpText,
-    std::optional<float> defaultValue,
-    std::function<void(float)> callback) {
+    const string& valuePlaceholder,
+    const string& helpText,
+    optional<float> defaultValue,
+    function<void(float)> callback) {
 
   return define(
       longOpt, shortOpt, false, FlagType::Float, valuePlaceholder,
-      helpText, defaultValue.has_value() ? std::make_optional(std::to_string(*defaultValue))
-                                         : std::nullopt,
-      [=](const std::string& value) {
+      helpText, defaultValue.has_value() ? make_optional(to_string(*defaultValue))
+                                         : nullopt,
+      [=](const string& value) {
         if (callback) {
-          callback(std::stof(value));
+          callback(stof(value));
         }
       });
 }
 
 Flags& Flags::defineBool(
-    const std::string& longOpt,
+    const string& longOpt,
     char shortOpt,
-    const std::string& helpText,
-    std::function<void(bool)> callback) {
+    const string& helpText,
+    function<void(bool)> callback) {
 
   return define(
       longOpt, shortOpt, false, FlagType::Bool, "<bool>",
-      helpText, std::nullopt,
-      [=](const std::string& value) {
+      helpText, nullopt,
+      [=](const string& value) {
         if (callback) {
           callback(value == "true");
         }
       });
 }
 
-Flags& Flags::enableParameters(const std::string& valuePlaceholder,
-                           const std::string& helpText) {
+Flags& Flags::enableParameters(const string& valuePlaceholder,
+                           const string& helpText) {
   parametersEnabled_ = true;
   parametersPlaceholder_ = valuePlaceholder;
   parametersHelpText_ = helpText;
@@ -246,7 +248,7 @@ Flags& Flags::enableParameters(const std::string& valuePlaceholder,
   return *this;
 }
 
-const Flags::FlagDef* Flags::findDef(const std::string& longOption) const {
+const Flags::FlagDef* Flags::findDef(const string& longOption) const {
   for (const auto& flag: flagDefs_)
     if (flag.longOption == longOption)
       return &flag;
@@ -264,24 +266,24 @@ const Flags::FlagDef* Flags::findDef(char shortOption) const {
 
 // -----------------------------------------------------------------------------
 void Flags::parse(int argc, const char* argv[]) {
-  std::vector<std::string> args;
+  vector<string> args;
   for (int i = 1; i < argc; ++i)
     args.push_back(argv[i]);
 
   parse(args);
 }
 
-std::error_code Flags::tryParse(const std::vector<std::string>& args) {
+error_code Flags::tryParse(const vector<string>& args) {
   try {
     parse(args);
   } catch (const Error& parseError) {
     return parseError.code();
   }
-  return std::error_code();
+  return error_code();
 }
 
-void Flags::parse(const std::vector<std::string>& args) {
-  auto invokeCallback = [&](const FlagDef* fd, FlagStyle style, const std::string& value) {
+void Flags::parse(const vector<string>& args) {
+  auto invokeCallback = [&](const FlagDef* fd, FlagStyle style, const string& value) {
     if (fd) {
       set(fd->longOption, value, style, fd->type);
       if (fd->callback) {
@@ -295,12 +297,12 @@ void Flags::parse(const std::vector<std::string>& args) {
     Parameters,
   };
 
-  std::vector<std::string> params;
+  vector<string> params;
   ParsingState pstate = ParsingState::Options;
   size_t i = 0;
 
   while (i < args.size()) {
-    std::string arg = args[i];
+    string arg = args[i];
     i++;
     if (pstate == ParsingState::Parameters) {
       params.push_back(arg);
@@ -312,10 +314,10 @@ void Flags::parse(const std::vector<std::string>& args) {
       }
     } else if (arg.size() > 2 && arg[0] == '-' && arg[1] == '-') {
       // longopt
-      std::string name = arg.substr(2);
+      string name = arg.substr(2);
       size_t eq = name.find('=');
       if (eq != name.npos) { // --name=value
-        std::string value = name.substr(eq + 1);
+        string value = name.substr(eq + 1);
         name = name.substr(0, eq);
         const FlagDef* fd = findDef(name);
         if (fd == nullptr) {
@@ -333,7 +335,7 @@ void Flags::parse(const std::vector<std::string>& args) {
           if (i >= args.size())
             throw Error{ErrorCode::MissingOption, arg};
 
-          std::string value = args[i];
+          string value = args[i];
           i++;
 
           invokeCallback(fd, FlagStyle::LongWithValue, value);
@@ -350,11 +352,11 @@ void Flags::parse(const std::vector<std::string>& args) {
           invokeCallback(fd, FlagStyle::ShortSwitch, "true");
           arg = arg.substr(1);
         } else if (arg.size() > 1) { // -fVALUE
-          std::string value = arg.substr(1);
+          string value = arg.substr(1);
           invokeCallback(fd, FlagStyle::ShortSwitch, value);
           arg.clear();
         } else { // -f VALUE
-          std::string name = fd->longOption;
+          string name = fd->longOption;
 
           if (i >= args.size()) {
             char option[3] = { '-', fd->shortOption, '\0' };
@@ -362,7 +364,7 @@ void Flags::parse(const std::vector<std::string>& args) {
           }
 
           arg.clear();
-          std::string value = args[i];
+          string value = args[i];
           i++;
 
           if (!value.empty() && value[0] == '-') {
@@ -399,42 +401,42 @@ void Flags::parse(const std::vector<std::string>& args) {
 
 // -----------------------------------------------------------------------------
 
-std::string Flags::helpText(size_t width, size_t helpTextOffset) const {
-  std::stringstream sstr;
+string Flags::helpText(size_t width, size_t helpTextOffset) const {
+  stringstream sstr;
 
   for (const FlagDef& fd: flagDefs_)
     sstr << fd.makeHelpText(width, helpTextOffset);
 
   if (parametersEnabled_) {
-    sstr << std::endl;
+    sstr << endl;
 
-    const std::streampos p = sstr.tellp();
+    const streampos p = sstr.tellp();
     const size_t column = static_cast<size_t>(sstr.tellp() - p);
 
     sstr << "    [--] " << parametersPlaceholder_;
     if (column < helpTextOffset)
-      sstr << std::setw(helpTextOffset - column) << ' ';
+      sstr << setw(helpTextOffset - column) << ' ';
     else
-      sstr << std::endl << std::setw(helpTextOffset) << ' ';
+      sstr << endl << setw(helpTextOffset) << ' ';
 
-    sstr << parametersHelpText_ << std::endl;
+    sstr << parametersHelpText_ << endl;
   }
 
   return sstr.str();
 }
 
-static std::string wordWrap(
-    const std::string& text,
+static string wordWrap(
+    const string& text,
     size_t currentWidth,
     size_t width,
     size_t indent) {
 
-  std::stringstream sstr;
+  stringstream sstr;
 
   size_t i = 0;
   while (i < text.size()) {
     if (currentWidth >= width) {
-      sstr << std::endl << std::setw(indent) << ' ';
+      sstr << endl << setw(indent) << ' ';
       currentWidth = 0;
     }
 
@@ -446,14 +448,14 @@ static std::string wordWrap(
   return sstr.str();
 }
 
-std::error_code make_error_code(Flags::ErrorCode errc) {
-  return std::error_code(static_cast<int>(errc), FlagsErrorCategory::get());
+error_code make_error_code(Flags::ErrorCode errc) {
+  return error_code(static_cast<int>(errc), FlagsErrorCategory::get());
 }
 
 // {{{ Flags::FlagDef
-std::string Flags::FlagDef::makeHelpText(size_t width,
+string Flags::FlagDef::makeHelpText(size_t width,
                                          size_t helpTextOffset) const {
-  std::stringstream sstr;
+  stringstream sstr;
 
   sstr << ' ';
 
@@ -478,9 +480,9 @@ std::string Flags::FlagDef::makeHelpText(size_t width,
   // spacer
   size_t column = static_cast<size_t>(sstr.tellp());
   if (column < helpTextOffset) {
-    sstr << std::setw(helpTextOffset - sstr.tellp()) << ' ';
+    sstr << setw(helpTextOffset - sstr.tellp()) << ' ';
   } else {
-    sstr << std::endl << std::setw(helpTextOffset) << ' ';
+    sstr << endl << setw(helpTextOffset) << ' ';
     column = helpTextOffset;
   }
 
@@ -492,7 +494,7 @@ std::string Flags::FlagDef::makeHelpText(size_t width,
     sstr << wordWrap(helpText, column, width, helpTextOffset);
   }
 
-  sstr << std::endl;
+  sstr << endl;
 
   return sstr.str();
 }
@@ -508,7 +510,7 @@ const char* FlagsErrorCategory::name() const noexcept {
   return "Flags";
 }
 
-std::string FlagsErrorCategory::message(int ec) const {
+string FlagsErrorCategory::message(int ec) const {
   switch (static_cast<Flags::ErrorCode>(ec)) {
   case Flags::ErrorCode::TypeMismatch:
     return "Type Mismatch";

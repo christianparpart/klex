@@ -15,10 +15,12 @@
 
 #include <klex/regular/Symbols.h>
 
+using namespace std;
+
 namespace klex::regular {
 
-RuleParser::RuleParser(std::unique_ptr<std::istream> input, int firstTag)
-	: stream_{std::move(input)},
+RuleParser::RuleParser(unique_ptr<istream> input, int firstTag)
+	: stream_{move(input)},
 	  refRules_{},
 	  lastParsedRule_{nullptr},
 	  lastParsedRuleIsRef_{false},
@@ -31,8 +33,8 @@ RuleParser::RuleParser(std::unique_ptr<std::istream> input, int firstTag)
 	consumeChar();
 }
 
-RuleParser::RuleParser(std::string input, int firstTag)
-	: RuleParser{std::make_unique<std::stringstream>(std::move(input)), firstTag}
+RuleParser::RuleParser(string input, int firstTag)
+	: RuleParser{make_unique<stringstream>(move(input)), firstTag}
 {
 }
 
@@ -59,11 +61,11 @@ RuleList RuleParser::parseRules()
 
 	// collect all condition labels, find all <*>-conditions, then replace their <*> with {collected
 	// conditions}
-	std::set<std::string> conditions;
-	std::list<Rule*> starRules;
+	set<string> conditions;
+	list<Rule*> starRules;
 	for (Rule& rule : rules)
 	{
-		for (const std::string& condition : rule.conditions)
+		for (const string& condition : rule.conditions)
 		{
 			if (condition != "*")
 			{
@@ -77,7 +79,7 @@ RuleList RuleParser::parseRules()
 		}
 	}
 	for (Rule* rule : starRules)
-		for (const std::string& condition : conditions)
+		for (const string& condition : conditions)
 			rule->conditions.emplace_back(condition);
 
 	return rules;
@@ -96,7 +98,7 @@ void RuleParser::parseRule(RuleList& rules)
 	{
 		consumeChar();
 		consumeSP();
-		const std::string pattern = parseExpression();
+		const string pattern = parseExpression();
 		lastParsedRule_->pattern += '|' + pattern;
 		return;
 	}
@@ -105,7 +107,7 @@ void RuleParser::parseRule(RuleList& rules)
 	if (lastParsedRuleIsRef_)
 		lastParsedRule_->pattern = fmt::format("({})", lastParsedRule_->pattern);
 
-	std::vector<std::string> conditions = parseRuleConditions();
+	vector<string> conditions = parseRuleConditions();
 	consumeSP();
 	if (!conditions.empty() && currentChar() == '{')
 	{
@@ -113,7 +115,7 @@ void RuleParser::parseRule(RuleList& rules)
 		consumeAnySP();  // allow whitespace, including LFs
 		while (!eof() && currentChar() != '}')
 		{
-			parseBasicRule(rules, std::vector<std::string>(conditions));
+			parseBasicRule(rules, vector<string>(conditions));
 			consumeSP();  //  part of the next line, allow indentation
 		}
 		consumeChar('}');
@@ -125,28 +127,28 @@ void RuleParser::parseRule(RuleList& rules)
 	}
 	else
 	{
-		parseBasicRule(rules, std::move(conditions));
+		parseBasicRule(rules, move(conditions));
 	}
 }
 
 struct TestRuleForName {
-	std::string name;
+	string name;
 	bool operator()(const Rule& r) const { return r.name == name; }
 };
 
-void RuleParser::parseBasicRule(RuleList& rules, std::vector<std::string>&& conditions)
+void RuleParser::parseBasicRule(RuleList& rules, vector<string>&& conditions)
 {
 	const unsigned int beginLine = line_;
 	const unsigned int beginColumn = column_;
 
-	std::string token = consumeToken();
+	string token = consumeToken();
 	bool ignore = false;
 	bool ref = false;
 	if (currentChar_ == '(')
 	{
 		consumeChar();
 		unsigned optionOffset = offset_;
-		std::string option = consumeToken();
+		string option = consumeToken();
 		consumeChar(')');
 
 		if (option == "ignore")
@@ -161,7 +163,7 @@ void RuleParser::parseBasicRule(RuleList& rules, std::vector<std::string>&& cond
 	consumeSP();
 	const unsigned int line = line_;
 	const unsigned int column = column_;
-	const std::string pattern = parseExpression();
+	const string pattern = parseExpression();
 	if (currentChar() == '\n')
 		consumeChar();
 	else if (!eof())
@@ -170,7 +172,7 @@ void RuleParser::parseBasicRule(RuleList& rules, std::vector<std::string>&& cond
 	const Tag tag = [&] {
 		if (ignore || ref)
 			return IgnoreTag;
-		else if (auto i = std::find_if(rules.begin(), rules.end(), TestRuleForName{token}); i != rules.end())
+		else if (auto i = find_if(rules.begin(), rules.end(), TestRuleForName{token}); i != rules.end())
 			return i->tag;
 		else
 			return nextTag_++;
@@ -178,18 +180,18 @@ void RuleParser::parseBasicRule(RuleList& rules, std::vector<std::string>&& cond
 
 	if (ref && !conditions.empty())
 		throw InvalidRefRuleWithConditions{beginLine, beginColumn,
-										   Rule{line, column, tag, std::move(conditions), token, pattern}};
+										   Rule{line, column, tag, move(conditions), token, pattern}};
 
 	if (conditions.empty())
 		conditions.emplace_back("INITIAL");
 
-	std::sort(conditions.begin(), conditions.end());
+	sort(conditions.begin(), conditions.end());
 
 	if (!ref)
 	{
-		if (auto i = std::find_if(rules.begin(), rules.end(), TestRuleForName{token}); i != rules.end())
+		if (auto i = find_if(rules.begin(), rules.end(), TestRuleForName{token}); i != rules.end())
 		{
-			throw DuplicateRule{Rule{line, column, tag, std::move(conditions), token, pattern}, *i};
+			throw DuplicateRule{Rule{line, column, tag, move(conditions), token, pattern}, *i};
 		}
 		else
 		{
@@ -200,7 +202,7 @@ void RuleParser::parseBasicRule(RuleList& rules, std::vector<std::string>&& cond
 	}
 	else if (auto i = refRules_.find(token); i != refRules_.end())
 	{
-		throw DuplicateRule{Rule{line, column, tag, std::move(conditions), token, pattern}, i->second};
+		throw DuplicateRule{Rule{line, column, tag, move(conditions), token, pattern}, i->second};
 	}
 	else
 	{
@@ -211,7 +213,7 @@ void RuleParser::parseBasicRule(RuleList& rules, std::vector<std::string>&& cond
 	}
 }
 
-std::vector<std::string> RuleParser::parseRuleConditions()
+vector<string> RuleParser::parseRuleConditions()
 {
 	// RuleConditionList ::= '<' ('*' | TOKEN (',' SP* TOKEN)) '>'
 	if (currentChar() != '<')
@@ -226,7 +228,7 @@ std::vector<std::string> RuleParser::parseRuleConditions()
 		return {"*"};
 	}
 
-	std::vector<std::string> conditions{consumeToken()};
+	vector<string> conditions{consumeToken()};
 
 	while (currentChar() == ',')
 	{
@@ -240,34 +242,34 @@ std::vector<std::string> RuleParser::parseRuleConditions()
 	return conditions;
 }
 
-std::string RuleParser::parseExpression()
+string RuleParser::parseExpression()
 {
 	// expression ::= " .... "
 	//              | ....
 
-	std::stringstream sstr;
+	stringstream sstr;
 
 	size_t i = 0;
 	size_t lastGraph = 0;
 	while (!eof() && currentChar_ != '\n')
 	{
-		if (std::isgraph(currentChar_))
+		if (isgraph(currentChar_))
 			lastGraph = i + 1;
 		i++;
 		sstr << consumeChar();
 	}
-	std::string pattern = sstr.str().substr(0, lastGraph);  // skips trailing spaces
+	string pattern = sstr.str().substr(0, lastGraph);  // skips trailing spaces
 
 	// replace all occurrences of {ref}
-	for (const std::pair<const std::string, Rule>& ref : refRules_)
+	for (const pair<const string, Rule>& ref : refRules_)
 	{
 		const Rule& rule = ref.second;
-		const std::string name = fmt::format("{{{}}}", rule.name);
-		// for (size_t i = 0; (i = pattern.find(name, i)) != std::string::npos; i += rule.pattern.size()) {
+		const string name = fmt::format("{{{}}}", rule.name);
+		// for (size_t i = 0; (i = pattern.find(name, i)) != string::npos; i += rule.pattern.size()) {
 		//   pattern.replace(i, name.size(), rule.pattern);
 		// }
 		size_t i = 0;
-		while ((i = pattern.find(name, i)) != std::string::npos)
+		while ((i = pattern.find(name, i)) != string::npos)
 		{
 			pattern.replace(i, name.size(), rule.pattern);
 			i += rule.pattern.size();
@@ -341,16 +343,16 @@ bool RuleParser::eof() const noexcept
 	return currentChar_ < 0 || stream_->eof();
 }
 
-std::string RuleParser::consumeToken()
+string RuleParser::consumeToken()
 {
-	std::stringstream sstr;
+	stringstream sstr;
 
-	if (!std::isalpha(currentChar_) || currentChar_ == '_')
+	if (!isalpha(currentChar_) || currentChar_ == '_')
 		throw UnexpectedToken{offset_, currentChar_, "Token"};
 
 	do
 		sstr << consumeChar();
-	while (std::isalnum(currentChar_) || currentChar_ == '_');
+	while (isalnum(currentChar_) || currentChar_ == '_');
 
 	return sstr.str();
 }

@@ -23,18 +23,20 @@
 #include <fnmatch.h>
 #endif
 
+using namespace std;
+
 namespace klex::util::testing {
 
 int main(int argc, const char* argv[]) {
   return UnitTest::instance()->main(argc, argv);
 }
 
-bool beginsWith(const std::string& str, const std::string_view& prefix) {
+bool beginsWith(const string& str, const string_view& prefix) {
   if (str.length() < prefix.length()) {
     return false;
   }
 
-  return std::string_view(&str[0], prefix.length()) == prefix;
+  return string_view(&str[0], prefix.length()) == prefix;
 }
 
 // ############################################################################
@@ -66,33 +68,33 @@ void Test::SetUp() {
 void Test::TearDown() {
 }
 
-void Test::log(const std::string& message) {
+void Test::log(const string& message) {
   UnitTest::instance()->log(message);
 }
 
-void Test::reportUnhandledException(const std::exception& e) {
+void Test::reportUnhandledException(const exception& e) {
   UnitTest::instance()->reportUnhandledException(e);
 }
 
 // ############################################################################
 
-TestInfo::TestInfo(const std::string& testCaseName, 
-    const std::string& testName,
+TestInfo::TestInfo(const string& testCaseName, 
+    const string& testName,
     bool enabled,
-    std::unique_ptr<TestFactory>&& testFactory)
+    unique_ptr<TestFactory>&& testFactory)
   : testCaseName_(testCaseName),
     testName_(testName),
     enabled_(enabled),
-    testFactory_(std::move(testFactory)) {
+    testFactory_(move(testFactory)) {
 }
 
 // ############################################################################
 
-static std::string colorsReset = AnsiColor::make(AnsiColor::Reset);
-static std::string colorsTestCaseHeader = AnsiColor::make(AnsiColor::Cyan);
-static std::string colorsError = AnsiColor::make(AnsiColor::Red | AnsiColor::Bold);
-static std::string colorsOk = AnsiColor::make(AnsiColor::Green);
-static std::string colorsLog = AnsiColor::make(AnsiColor::Blue | AnsiColor::Bold);
+static string colorsReset = AnsiColor::make(AnsiColor::Reset);
+static string colorsTestCaseHeader = AnsiColor::make(AnsiColor::Cyan);
+static string colorsError = AnsiColor::make(AnsiColor::Red | AnsiColor::Bold);
+static string colorsOk = AnsiColor::make(AnsiColor::Green);
+static string colorsLog = AnsiColor::make(AnsiColor::Blue | AnsiColor::Bold);
 
 UnitTest::UnitTest()
   : environments_(),
@@ -116,14 +118,14 @@ UnitTest* UnitTest::instance() {
 }
 
 void UnitTest::randomizeTestOrder() {
-	unsigned int seed = static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count());
+	unsigned int seed = static_cast<unsigned int>(chrono::system_clock::now().time_since_epoch().count());
 
-  std::shuffle(activeTests_.begin(), activeTests_.end(),
-      std::default_random_engine(seed));
+  shuffle(activeTests_.begin(), activeTests_.end(),
+      default_random_engine(seed));
 }
 
 void UnitTest::sortTestsAlphabetically() {
-  std::sort(
+  sort(
       activeTests_.begin(),
       activeTests_.end(),
       [this](size_t a, size_t b) -> bool {
@@ -183,7 +185,7 @@ int UnitTest::main(int argc, const char* argv[]) {
 
   try {
     flags.parse(argc, argv);
-  } catch (const std::exception& ex) {
+  } catch (const exception& ex) {
     fprintf(stderr, "Failed to parse flags. %s\n", ex.what());
     return EXIT_FAILURE;
   }
@@ -195,8 +197,8 @@ int UnitTest::main(int argc, const char* argv[]) {
 
   verbose_ = flags.getBool("verbose");
 
-  std::string filter = flags.getString("filter");
-  std::string exclude = flags.getString("exclude");
+  string filter = flags.getString("filter");
+  string exclude = flags.getString("exclude");
   repeats_ = flags.getNumber("repeat");
   printProgress_ = !flags.getBool("no-progress");
 
@@ -217,14 +219,14 @@ int UnitTest::main(int argc, const char* argv[]) {
   return failCount_ == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-void UnitTest::filterTests(const std::string& filter,
-                           const std::string& exclude) {
+void UnitTest::filterTests(const string& filter,
+                           const string& exclude) {
   // if (filter != "*") { ... }
 
-  std::vector<size_t> filtered;
+  vector<size_t> filtered;
   for (size_t i = 0, e = activeTests_.size(); i != e; ++i) {
     TestInfo* testInfo = testCases_[activeTests_[i]].get();
-    std::string matchName = fmt::format("{}.{}",
+    string matchName = fmt::format("{}.{}",
         testInfo->testCaseName(), testInfo->testName());
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -244,7 +246,7 @@ void UnitTest::filterTests(const std::string& filter,
     }
 #endif
   }
-  activeTests_ = std::move(filtered);
+  activeTests_ = move(filtered);
 }
 
 void UnitTest::run() {
@@ -333,7 +335,7 @@ void UnitTest::runAllTestsOnce() {
 
   for (size_t i = 0, e = activeTests_.size(); i != e; ++i) {
     TestInfo* testCase = testCases_[activeTests_[i]].get();
-    std::unique_ptr<Test> test = testCase->createTest();
+    unique_ptr<Test> test = testCase->createTest();
 
     if (!testCase->isEnabled())
       continue;
@@ -369,7 +371,7 @@ void UnitTest::runAllTestsOnce() {
       } catch (const BailOutException&) {
         // no-op
         failed++;
-      } catch (const std::exception& ex) {
+      } catch (const exception& ex) {
         reportUnhandledException(ex);
         failed++;
       } catch (...) {
@@ -398,8 +400,8 @@ void UnitTest::reportError(const char* fileName,
                            int lineNo,
                            bool fatal,
                            const char* actual,
-                           const std::error_code& ec) {
-  std::string message = fmt::format(
+                           const error_code& ec) {
+  string message = fmt::format(
       "{}:{}: Failure\n"
       "  Value of: {}\n"
       "  Expected: success\n"
@@ -416,10 +418,10 @@ void UnitTest::reportError(const char* fileName,
                            int lineNo,
                            bool fatal,
                            const char* expected,
-                           const std::error_code& expectedEvaluated,
+                           const error_code& expectedEvaluated,
                            const char* actual,
-                           const std::error_code& actualEvaluated) {
-  std::string message = fmt::format(
+                           const error_code& actualEvaluated) {
+  string message = fmt::format(
       "{}:{}: Failure\n"
       "  Value of: {}\n"
       "  Expected: ({}) {}\n"
@@ -437,9 +439,9 @@ void UnitTest::reportBinary(const char* fileName,
                             bool fatal,
                             const char* expected,
                             const char* actual,
-                            const std::string& actualEvaluated,
+                            const string& actualEvaluated,
                             const char* op) {
-  std::string message = fmt::format(
+  string message = fmt::format(
       "{}:{}: Failure\n"
       "  Value of: {}\n"
       "  Expected: {} {}\n"
@@ -452,8 +454,8 @@ void UnitTest::reportBinary(const char* fileName,
   reportMessage(message, fatal);
 }
 
-void UnitTest::reportUnhandledException(const std::exception& e) {
-  std::string message = fmt::format(
+void UnitTest::reportUnhandledException(const exception& e) {
+  string message = fmt::format(
       "Unhandled Exception\n"
         "  Type: {}\n"
         "  What: {}\n",
@@ -468,7 +470,7 @@ void UnitTest::reportEH(const char* fileName,
                         const char* program,
                         const char* expected,
                         const char* actual) {
-  std::string message = fmt::format(
+  string message = fmt::format(
       "{}:{}: {}\n"
       "  Value of: {}\n"
       "  Expected: {}\n"
@@ -483,12 +485,12 @@ void UnitTest::reportEH(const char* fileName,
   reportMessage(message, fatal);
 }
 
-void UnitTest::reportMessage(const char* fileName, int lineNo, bool fatal, const std::string& msg) {
-	std::string message = fmt::format("{}:{}: {}\n", fileName, lineNo, msg);
+void UnitTest::reportMessage(const char* fileName, int lineNo, bool fatal, const string& msg) {
+	string message = fmt::format("{}:{}: {}\n", fileName, lineNo, msg);
 	reportMessage(message, fatal);
 }
 
-void UnitTest::reportMessage(const std::string& message, bool fatal) {
+void UnitTest::reportMessage(const string& message, bool fatal) {
   printf("%s%s%s\n",
       colorsError.c_str(),
       message.c_str(),
@@ -502,46 +504,46 @@ void UnitTest::reportMessage(const std::string& message, bool fatal) {
   }
 }
 
-void UnitTest::addEnvironment(std::unique_ptr<Environment>&& env) {
-  environments_.emplace_back(std::move(env));
+void UnitTest::addEnvironment(unique_ptr<Environment>&& env) {
+  environments_.emplace_back(move(env));
 }
 
-Callback* UnitTest::addInitializer(std::unique_ptr<Callback>&& cb) {
-  initializers_.emplace_back(std::move(cb));
+Callback* UnitTest::addInitializer(unique_ptr<Callback>&& cb) {
+  initializers_.emplace_back(move(cb));
   return initializers_.back().get();
 }
 
 TestInfo* UnitTest::addTest(const char* testCaseName,
                             const char* testName,
-                            std::unique_ptr<TestFactory>&& testFactory) {
-  testCases_.emplace_back(std::make_unique<TestInfo>(
+                            unique_ptr<TestFactory>&& testFactory) {
+  testCases_.emplace_back(make_unique<TestInfo>(
           testCaseName,
           testName,
           !beginsWith(testCaseName, "DISABLED_")
               && !beginsWith(testName, "DISABLED_"),
-          std::move(testFactory)));
+          move(testFactory)));
 
   activeTests_.emplace_back(activeTests_.size());
 
   return testCases_.back().get();
 }
 
-void UnitTest::log(const std::string& message) {
+void UnitTest::log(const string& message) {
   if (verbose_) {
     size_t bol = 0;
     size_t eol = 0;
     do {
       eol = message.find('\n', bol);
-      std::string line = message.substr(bol, eol - bol);
+      string line = message.substr(bol, eol - bol);
       if (eol + 1 < message.size() || (!line.empty() && line != "\n"))
-        std::cerr << fmt::format("{}{}.{}:{} {}\n",
+        cerr << fmt::format("{}{}.{}:{} {}\n",
                                  colorsLog,
                                  currentTestCase_->testCaseName(),
                                  currentTestCase_->testName(),
                                  colorsReset,
                                  line);
       bol = eol + 1;
-    } while (eol != std::string::npos);
+    } while (eol != string::npos);
   }
 }
 

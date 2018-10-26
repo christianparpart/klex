@@ -8,6 +8,8 @@
 #include <klex/util/AnsiColor.h>
 #include <sstream>
 
+using namespace std;
+
 namespace klex::util {
 
 /**
@@ -20,8 +22,8 @@ namespace klex::util {
  * \param AColor a bitmask of colors/flags to create the ANSII sequence for
  * \return the ANSII sequence representing the colors/flags passed.
  */
-std::string AnsiColor::make(Type AColor) {
-  std::stringstream sb;
+string AnsiColor::make(Type AColor) {
+  stringstream sb;
   int i = 0;
 
   sb << "\x1B[";  // XXX: '\e' = 0x1B
@@ -69,7 +71,7 @@ std::string AnsiColor::make(Type AColor) {
  * \param AText the text to be colourized.
  * \return the given text colourized in the expected colours/flags.
  */
-std::string AnsiColor::colorize(Type AColor, const std::string& AText) {
+string AnsiColor::colorize(Type AColor, const string& AText) {
   return make(AColor) + AText + make(Clear);
 }
 

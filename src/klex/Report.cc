@@ -13,7 +13,7 @@ using namespace std;
 using namespace klex;
 
 // {{{ Message
-std::string Report::Message::to_string() const
+string Report::Message::to_string() const
 {
 	switch (type)
 	{
@@ -38,10 +38,10 @@ void ConsoleReport::onMessage(Message message)
 	switch (message.type)
 	{
 		case Type::Warning:
-			std::cerr << fmt::format("Warning: {}\n", message);
+			cerr << fmt::format("Warning: {}\n", message);
 			break;
 		default:
-			std::cerr << fmt::format("Error: {}\n", message);
+			cerr << fmt::format("Error: {}\n", message);
 			break;
 	}
 }
@@ -49,7 +49,7 @@ void ConsoleReport::onMessage(Message message)
 // {{{ BufferedReport
 void BufferedReport::onMessage(Message msg)
 {
-	messages_.emplace_back(std::move(msg));
+	messages_.emplace_back(move(msg));
 }
 
 void BufferedReport::clear()
@@ -57,9 +57,9 @@ void BufferedReport::clear()
 	messages_.clear();
 }
 
-std::string BufferedReport::to_string() const
+string BufferedReport::to_string() const
 {
-	std::stringstream sstr;
+	stringstream sstr;
 	for (const Message& message : messages_)
 	{
 		switch (message.type)
@@ -111,7 +111,7 @@ DifferenceReport difference(const BufferedReport& first, const BufferedReport& s
 	return diff;
 }
 
-std::ostream& operator<<(std::ostream& os, const BufferedReport& report)
+ostream& operator<<(ostream& os, const BufferedReport& report)
 {
 	os << report.to_string();
 	return os;

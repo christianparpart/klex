@@ -8,14 +8,16 @@
 #include <klex/regular/State.h>
 #include <sstream>
 
+using namespace std;
+
 namespace klex::regular {
 
-std::string to_string(const StateIdVec& S, std::string_view stateLabelPrefix)
+string to_string(const StateIdVec& S, string_view stateLabelPrefix)
 {
 	StateIdVec names = S;
-	std::sort(names.begin(), names.end());
+	sort(names.begin(), names.end());
 
-	std::stringstream sstr;
+	stringstream sstr;
 	sstr << "{";
 	int i = 0;
 	for (StateId name : names)

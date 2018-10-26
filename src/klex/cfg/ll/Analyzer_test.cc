@@ -23,7 +23,7 @@ using namespace klex::cfg;
 using namespace klex::cfg::ll;
 using namespace klex::util::literals;
 
-const std::string balancedParentheses = "A ::= '(' A ')' | '(' ')'";
+const string balancedParentheses = "A ::= '(' A ')' | '(' ')'";
 
 TEST(cfg_ll_Analyzer, ETF)
 {

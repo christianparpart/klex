@@ -5,7 +5,7 @@ using namespace std;
 
 namespace klex {
 
-std::string SourceLocation::source() const // TODO
+string SourceLocation::source() const // TODO
 {
 	string code;
 	ifstream ifs(filename);

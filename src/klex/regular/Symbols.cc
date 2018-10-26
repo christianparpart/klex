@@ -8,9 +8,11 @@
 #include <klex/regular/Symbols.h>
 #include <sstream>
 
+using namespace std;
+
 namespace klex::regular {
 
-std::string prettySymbol(Symbol input)
+string prettySymbol(Symbol input)
 {
 	switch (input)
 	{
@@ -45,7 +47,7 @@ std::string prettySymbol(Symbol input)
 		case '.':
 			return "\\.";  // so we can distinguish from dot-operator
 		default:
-			if (std::isprint(input))
+			if (isprint(input))
 			{
 				return fmt::format("{}", (char) input);
 			}
@@ -56,11 +58,11 @@ std::string prettySymbol(Symbol input)
 	}
 }
 
-std::string prettyCharRange(Symbol ymin, Symbol ymax)
+string prettyCharRange(Symbol ymin, Symbol ymax)
 {
 	assert(ymin <= ymax);
 
-	std::stringstream sstr;
+	stringstream sstr;
 	switch (ymax - ymin)
 	{
 		case 0:
@@ -79,13 +81,13 @@ std::string prettyCharRange(Symbol ymin, Symbol ymax)
 	return sstr.str();
 }
 
-std::string groupCharacterClassRanges(const std::vector<bool>& syms)
+string groupCharacterClassRanges(const vector<bool>& syms)
 {
 	// {1,3,5,a,b,c,d,e,f,z]
 	// ->
 	// {{1}, {3}, {5}, {a-f}, {z}}
 
-	std::stringstream sstr;
+	stringstream sstr;
 	Symbol ymin = '\0';
 	Symbol ymax = ymin;
 	int k = 0;
@@ -115,10 +117,10 @@ std::string groupCharacterClassRanges(const std::vector<bool>& syms)
 	return sstr.str();
 }
 
-std::string groupCharacterClassRanges(std::vector<Symbol> chars)
+string groupCharacterClassRanges(vector<Symbol> chars)
 {
 	// we took a copy in tgroup here, so I can sort() later
-	std::sort(chars.begin(), chars.end());
+	sort(chars.begin(), chars.end());
 
 	if (chars.size() == 1)
 		return prettySymbol(chars.front());
@@ -127,7 +129,7 @@ std::string groupCharacterClassRanges(std::vector<Symbol> chars)
 	// ->
 	// "123a-fz"
 
-	std::stringstream sstr;
+	stringstream sstr;
 	Symbol ymin = 0;
 	Symbol ymax = ymin;
 	int i = 0;
@@ -168,7 +170,7 @@ bool SymbolSet::isDot() const noexcept
 	return *this == dot;
 }
 
-std::string SymbolSet::to_string() const
+string SymbolSet::to_string() const
 {
 	if (isDot())
 		return ".";
