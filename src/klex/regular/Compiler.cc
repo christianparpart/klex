@@ -140,7 +140,7 @@ LexerDef Compiler::compile()
 LexerDef Compiler::compileMulti(OvershadowMap* overshadows)
 {
 	MultiDFA multiDFA = compileMultiDFA(overshadows);
-	multiDFA = move(DFAMinimizer{multiDFA}.constructMultiDFA());
+	multiDFA = DFAMinimizer{multiDFA}.constructMultiDFA();
 	return generateTables(multiDFA, containsBeginOfLine_, names());
 }
 
