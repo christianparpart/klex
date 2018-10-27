@@ -14,29 +14,35 @@
 #include <sstream>
 #include <vector>
 
-#if 0
-#	define DEBUG(msg, ...)                                     \
-		do                                                      \
-		{                                                       \
-			cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
-		} while (0)
-#else
-#	define DEBUG(msg, ...) \
-		do                  \
-		{                   \
-		} while (0)
-#endif
+#include <range/v3/core.hpp>
+#include <range/v3/view/iota.hpp>
+#include <range/v3/view/map.hpp>
+#include <range/v3/view/zip.hpp>
+#include <range/v3/view/join.hpp>
+#include <range/v3/view/transform.hpp>
+#include <range/v3/utility/copy.hpp>
+#include <range/v3/algorithm/for_each.hpp>
+#include <range/v3/action/insert.hpp>
+#include <range/v3/action/push_back.hpp>
 
-using namespace std;
+//using namespace std;
+using std::pair;
+using std::vector;
+using namespace ranges::v3;
 
 namespace klex::regular {
+
+inline DFA::TransitionMap const& StateTransitions(DFA::State const& s) { return s.transitions; }
 
 Alphabet DFA::alphabet() const
 {
 	Alphabet alphabet;
-	for (const State& state : states_)
-		for (const pair<Symbol, StateId>& t : state.transitions)
-			alphabet.insert(t.first);
+	for (const StateId s : states_ | view::transform(StateTransitions) | view::join | view::keys)
+		alphabet.insert(s);
+
+	// for (const State& state : states_)
+	// 	for (const pair<Symbol, StateId>& t : state.transitions)
+	// 		alphabet.insert(t.first);
 
 	return alphabet;
 }
@@ -45,7 +51,8 @@ vector<StateId> DFA::acceptStates() const
 {
 	vector<StateId> states;
 	states.reserve(acceptTags_.size());
-	for_each(begin(acceptTags_), end(acceptTags_), [&](const pair<StateId, Tag>& s) { states.push_back(s.first); });
+	states |= push_back(acceptTags_ | view::keys);
+	for_each(acceptTags_, [&](const pair<StateId, Tag>& s) { states.push_back(s.first); });
 	return states;
 }
 
@@ -145,8 +152,8 @@ void DFA::visit(DotVisitor& v) const
 	for (StateId s = 0, sE = size(); s != sE; ++s)
 	{
 		const TransitionMap& T = states_[s].transitions;
-		for_each(T.begin(), T.end(), [&](const auto& t) { v.visitEdge(s, t.second, t.first); });
-		for_each(T.begin(), T.end(), [&](const auto& t) { v.endVisitEdge(s, t.second); });
+		for_each(T, [&](const auto& t) { v.visitEdge(s, t.second, t.first); });
+		for_each(T, [&](const auto& t) { v.endVisitEdge(s, t.second); });
 	}
 	v.end();
 }

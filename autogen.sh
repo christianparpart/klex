@@ -56,7 +56,7 @@ echo CXXFLAGS = $CXXFLAGS
 echo PKG_CONFIG_PATH = $PKG_CONFIG_PATH
 
 exec cmake "${ROOT}" \
-            -DCMAKE_BUILD_TYPE="debug" \
+            -DCMAKE_BUILD_TYPE="Debug" \
             -DCMAKE_INSTALL_PREFIX="${HOME}/local" \
             -DCMAKE_VERBOSE_MAKEFILE=OFF \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \

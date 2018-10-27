@@ -6,6 +6,7 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/Report.h>
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 
@@ -77,23 +78,12 @@ string BufferedReport::to_string() const
 
 bool BufferedReport::operator==(const BufferedReport& other) const noexcept
 {
-	if (size() != other.size())
-		return false;
-
-	for (size_t i = 0, e = size(); i != e; ++i)
-		if (messages_[i] != other.messages_[i])
-			return false;
-
-	return true;
+	return messages_ == other.messages_;
 }
 
 bool BufferedReport::contains(const Message& message) const noexcept
 {
-	for (const Message& m : messages_)
-		if (m == message)
-			return true;
-
-	return false;
+	return find(begin(), end(), message) != end();
 }
 
 DifferenceReport difference(const BufferedReport& first, const BufferedReport& second)

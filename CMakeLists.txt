@@ -28,6 +28,9 @@ else()
   # master project must provide its own fmtlib
 endif()
 
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/range-v3")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/range-v3/include)
+
 # ----------------------------------------------------------------------------
 if(NOT MSVC)
   add_definitions(-Wall)
@@ -69,6 +72,8 @@ add_library(klex STATIC
     )
 
 target_link_libraries(klex PUBLIC fmt::fmt-header-only)
+target_link_libraries(klex PRIVATE range-v3)
+
 if(MSVC)
   target_link_libraries(klex PUBLIC Shlwapi)
 else()
