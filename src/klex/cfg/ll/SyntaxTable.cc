@@ -171,7 +171,7 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 
 	st.startSymbol = idNonTerminals[NonTerminal{grammar.productions[0].name}];
 
-	return move(st);
+	return st;
 }
 
 string SyntaxTable::dump(const Grammar& grammar) const

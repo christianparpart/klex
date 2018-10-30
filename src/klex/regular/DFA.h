@@ -68,7 +68,7 @@ class DFA {
 		v.reserve(states_.size());
 		for (size_t i = 0, e = states_.size(); i != e; ++i)
 			v.push_back(i);  // funny, I know
-		return std::move(v);
+		return v;
 	}
 
 	//! Retrieves the list of accepting states.
@@ -133,13 +133,13 @@ class DFA {
 	{
 		StateIdVec result;
 		result.reserve(
-			abs(static_cast<long int>(states_.size()) - static_cast<long int>(acceptTags_.size())));
+			std::abs(static_cast<long int>(states_.size()) - static_cast<long int>(acceptTags_.size())));
 
 		for (StateId s = 0, sE = size(); s != sE; ++s)
 			if (!isAccepting(s))
 				result.push_back(s);
 
-		return std::move(result);
+		return result;
 	}
 
 	bool isAcceptor(Tag t) const

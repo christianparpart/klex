@@ -113,8 +113,6 @@ class RuleParser::UnexpectedToken : public std::runtime_error {
 
   private:
 	unsigned offset_;
-	unsigned line_;
-	unsigned column_;
 	char actual_;
 	std::string expected_;
 };

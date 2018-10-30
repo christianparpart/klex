@@ -48,7 +48,7 @@ Alphabet NFA::alphabet() const
 		}
 	}
 
-	return std::move(alphabet);
+	return alphabet;
 }
 
 NFA NFA::clone() const
@@ -66,7 +66,7 @@ StateIdVec NFA::delta(const StateIdVec& S, Symbol c) const
 {
 	StateIdVec result;
 	delta(S, c, &result);
-	return std::move(result);
+	return result;
 }
 
 StateIdVec* NFA::delta(const StateIdVec& S, Symbol c, StateIdVec* result) const
@@ -98,14 +98,14 @@ StateIdVec NFA::epsilonTransitions(StateId s) const
 		if (p.first == Symbols::Epsilon)
 			t.insert(t.end(), p.second.begin(), p.second.end());
 
-	return std::move(t);
+	return t;
 }
 
 StateIdVec NFA::epsilonClosure(const StateIdVec& S) const
 {
 	StateIdVec eclosure;
 	epsilonClosure(S, &eclosure);
-	return std::move(eclosure);
+	return eclosure;
 }
 
 void NFA::epsilonClosure(const StateIdVec& S, StateIdVec* eclosure) const
@@ -203,7 +203,7 @@ NFA NFA::join(const std::map<std::string, NFA>& mappings)
 		multi.acceptState_ = rhs.acceptState_;
 	}
 
-	return std::move(multi);
+	return multi;
 }
 
 NFA& NFA::lookahead(NFA rhs)

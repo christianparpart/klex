@@ -237,7 +237,7 @@ std::vector<std::string> RuleParser::parseRuleConditions()
 
 	consumeChar('>');
 
-	return std::move(conditions);
+	return conditions;
 }
 
 std::string RuleParser::parseExpression()

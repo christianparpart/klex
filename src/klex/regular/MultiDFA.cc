@@ -24,7 +24,7 @@ MultiDFA constructMultiDFA(std::map<std::string, DFA> many)
 		q0++;
 	}
 
-	return std::move(multiDFA);
+	return multiDFA;
 }
 
 }  // namespace klex::regular

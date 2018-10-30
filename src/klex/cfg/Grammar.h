@@ -431,7 +431,7 @@ struct formatter<std::vector<klex::cfg::Terminal>> {
 	}
 
 	template <typename FormatContext>
-	constexpr auto format(const std::vector<klex::cfg::Terminal>& terminals, FormatContext& ctx)
+	auto format(const std::vector<klex::cfg::Terminal>& terminals, FormatContext& ctx)
 	{
 		std::stringstream sstr;
 		size_t i = 0;
@@ -454,7 +454,7 @@ struct formatter<std::set<klex::cfg::Terminal>> {
 	}
 
 	template <typename FormatContext>
-	constexpr auto format(const std::set<klex::cfg::Terminal>& terminals, FormatContext& ctx)
+	auto format(const std::set<klex::cfg::Terminal>& terminals, FormatContext& ctx)
 	{
 		std::stringstream sstr;
 		size_t i = 0;
@@ -477,7 +477,7 @@ struct formatter<std::set<klex::cfg::NonTerminal>> {
 	}
 
 	template <typename FormatContext>
-	constexpr auto format(const std::set<klex::cfg::NonTerminal>& nonterminals, FormatContext& ctx)
+	auto format(const std::set<klex::cfg::NonTerminal>& nonterminals, FormatContext& ctx)
 	{
 		std::stringstream sstr;
 		size_t i = 0;

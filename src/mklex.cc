@@ -305,7 +305,7 @@ int main(int argc, const char* argv[])
 
 	if (!flags.getBool("no-dfa-minimize"))
 	{
-		multiDFA = move(DFAMinimizer{multiDFA}.constructMultiDFA());
+		multiDFA = DFAMinimizer{multiDFA}.constructMultiDFA();
 		perfTimer.lap("DFA minimization", multiDFA.dfa.size(), "states");
 	}
 

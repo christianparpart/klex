@@ -113,7 +113,7 @@ vector<Terminal> Production::first1() const
 	if (epsilon)
 		set_union(begin(result), end(result), begin(follow), end(follow), back_inserter(result));
 
-	return move(result);
+	return result;
 }
 
 vector<Production*> Grammar::getProductions(const NonTerminal& nt)
@@ -124,7 +124,7 @@ vector<Production*> Grammar::getProductions(const NonTerminal& nt)
 		if (production.name == nt.name)
 			result.push_back(&production);
 
-	return move(result);
+	return result;
 }
 
 vector<const Production*> Grammar::getProductions(const NonTerminal& nt) const
@@ -135,7 +135,7 @@ vector<const Production*> Grammar::getProductions(const NonTerminal& nt) const
 		if (production.name == nt.name)
 			result.push_back(&production);
 
-	return move(result);
+	return result;
 }
 
 vector<Terminal> Grammar::firstOf(const Symbol& b) const
@@ -287,7 +287,7 @@ string Grammar::dump() const
 		if (next(p) != end(productions))
 			sstr << '\n';
 	}
-	return move(sstr.str());
+	return sstr.str();
 }
 
 vector<Terminal> terminals(const Grammar& grammar)
@@ -307,7 +307,7 @@ vector<Terminal> terminals(const Grammar& grammar)
 		if (rule.isIgnored())
 			terms.emplace_back(Terminal{rule, rule.name});
 
-	return move(terms);
+	return terms;
 }
 
 vector<NonTerminal> nonterminals(const Grammar& grammar)
@@ -318,7 +318,7 @@ vector<NonTerminal> nonterminals(const Grammar& grammar)
 		if (find(begin(nts), end(nts), production.name) == end(nts))
 			nts.emplace_back(NonTerminal{production.name});
 
-	return move(nts);
+	return nts;
 }
 
 vector<Action> actions(const Grammar& grammar)

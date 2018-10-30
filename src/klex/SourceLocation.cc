@@ -12,7 +12,7 @@ std::string SourceLocation::source() const // TODO
 	string code;
 	code.resize(count);
 	ifs.read(&code[0], count);
-	return move(code);
+	return code;
 }
 
 }  // namespace klex

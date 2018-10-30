@@ -115,7 +115,7 @@ DFAMinimizer::PartitionVec DFAMinimizer::split(const StateIdVec& S) const
 				result.emplace_back(move(t.second));
 				DEBUG(" partition {}: {}", t.first, t.second);
 			}
-			return move(result);
+			return result;
 		}
 
 		assert(t_i.size() == 1);
@@ -229,7 +229,7 @@ void DFAMinimizer::constructPartitions()
 
 			p_i++;
 		}
-		return move(remaps);
+		return remaps;
 	}();
 }
 
@@ -273,7 +273,7 @@ DFA DFAMinimizer::constructFromPartitions(const PartitionVec& P) const
 		p_i++;
 	}
 
-	return move(dfamin);
+	return dfamin;
 }
 
 optional<StateId> DFAMinimizer::containsBacktrackState(const StateIdVec& Q) const
