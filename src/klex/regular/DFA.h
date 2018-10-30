@@ -133,7 +133,7 @@ class DFA {
 	{
 		StateIdVec result;
 		result.reserve(
-			abs(static_cast<int>(states_.size()) - static_cast<int>(acceptTags_.size())));
+			std::abs(static_cast<long int>(states_.size()) - static_cast<long int>(acceptTags_.size())));
 
 		for (StateId s = 0, sE = size(); s != sE; ++s)
 			if (!isAccepting(s))
