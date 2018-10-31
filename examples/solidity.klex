@@ -1,0 +1,227 @@
+# Solidity: Lexical Token Specification
+
+# helpers
+IdentifierStart(ref)    ::= [_$a-zA-Z]
+IdentifierPart(ref)     ::= {IdentifierStart} | [0-9]
+HexByte(ref)            ::= [0-9a-fA-F]{2}
+Decimals32(ref)         ::= [1-9] | 1[0-9] | 2[0-9] | 3[012]
+Decimals80(ref)         ::= [1-9] | [1-7][0-9] | 80
+Decimals256Mod8(ref)    ::= 8   | 16  | 24  | 32  | 40  | 48  | 56  | 64
+                          | 72  | 80  | 88  | 96  | 104 | 112 | 120 | 128
+                          | 136 | 144 | 152 | 160 | 168 | 176 | 184 | 192
+                          | 200 | 208 | 216 | 224 | 232 | 240 | 248 | 256
+DecimalDelimiter(ref)   ::= "_"
+Decimals(ref)           ::= [0-9]+
+                          | [0-9]+ ({DecimalDelimiter} [0-9]+)+
+HexDigit(ref)           ::= [0-9a-fA-F]
+HexDigits(ref)          ::= {HexDigit}+
+                          | {HexDigit}+ ({DecimalDelimiter} {HexDigit})+
+ExpFrag(ref)            ::= [eE][+-]?{Decimals}
+FloatLiteral(ref)       ::= {Decimals}\.{Decimals} ExpFrag?
+                          | {Decimals}\. ExpFrag?
+                          | \.{Decimals} ExpFrag?
+
+EOS                 ::= <<EOF>>
+
+# Punctuators (ECMA-262, section 7.7, page 15).
+LParen              ::= "("
+RParen              ::= ")"
+LBrack              ::= "["
+RBrack              ::= "]"
+LBrace              ::= "{"
+RBrace              ::= "}"
+Colon               ::= ":"
+Semicolon           ::= ";"
+Period              ::= "."
+Conditional         ::= "?"
+Arrow               ::= "=>"
+
+# Assignment operators.
+# IsAssignmentOp() relies on this block of enum values being
+# contiguous and sorted in the same order!
+Assign              ::= "="
+
+# The following have to be in exactly the same order as the simple binary operators
+AssignBitOr         ::= "|="
+AssignBitXor        ::= "^="
+AssignBitAnd        ::= "&="
+AssignShl           ::= "<<="
+AssignSar           ::= ">>="
+AssignShr           ::= ">>>="
+AssignAdd           ::= "+="
+AssignSub           ::= "-="
+AssignMul           ::= "*="
+AssignDiv           ::= "/="
+AssignMod           ::= "%="
+
+# Binary operators sorted by precedence.
+# IsBinaryOp() relies on this block of enum values
+# being contiguous and sorted in the same order!
+Comma               ::= ","
+Or                  ::= "||"
+And                 ::= "&&"
+BitOr               ::= "|"
+BitXor              ::= "^"
+BitAnd              ::= "&"
+SHL                 ::= "<<"
+SAR                 ::= ">>"
+SHR                 ::= ">>>"
+Add                 ::= "+"
+Sub                 ::= "-"
+Mul                 ::= "*"
+Div                 ::= "/"
+Mod                 ::= "%"
+Exp                 ::= "**"
+
+# Compare operators sorted by precedence.
+# IsCompareOp() relies on this block of enum values
+# being contiguous and sorted in the same order!
+Equal               ::= "=="
+NotEqual            ::= "!="
+LessThan            ::= "<"
+GreaterThan         ::= ">"
+LessThanOrEqual     ::= "<="
+GreaterThanOrEqual  ::= ">="
+
+# Unary operators.
+# IsUnaryOp() relies on this block of enum values
+# being contiguous and sorted in the same order!
+Not                 ::= "!"
+BitNot              ::= "~"
+Inc                 ::= "++"
+Dec                 ::= "--"
+Delete              ::= "delete"
+
+# Keywords
+Anonymous           ::= "anonymous"
+As                  ::= "as"
+Assembly            ::= "assembly"
+Break               ::= "break"
+Constant            ::= "constant"
+Constructor         ::= "constructor"
+Continue            ::= "continue"
+Contract            ::= "contract"
+Do                  ::= "do"
+Else                ::= "else"
+Enum                ::= "enum"
+Emit                ::= "emit"
+Event               ::= "event"
+External            ::= "external"
+For                 ::= "for"
+Function            ::= "function"
+Hex                 ::= "hex"
+If                  ::= "if"
+Indexed             ::= "indexed"
+Interface           ::= "interface"
+Internal            ::= "internal"
+Import              ::= "import"
+Is                  ::= "is"
+Library             ::= "library"
+Mapping             ::= "mapping"
+Memory              ::= "memory"
+Modifier            ::= "modifier"
+New                 ::= "new"
+Payable             ::= "payable"
+Public              ::= "public"
+Pragma              ::= "pragma"
+Private             ::= "private"
+Pure                ::= "pure"
+Return              ::= "return"
+Returns             ::= "returns"
+Storage             ::= "storage"
+CallData            ::= "calldata"
+Struct              ::= "struct"
+Throw               ::= "throw"
+Using               ::= "using"
+Var                 ::= "var"
+View                ::= "view"
+While               ::= "while"
+
+# Ether subdenominations
+SubWei              ::= "wei"
+SubSzabo            ::= "szabo"
+SubFinney           ::= "finney"
+SubEther            ::= "ether"
+SubSecond           ::= "seconds"
+SubMinute           ::= "minutes"
+SubHour             ::= "hours"
+SubDay              ::= "days"
+SubWeek             ::= "weeks"
+SubYear             ::= "years"
+
+# type keywords
+IntM                ::= int{Decimals256Mod8}
+UIntM               ::= uint{Decimals256Mod8}
+BytesM              ::= bytes{Decimals32}
+FixedMxN            ::= fixed{Decimals256Mod8}x{Decimals80}
+UFixedMxN           ::= ufixed{Decimals256Mod8}x{Decimals80}
+Int                 ::= "int"
+UInt                ::= "uint"
+Bytes               ::= "bytes"
+Byte                ::= "byte"
+String              ::= "string"
+Address             ::= "address"
+Bool                ::= "bool"
+Fixed               ::= "fixed"
+UFixed              ::= "ufixed"
+
+# Literals
+TrueLiteral         ::= "true"
+FalseLiteral        ::= "false"
+Number              ::= {FloatLiteral}
+                      | {NumberLiteral}
+                      | 0x{HexDigits}
+                      | hex\"{HexDigits}\"
+StringLiteral       ::= \"[^"]\"
+CommentLiteral      ::= //.*
+                      | /\*[.\n]*\*/
+
+# Keywords reserved for future use.
+Abstract            ::= "abstract"
+After               ::= "after"
+Alias               ::= "alias"
+Apply               ::= "apply"
+Auto                ::= "auto"
+Case                ::= "case"
+Catch               ::= "catch"
+CopyOf              ::= "copyof"
+Default             ::= "default"
+Define              ::= "define"
+Final               ::= "final"
+Immutable           ::= "immutable"
+Implements          ::= "implements"
+In                  ::= "in"
+Inline              ::= "inline"
+Let                 ::= "let"
+Macro               ::= "macro"
+Match               ::= "match"
+Mutable             ::= "mutable"
+NullLiteral         ::= "null"
+Of                  ::= "of"
+Override            ::= "override"
+Partial             ::= "partial"
+Promise             ::= "promise"
+Reference           ::= "reference"
+Relocatable         ::= "relocatable"
+Sealed              ::= "sealed"
+Sizeof              ::= "sizeof"
+Static              ::= "static"
+Supports            ::= "supports"
+Switch              ::= "switch"
+Try                 ::= "try"
+Type                ::= "type"
+Typedef             ::= "typedef"
+TypeOf              ::= "typeof"
+Unchecked           ::= "unchecked"
+
+# Identifiers (not keywords or future reserved words).
+Identifier          ::= {IdentifierStart}{IdentifierPart}*
+
+# Illegal hex token
+# TODO IllegalHex          ::= "ILLEGAL_HEX"
+
+# Illegal token - not able to scan.
+Illegal             ::= .
+
+# Scanner-internal use only.
+Whitespace(ignore) ::= [\s\t\n]+
