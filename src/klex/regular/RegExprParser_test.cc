@@ -21,6 +21,20 @@ TEST(regular_RegExprParser, namedCharacterClass_graph)
 	EXPECT_EQ("!-~", e->value().to_string());
 }
 
+TEST(regular_RegExprParser, whitespaces_concatination)
+{
+	unique_ptr<RegExpr> re = RegExprParser{}.parse("a b");
+	ASSERT_TRUE(dynamic_cast<const ConcatenationExpr*>(re.get()) != nullptr);
+	EXPECT_EQ("ab", re->to_string());
+}
+
+TEST(regular_RegExprParser, whitespaces_alternation)
+{
+	unique_ptr<RegExpr> re = RegExprParser{}.parse("a | b");
+	ASSERT_TRUE(dynamic_cast<const ConcatenationExpr*>(re.get()) != nullptr);
+	EXPECT_EQ("a|b", re->to_string());
+}
+
 TEST(regular_RegExprParser, namedCharacterClass_digit)
 {
 	unique_ptr<RegExpr> re = RegExprParser{}.parse("[[:digit:]]");

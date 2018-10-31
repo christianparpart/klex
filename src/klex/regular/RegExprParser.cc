@@ -213,6 +213,10 @@ unsigned RegExprParser::parseInt()
 
 unique_ptr<RegExpr> RegExprParser::parseAtom()
 {
+	// skip any whitespace (except newlines)
+	while (!eof() && isspace(currentChar()) && currentChar() != '\n')
+		consume();
+
 	switch (currentChar())
 	{
 		case -1:  // EOF

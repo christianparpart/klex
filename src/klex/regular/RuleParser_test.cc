@@ -20,6 +20,14 @@ TEST(regular_RuleParser, simple)
 	EXPECT_EQ("blah", rules[0].pattern);
 }
 
+TEST(regular_RuleParser, whitespaces)
+{
+	RuleParser rp{"main ::= a\n\t| b | c\n"};
+	RuleList rules = rp.parseRules();
+	ASSERT_EQ(1, rules.size());
+	EXPECT_EQ("a|b | c", rules[0].pattern);
+}
+
 TEST(regular_RuleParser, rule_at_eof)
 {
 	RuleParser rp{"main ::= blah"};
