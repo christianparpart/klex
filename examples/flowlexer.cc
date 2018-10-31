@@ -17,7 +17,7 @@ extern klex::regular::LexerDef lexerDef; // generated via mklex
 int main(int argc, const char* argv[]) {
   klex::regular::Lexer<Token, Machine> lexer {lexerDef, std::cin};
   if (argc == 2)
-    lexer.open(std::make_unique<std::ifstream>(argv[1]));
+    lexer.reset(std::make_unique<std::ifstream>(argv[1]));
 
   do {
     lexer.recognize();

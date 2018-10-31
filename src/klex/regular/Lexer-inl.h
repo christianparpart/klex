@@ -48,8 +48,6 @@ inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info, D
 	  stream_{nullptr},
 	  oldOffset_{0},
 	  offset_{0},
-	  line_{0},
-	  column_{0},
 	  fileSize_{0},
 	  isBeginOfLine_{true},
 	  token_{0}
@@ -67,7 +65,7 @@ inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info,
 																DebugLogger logger)
 	: Lexer{std::move(info), std::move(logger)}
 {
-	open(std::move(stream));
+	reset(std::move(stream));
 }
 
 template <typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
@@ -84,18 +82,16 @@ inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info, s
 																DebugLogger logger)
 	: Lexer{std::move(info), std::move(logger)}
 {
-	open(std::make_unique<std::stringstream>(std::move(input)));
+	reset(std::make_unique<std::stringstream>(std::move(input)));
 }
 
 template <typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
-inline void Lexer<Token, Machine, RequiresBeginOfLine, Debug>::open(std::unique_ptr<std::istream> stream)
+inline void Lexer<Token, Machine, RequiresBeginOfLine, Debug>::reset(std::unique_ptr<std::istream> stream)
 {
 	ownedStream_ = std::move(stream);
 	stream_ = ownedStream_.get();
 	oldOffset_ = 0;
 	offset_ = 0;
-	line_ = 0;
-	column_ = 0;
 	isBeginOfLine_ = true;
 	fileSize_ = getFileSize();
 }
@@ -183,12 +179,9 @@ inline Token Lexer<Token, Machine, RequiresBeginOfLine, Debug>::recognizeOne()
 	stack.push_back(BadState);
 
 	if constexpr (Debug)
-		debugf("recognize: startState {}, offset {} [{}:{}] {}", stateName(state), offset_, line_, column_,
-			   isBeginOfLine_ ? "BOL" : "no-BOL");
+		debugf("recognize: startState {}, offset {} {}", stateName(state), offset_, isBeginOfLine_ ? "BOL" : "no-BOL");
 
 	// advance
-	unsigned int savedLine = line_;
-	unsigned int savedCol = column_;
 	while (state != ErrorState)
 	{
 		Symbol ch = nextChar();  // one of: input character, ERROR or EOF
@@ -198,8 +191,6 @@ inline Token Lexer<Token, Machine, RequiresBeginOfLine, Debug>::recognizeOne()
 		// lookahead is required. Otherwise we could clear here (for space savings)
 
 		stack.push_back(state);
-		savedLine = line_;
-		savedCol = column_;
 		state = delta(state, ch);
 	}
 
@@ -217,13 +208,6 @@ inline Token Lexer<Token, Machine, RequiresBeginOfLine, Debug>::recognizeOne()
 			rollback();
 			word_.resize(word_.size() - 1);
 		}
-	}
-
-	// trackback
-	if (state == BadState)
-	{
-		line_ = savedLine;
-		column_ = savedCol;
 	}
 
 	// backtrack to right-most non-lookahead position in input stream
@@ -256,7 +240,7 @@ inline Token Lexer<Token, Machine, RequiresBeginOfLine, Debug>::recognizeOne()
 			   quotedString(word_), quoted(currentChar_));
 
 	if (!isAcceptState(state))
-		throw LexerError{offset_, line_, column_};
+		throw LexerError{offset_};
 
 	auto i = acceptStates_.find(state);
 	assert(i != acceptStates_.end() && "Accept state hit, but no tag assigned.");
@@ -301,7 +285,7 @@ inline Symbol Lexer<Token, Machine, RequiresBeginOfLine, Debug>::nextChar()
 		currentChar_ = ch;
 		buffered_.resize(buffered_.size() - 1);
 		if constexpr (Debug)
-			debugf("Lexer:{}: advance '{}' [{}:{}]", offset_, prettySymbol(ch), line_, column_);
+			debugf("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
 		offset_++;
 		return ch;
 	}
@@ -309,7 +293,7 @@ inline Symbol Lexer<Token, Machine, RequiresBeginOfLine, Debug>::nextChar()
 	if (!stream_->good())
 	{  // EOF or I/O error
 		if constexpr (Debug)
-			debugf("Lexer:{}: advance '{}' [{}:{}]", offset_, "EOF", line_, column_);
+			debugf("Lexer:{}: advance '{}'", offset_, "EOF");
 		return Symbols::EndOfFile;
 	}
 
@@ -319,13 +303,13 @@ inline Symbol Lexer<Token, Machine, RequiresBeginOfLine, Debug>::nextChar()
 		currentChar_ = Symbols::EndOfFile;
 		offset_++;
 		if constexpr (Debug)
-			debugf("Lexer:{}: advance '{}' [{}:{}]", offset_, prettySymbol(ch), line_, column_);
+			debugf("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
 		return currentChar_;
 	}
 
 	currentChar_ = ch;
 	if constexpr (Debug)
-		debugf("Lexer:{}: advance '{}' [{}:{}]", offset_, prettySymbol(ch), line_, column_);
+		debugf("Lexer:{}: advance '{}'", offset_, prettySymbol(ch));
 	offset_++;
 	return ch;
 }
@@ -337,9 +321,6 @@ inline void Lexer<Token, Machine, RequiresBeginOfLine, Debug>::rollback()
 	if (word_.back() != -1)
 	{
 		offset_--;
-		// TODO: rollback (line, column)
-		column_--;
-		// XXX potentially crack line/column when passing \n
 		buffered_.push_back(word_.back());
 	}
 }

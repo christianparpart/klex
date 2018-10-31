@@ -65,7 +65,7 @@ class Lexer {
 	/**
 	 * Open given input stream.
 	 */
-	void open(std::unique_ptr<std::istream> input);
+	void reset(std::unique_ptr<std::istream> input);
 
 	/**
 	 * Recognizes one token (ignored patterns are skipped).
@@ -82,12 +82,6 @@ class Lexer {
 
 	//! @returns the absolute offset of the file the lexer is currently reading from.
 	std::pair<unsigned, unsigned> offset() const noexcept { return std::make_pair(oldOffset_, offset_); }
-
-	//! @returns the current line the lexer is reading from.
-	unsigned line() const noexcept { return line_; }
-
-	//! @returns the current column of the current line the lexer is reading from.
-	unsigned column() const noexcept { return column_; }
 
 	//! @returns the last recognized token.
 	Token token() const noexcept { return token_; }
@@ -148,18 +142,13 @@ class Lexer {
 	 * Runtime exception that is getting thrown when a word could not be recognized.
 	 */
 	struct LexerError : public std::runtime_error {
-		LexerError(unsigned int _offset, unsigned int _line, unsigned int _column)
-			: std::runtime_error{fmt::format("[{}:{}] Failed to lexically recognize a word.", _line,
-											 _column)},
-			  offset{_offset},
-			  line{_line},
-			  column{_column}
+		LexerError(unsigned int _offset)
+			: std::runtime_error{fmt::format("[{}] Failed to lexically recognize a word.", _offset)},
+			  offset{_offset}
 		{
 		}
 
 		unsigned int offset;
-		unsigned int line;
-		unsigned int column;
 	};
 
 	struct iterator {
@@ -233,8 +222,6 @@ class Lexer {
 	std::vector<int> buffered_;
 	unsigned oldOffset_;
 	unsigned offset_;
-	unsigned line_;
-	unsigned column_;
 	size_t fileSize_;  // cache
 	bool isBeginOfLine_;
 	int currentChar_;
