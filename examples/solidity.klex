@@ -1,4 +1,5 @@
 # Solidity: Lexical Token Specification
+# vim:syntax=klex
 
 # helpers
 IdentifierStart(ref)    ::= [_$a-zA-Z]
@@ -172,9 +173,10 @@ Number              ::= {FloatLiteral}
                       | {NumberLiteral}
                       | 0x{HexDigits}
                       | hex\"{HexDigits}\"
-StringLiteral       ::= \"[^"]\"
-CommentLiteral      ::= //.*
-                      | /\*[.\n]*\*/
+StringLiteral       ::= '([^'\n]|\\\\')*'
+                      | \"([^\"\n]|\\\")*\"
+CommentLiteral      ::= \/\/.*
+                      | \/\*[.\n]*\*\/
 
 # Keywords reserved for future use.
 Abstract            ::= "abstract"
@@ -217,11 +219,11 @@ Unchecked           ::= "unchecked"
 # Identifiers (not keywords or future reserved words).
 Identifier          ::= {IdentifierStart}{IdentifierPart}*
 
+# Scanner-internal use only.
+Whitespace(ignore) ::= [\s\t\n]+
+
 # Illegal hex token
 # TODO IllegalHex          ::= "ILLEGAL_HEX"
 
 # Illegal token - not able to scan.
 Illegal             ::= .
-
-# Scanner-internal use only.
-Whitespace(ignore) ::= [\s\t\n]+
