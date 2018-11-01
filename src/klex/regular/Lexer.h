@@ -21,6 +21,21 @@
 
 namespace klex::regular {
 
+template<typename Token = Tag>
+struct TokenInfo {
+	Token token;
+	std::string literal;
+	size_t offset;
+
+	operator Token() const noexcept { return token; }
+};
+
+template<typename Token>
+inline const std::string& to_string(const TokenInfo<Token>& info) noexcept
+{
+	return info.literal;
+}
+
 /**
  * Lexer API for recognizing words.
  */
@@ -29,19 +44,9 @@ template <typename Token = Tag, typename Machine = StateId, const bool RequiresB
 class Lexer {
   public:
 	using value_type = Token;
-
-  private:
 	using DebugLogger = std::function<void(const std::string&)>;
+	using TokenInfo = klex::regular::TokenInfo<Token>;
 
-	template <typename... Args>
-	inline void debugf(const char* msg, Args... args) const
-	{
-		if constexpr (Debug)
-			if (debug_)
-				debug_(fmt::format(msg, args...));
-	}
-
-  public:
 	/**
 	 * Constructs the Lexer with the given information table.
 	 */
@@ -155,18 +160,18 @@ class Lexer {
 	struct iterator {
 		Lexer& lx;
 		int end;
-		Token token;
-		std::string literal;
+		TokenInfo info;
 
-		Token operator*() const { return token; }
+		const TokenInfo& operator*() const { return info; }
 
 		iterator& operator++()
 		{
 			if (lx.eof())
 				++end;
 
-			token = lx.recognize();
-			literal = lx.word();
+			info.token = lx.recognize();
+			info.literal = lx.word();
+			info.offset = lx.offset().first;
 
 			return *this;
 		}
@@ -189,6 +194,14 @@ class Lexer {
 	size_t fileSize() const noexcept { return fileSize_; }
 
   private:
+	template <typename... Args>
+	inline void debugf(const char* msg, Args... args) const
+	{
+		if constexpr (Debug)
+			if (debug_)
+				debug_(fmt::format(msg, args...));
+	}
+
 	Symbol nextChar();
 	void rollback();
 	StateId getInitialState() const noexcept;
@@ -231,9 +244,9 @@ class Lexer {
 
 template <typename Token = Tag, typename Machine = StateId, const bool RequiresBeginOfLine = true,
 		  const bool Debug = false>
-inline const std::string& to_string(const typename Lexer<Token, Machine, RequiresBeginOfLine, Debug>::iterator& it)
+inline const std::string& to_string(const typename Lexer<Token, Machine, RequiresBeginOfLine, Debug>::iterator& it) noexcept
 {
-	return it.literal;
+	return it.info.literal;
 }
 
 }  // namespace klex::regular
