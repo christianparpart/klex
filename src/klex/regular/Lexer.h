@@ -100,16 +100,6 @@ class Lexer {
 	//! @returns the name of the current token.
 	const std::string& name() const { return name(token_); }
 
-	//! Tests whether given token is actually being recognized by this lexer.
-	bool isToken(Tag t) const noexcept
-	{
-		for (const std::pair<StateId, Tag>& s_A : acceptStates_)
-			if (s_A.second == t)
-				return true;
-
-		return false;
-	}
-
 	//! @returns the name of the token represented by Token @p t.
 	const std::string& name(Token t) const
 	{
