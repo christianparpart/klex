@@ -35,12 +35,7 @@ static inline std::string quotedString(const std::string& s)
 
 template <typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
 inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info, DebugLogger logger)
-	: transitions_{std::move(info.transitions)},
-	  initialStates_{info.initialStates},
-	  containsBeginOfLineStates_{info.containsBeginOfLineStates},
-	  acceptStates_{std::move(info.acceptStates)},
-	  backtracking_{std::move(info.backtrackingStates)},
-	  tagNames_{std::move(info.tagNames)},
+	: def_{std::move(info)},
 	  debug_{logger},
 	  initialStateId_{defaultMachine()},
 	  word_{},
@@ -53,7 +48,7 @@ inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info, D
 	  token_{0}
 {
 	if constexpr (!RequiresBeginOfLine)
-		if (containsBeginOfLineStates_)
+		if (def_.containsBeginOfLineStates)
 			throw std::invalid_argument{
 				"LexerDef contains a grammar that requires begin-of-line handling, but this Lexer has "
 				"begin-of-line support disabled."};
@@ -161,7 +156,7 @@ inline StateId Lexer<Token, Machine, RequiresBeginOfLine, Debug>::getInitialStat
 {
 	if constexpr (RequiresBeginOfLine)
 	{
-		if (isBeginOfLine_ && containsBeginOfLineStates_)
+		if (isBeginOfLine_ && def_.containsBeginOfLineStates)
 		{
 			return static_cast<StateId>(initialStateId_) + 1;
 		}
@@ -213,7 +208,7 @@ inline Token Lexer<Token, Machine, RequiresBeginOfLine, Debug>::recognizeOne()
 	}
 
 	// backtrack to right-most non-lookahead position in input stream
-	if (auto i = backtracking_.find(state); i != backtracking_.end())
+	if (auto i = def_.backtrackingStates.find(state); i != def_.backtrackingStates.end())
 	{
 		const StateId tmp = state;
 		const StateId backtrackState = i->second;
@@ -244,8 +239,8 @@ inline Token Lexer<Token, Machine, RequiresBeginOfLine, Debug>::recognizeOne()
 	if (!isAcceptState(state))
 		throw LexerError{offset_};
 
-	auto i = acceptStates_.find(state);
-	assert(i != acceptStates_.end() && "Accept state hit, but no tag assigned.");
+	auto i = def_.acceptStates.find(state);
+	assert(i != def_.acceptStates.end() && "Accept state hit, but no tag assigned.");
 	isBeginOfLine_ = word_.back() == '\n';
 	return token_ = static_cast<Token>(i->second);
 }
@@ -254,7 +249,7 @@ template <typename Token, typename Machine, const bool RequiresBeginOfLine, cons
 inline StateId Lexer<Token, Machine, RequiresBeginOfLine, Debug>::delta(StateId currentState,
 																		Symbol inputSymbol) const
 {
-	const StateId nextState = transitions_.apply(currentState, inputSymbol);
+	const StateId nextState = def_.transitions.apply(currentState, inputSymbol);
 	if constexpr (Debug)
 	{
 		if (isAcceptState(nextState))
@@ -275,7 +270,7 @@ inline StateId Lexer<Token, Machine, RequiresBeginOfLine, Debug>::delta(StateId 
 template <typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
 inline bool Lexer<Token, Machine, RequiresBeginOfLine, Debug>::isAcceptState(StateId id) const
 {
-	return acceptStates_.find(id) != acceptStates_.end();
+	return def_.acceptStates.find(id) != def_.acceptStates.end();
 }
 
 template <typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>

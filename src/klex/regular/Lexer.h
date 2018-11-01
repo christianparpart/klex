@@ -103,8 +103,8 @@ class Lexer {
 	//! @returns the name of the token represented by Token @p t.
 	const std::string& name(Token t) const
 	{
-		auto i = tagNames_.find(static_cast<Tag>(t));
-		assert(i != tagNames_.end());
+		auto i = def_.tagNames.find(static_cast<Tag>(t));
+		assert(i != def_.tagNames.end());
 		return i->second;
 	}
 
@@ -134,8 +134,8 @@ class Lexer {
 	 */
 	Machine defaultMachine() const
 	{
-		auto i = initialStates_.find("INITIAL");
-		assert(i != initialStates_.end());
+		auto i = def_.initialStates.find("INITIAL");
+		assert(i != def_.initialStates.end());
 		return static_cast<Machine>(i->second);
 	}
 
@@ -207,21 +207,17 @@ class Lexer {
 
 	Token token(StateId s) const
 	{
-		auto i = acceptStates_.find(s);
-		assert(i != acceptStates_.end());
+		auto i = def_.acceptStates.find(s);
+		assert(i != def_.acceptStates.end());
 		return static_cast<Token>(i->second);
 	}
 
 	size_t getFileSize();
 
   private:
-	const TransitionMap transitions_;
-	const std::map<std::string, StateId> initialStates_;
-	const bool containsBeginOfLineStates_;
-	const std::map<StateId, Tag> acceptStates_;
-	const BacktrackingMap backtracking_;
-	const std::map<Tag, std::string> tagNames_;
+	const LexerDef def_;
 	const DebugLogger debug_;
+
 	Machine initialStateId_;
 	std::string word_;
 	std::unique_ptr<std::istream> ownedStream_;
