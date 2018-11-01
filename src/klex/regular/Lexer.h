@@ -66,6 +66,7 @@ class Lexer {
 	 * Open given input stream.
 	 */
 	void reset(std::unique_ptr<std::istream> input);
+	void reset(const std::string& input);
 
 	/**
 	 * Recognizes one token (ignored patterns are skipped).

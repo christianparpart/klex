@@ -97,6 +97,12 @@ inline void Lexer<Token, Machine, RequiresBeginOfLine, Debug>::reset(std::unique
 }
 
 template <typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
+inline void Lexer<Token, Machine, RequiresBeginOfLine, Debug>::reset(const std::string& text)
+{
+	reset(std::make_unique<std::stringstream>(text));
+}
+
+template <typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
 inline size_t Lexer<Token, Machine, RequiresBeginOfLine, Debug>::getFileSize()
 {
 	std::streamoff oldpos = stream_->tellg();
