@@ -276,7 +276,7 @@ TEST(regular_Lexer, iterator)
 		A               ::= a
 		B               ::= b
 		Eof             ::= <<EOF>>
-  )"));
+	)"));
 
 	Lexer<Tag> lexer{cc.compile(), make_unique<stringstream>("a b b a")};
 
