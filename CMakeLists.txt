@@ -42,6 +42,12 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/src
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/klex/sysconfig.h.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/src/klex/sysconfig.h)
 
+# pkg-config support
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/klex.pc.cmake
+               ${CMAKE_CURRENT_BINARY_DIR}/klex.pc
+               @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/klex.pc DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig)
+
 # ----------------------------------------------------------------------------
 add_library(klex STATIC
     src/klex/Report.cc
