@@ -21,16 +21,21 @@
 
 namespace klex::regular {
 
-template<typename Token = Tag>
+template <typename Token = Tag>
 struct TokenInfo {
 	Token token;
 	std::string literal;
 	size_t offset;
 
 	operator Token() const noexcept { return token; }
+
+	friend bool operator==(const TokenInfo<Token>& a, Token b) noexcept { return a.token == b; }
+	friend bool operator!=(const TokenInfo<Token>& a, Token b) noexcept { return a.token != b; }
+	friend bool operator==(Token a, const TokenInfo<Token>& b) noexcept { return b == a; }
+	friend bool operator!=(Token a, const TokenInfo<Token>& b) noexcept { return b != a; }
 };
 
-template<typename Token>
+template <typename Token>
 inline const std::string& to_string(const TokenInfo<Token>& info) noexcept
 {
 	return info.literal;
@@ -76,7 +81,7 @@ class Lexer {
 	/**
 	 * Recognizes one token (ignored patterns are skipped).
 	 */
-	Token recognize();
+	TokenInfo recognize();
 
 	/**
 	 * Recognizes one token, regardless of it is to be ignored or not.
@@ -169,9 +174,7 @@ class Lexer {
 			if (lx.eof())
 				++end;
 
-			info.token = lx.recognize();
-			info.literal = lx.word();
-			info.offset = lx.offset().first;
+			info = lx.recognize();
 
 			return *this;
 		}
@@ -244,11 +247,31 @@ class Lexer {
 
 template <typename Token = Tag, typename Machine = StateId, const bool RequiresBeginOfLine = true,
 		  const bool Debug = false>
-inline const std::string& to_string(const typename Lexer<Token, Machine, RequiresBeginOfLine, Debug>::iterator& it) noexcept
+inline const std::string& to_string(
+	const typename Lexer<Token, Machine, RequiresBeginOfLine, Debug>::iterator& it) noexcept
 {
 	return it.info.literal;
 }
 
 }  // namespace klex::regular
 
+namespace fmt {
+template <>
+template <typename Token>
+struct formatter<klex::regular::TokenInfo<Token>> {
+	using TokenInfo = klex::regular::TokenInfo<Token>;
+
+	template <typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
+
+	template <typename FormatContext>
+	constexpr auto format(const TokenInfo& v, FormatContext& ctx)
+	{
+		return format_to(ctx.begin(), "{}", v.literal);
+	}
+};
+}  // namespace fmt
 #include <klex/regular/Lexer-inl.h>

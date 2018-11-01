@@ -149,15 +149,11 @@ inline std::string Lexer<Token, Machine, RequiresBeginOfLine, Debug>::toString(
 }
 
 template <typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
-inline Token Lexer<Token, Machine, RequiresBeginOfLine, Debug>::recognize()
+inline auto Lexer<Token, Machine, RequiresBeginOfLine, Debug>::recognize() -> TokenInfo
 {
 	for (;;)
-	{
 		if (Token tag = recognizeOne(); static_cast<Tag>(tag) != IgnoreTag)
-		{
-			return tag;
-		}
-	}
+			return TokenInfo{tag, word_, oldOffset_};
 }
 
 template <typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
