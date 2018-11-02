@@ -242,7 +242,6 @@ inline const std::string& to_string(
 }  // namespace klex::regular
 
 namespace fmt {
-template <>
 template <typename Token>
 struct formatter<klex::regular::TokenInfo<Token>> {
 	using TokenInfo = klex::regular::TokenInfo<Token>;
