@@ -136,9 +136,19 @@ struct filter {
 	auto begin() const
 	{
 		if constexpr (std::is_const<Container>::value)
-			return const_iterator{std::cbegin(container), std::cend(container), proc};
+		{
+			auto i = const_iterator{std::cbegin(container), std::cend(container), proc};
+			while (i != end() && !proc(*i))
+				++i;
+			return i;
+		}
 		else
-			return iterator{std::begin(container), std::end(container), proc};
+		{
+			auto i = iterator{std::begin(container), std::end(container), proc};
+			while (i != end() && !proc(*i))
+				++i;
+			return i;
+		}
 	}
 
 	auto end() const
