@@ -10,6 +10,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <array>
 
 using namespace std;
 using namespace klex::util;
@@ -120,8 +121,7 @@ TEST(util_iterator_filter, count_proc_invocations)
 	int count = 0;
 	auto counter = [&](int) { ++count; return true; };
 	const auto f = filter(numbers, counter);
-	for (auto i = f.begin(); i != f.end(); ++i)
-		;
+	for_each(begin(f), end(f), [](int) {});
 	ASSERT_EQ(4, count);
 }
 
