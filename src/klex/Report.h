@@ -96,7 +96,7 @@ class ConsoleReport : public Report {
 	ConsoleReport() : Report(std::bind(&ConsoleReport::onMessage, this, std::placeholders::_1)) {}
 
   private:
-	void onMessage(Message msg);
+	void onMessage(Message&& msg);
 };
 
 class BufferedReport : public Report {
@@ -127,7 +127,7 @@ class BufferedReport : public Report {
 	bool operator!=(const BufferedReport& other) const noexcept { return !(*this == other); }
 
   private:
-	void onMessage(Message msg);
+	void onMessage(Message&& msg);
 
   private:
 	MessageList messages_;

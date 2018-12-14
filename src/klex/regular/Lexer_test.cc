@@ -85,8 +85,7 @@ TEST(regular_Lexer, lookahead)
 	Compiler cc;
 	cc.parse(RULES);
 
-	// Lexer<LookaheadToken> lexer { cc.compile(), "abba abcd cdef" };
-	LexerDef lexerDef = cc.compile();
+	const LexerDef lexerDef = cc.compile();
 	logf("LexerDef:\n{}", lexerDef.to_string());
 	Lexer<LookaheadToken, StateId, false, true> lexer{lexerDef, "abba abcdef",
 													  [this](const string& msg) { log(msg); }};
@@ -103,7 +102,8 @@ TEST(regular_Lexer, LexerError)
 	cc.parse(RULES);
 
 	using LookaheadLexer = Lexer<LookaheadToken, StateId, false, false>;
-	LookaheadLexer lexer{cc.compile(), "invalid"};
+	const LexerDef lexerDef = cc.compile();
+	LookaheadLexer lexer{lexerDef, "invalid"};
 
 	EXPECT_THROW(lexer.recognize(), LookaheadLexer::LexerError);
 }
@@ -113,7 +113,8 @@ TEST(regular_Lexer, evaluateDotToken)
 	Compiler cc;
 	cc.parse(RULES);
 
-	Lexer<LookaheadToken, StateId, false, false> lexer{cc.compile(), "xanything"};
+	const LexerDef lexerDef = cc.compile();
+	Lexer<LookaheadToken, StateId, false, false> lexer{lexerDef, "xanything"};
 
 	ASSERT_EQ(LookaheadToken::XAnyLine, lexer.recognize());
 	ASSERT_EQ(LookaheadToken::Eof, lexer.recognize());
@@ -278,7 +279,8 @@ TEST(regular_Lexer, iterator)
 		Eof             ::= <<EOF>>
 	)"));
 
-	Lexer<Tag> lexer{cc.compile(), make_unique<stringstream>("a b b a")};
+	const LexerDef lexerDef = cc.compile();
+	Lexer<Tag> lexer{lexerDef, make_unique<stringstream>("a b b a")};
 
 	Lexer<Tag>::iterator i = lexer.begin();
 	Lexer<Tag>::iterator e = lexer.end();
@@ -371,7 +373,8 @@ TEST(regular_Lexer, realworld_ipv4)
 			    |IPv4Literal       ::= {IPv4}
 			    |)"_multiline);
 
-	Lexer<int, StateId, false, true> lexer{cc.compile(),
+	auto lexerDef = cc.compile();
+	Lexer<int, StateId, false, true> lexer{lexerDef,
 										   R"(0.0.0.0 4.2.2.1 10.10.40.199 255.255.255.255)",
 										   [this](const string& msg) { log(msg); }};
 

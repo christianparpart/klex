@@ -208,7 +208,7 @@ NFA NFA::join(const map<string, NFA>& mappings)
 	return multi;
 }
 
-NFA& NFA::lookahead(NFA rhs)
+NFA& NFA::lookahead(NFA&& rhs)
 {
 	if (empty())
 	{
@@ -230,7 +230,7 @@ NFA& NFA::lookahead(NFA rhs)
 	return *this;
 }
 
-NFA& NFA::alternate(NFA rhs)
+NFA& NFA::alternate(NFA&& rhs)
 {
 	StateId newStart = createState();
 	StateId newEnd = createState();
@@ -252,7 +252,7 @@ NFA& NFA::alternate(NFA rhs)
 	return *this;
 }
 
-NFA& NFA::concatenate(NFA rhs)
+NFA& NFA::concatenate(NFA&& rhs)
 {
 	rhs.prepareStateIds(states_.size());
 	states_.reserve(size() + rhs.size());

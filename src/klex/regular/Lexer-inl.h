@@ -34,8 +34,8 @@ static inline std::string quotedString(const std::string& s)
 }
 
 template <typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
-inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info, DebugLogger logger)
-	: def_{std::move(info)},
+inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(const LexerDef& info, DebugLogger logger)
+	: def_{info},
 	  debug_{logger},
 	  initialStateId_{defaultMachine()},
 	  word_{},
@@ -55,27 +55,27 @@ inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info, D
 }
 
 template <typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
-inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info,
+inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(const LexerDef& info,
 																std::unique_ptr<std::istream> stream,
 																DebugLogger logger)
-	: Lexer{std::move(info), std::move(logger)}
+	: Lexer{info, std::move(logger)}
 {
 	reset(std::move(stream));
 }
 
 template <typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
-inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info, std::istream& stream,
+inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(const LexerDef& info, std::istream& stream,
 																DebugLogger logger)
-	: Lexer{std::move(info), std::move(logger)}
+	: Lexer{info, std::move(logger)}
 {
 	stream_ = &stream;
 	fileSize_ = getFileSize();
 }
 
 template <typename Token, typename Machine, const bool RequiresBeginOfLine, const bool Debug>
-inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(LexerDef info, std::string input,
+inline Lexer<Token, Machine, RequiresBeginOfLine, Debug>::Lexer(const LexerDef& info, std::string input,
 																DebugLogger logger)
-	: Lexer{std::move(info), std::move(logger)}
+	: Lexer{info, std::move(logger)}
 {
 	reset(std::make_unique<std::stringstream>(std::move(input)));
 }

@@ -114,13 +114,13 @@ class NFA {
 	 *
 	 * This resembles the syntax r/s (or r(?=s) in Perl) where r is matched when also s is following.
 	 */
-	NFA& lookahead(NFA rhs);
+	NFA& lookahead(NFA&& rhs);
 
 	//! Reconstructs this FA to alternate between this FA and the @p other FA.
-	NFA& alternate(NFA other);
+	NFA& alternate(NFA&& other);
 
 	//! Concatenates the right FA's initial state with this FA's accepting state.
-	NFA& concatenate(NFA rhs);
+	NFA& concatenate(NFA&& rhs);
 
 	//! Reconstructs this FA to allow optional input. X -> X?
 	NFA& optional();
