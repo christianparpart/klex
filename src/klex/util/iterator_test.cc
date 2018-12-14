@@ -114,10 +114,26 @@ TEST(util_iterator_filter, for_range)
 	EXPECT_EQ(3, odds[1]);
 }
 
+TEST(util_iterator_filter, count_proc_invocations)
+{
+	static const array<int, 4> numbers = { 1, 2, 3, 4 };
+	int count = 0;
+	auto counter = [&](int) { ++count; return true; };
+	const auto f = filter(numbers, counter);
+	for (auto i = f.begin(); i != f.end(); ++i)
+		;
+	ASSERT_EQ(4, count);
+}
+
 TEST(util_iterator_filter, for_range_initializer_list)
 {
+	static const array<int, 4> numbers = {1, 2, 3, 4};
 	vector<int> odds;
-	for (const int i : filter({1, 2, 3, 4}, [](int x) { return x % 2 != 0; }))
+	auto f_odd = [&](int x) {
+		logf("f_odd: x={0}", x);
+		return x % 2 != 0;
+	};
+	for (const int i : filter(numbers, f_odd))
 		odds.push_back(i);
 
 	ASSERT_EQ(2, odds.size());
