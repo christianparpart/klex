@@ -79,7 +79,7 @@ void DFA::removeTransition(StateId from, Symbol symbol)
 		s.transitions.erase(i);
 }
 
-StateId DFA::append(DFA other, StateId q0)
+StateId DFA::append(DFA&& other, StateId q0)
 {
 	assert(other.initialState() == 0);
 

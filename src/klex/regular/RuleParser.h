@@ -63,7 +63,7 @@ class RuleParser {
 
 class RuleParser::InvalidRefRuleWithConditions : public std::runtime_error {
   public:
-	InvalidRefRuleWithConditions(unsigned line, unsigned column, Rule rule)
+	InvalidRefRuleWithConditions(unsigned line, unsigned column, Rule&& rule)
 		: std::runtime_error{fmt::format(
 			  "{}:{}: Invalid rule \"{}\". Reference rules must not be labelled with conditions.", line,
 			  column, rule.name)},
@@ -79,7 +79,7 @@ class RuleParser::InvalidRefRuleWithConditions : public std::runtime_error {
 
 class RuleParser::DuplicateRule : public std::runtime_error {
   public:
-	DuplicateRule(Rule duplicate, const Rule& other)
+	DuplicateRule(Rule&& duplicate, const Rule& other)
 		: std::runtime_error{fmt::format(
 			  "{}:{}: Duplicated rule definition with name \"{}\", previously defined in {}:{}.",
 			  duplicate.line, duplicate.column, duplicate.name, other.line, other.column)},

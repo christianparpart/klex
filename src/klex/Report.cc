@@ -33,7 +33,7 @@ bool Report::Message::operator==(const Message& other) const noexcept
 }
 // }}}
 // {{{ ConsoleReport
-void ConsoleReport::onMessage(Message message)
+void ConsoleReport::onMessage(Message&& message)
 {
 	switch (message.type)
 	{
@@ -47,7 +47,7 @@ void ConsoleReport::onMessage(Message message)
 }
 // }}}
 // {{{ BufferedReport
-void BufferedReport::onMessage(Message msg)
+void BufferedReport::onMessage(Message&& msg)
 {
 	messages_.emplace_back(move(msg));
 }

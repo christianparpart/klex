@@ -151,7 +151,7 @@ class DFA {
 		return false;
 	}
 
-	StateId append(DFA other, StateId q0);
+	StateId append(DFA&& other, StateId q0);
 
   private:
 	void prepareStateIds(StateId baseId, StateId q0);

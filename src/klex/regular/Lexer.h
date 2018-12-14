@@ -52,25 +52,17 @@ class Lexer {
 	using DebugLogger = std::function<void(const std::string&)>;
 	using TokenInfo = klex::regular::TokenInfo<Token>;
 
-	/**
-	 * Constructs the Lexer with the given information table.
-	 */
-	explicit Lexer(LexerDef info, DebugLogger logger = DebugLogger{});
+	//! Constructs the Lexer with the given information table.
+	explicit Lexer(const LexerDef& info, DebugLogger logger = DebugLogger{});
 
-	/**
-	 * Constructs the Lexer with the given information table and input stream.
-	 */
-	Lexer(LexerDef info, std::unique_ptr<std::istream> input, DebugLogger logger = DebugLogger{});
+	//! Constructs the Lexer with the given information table and input stream.
+	Lexer(const LexerDef& info, std::unique_ptr<std::istream> input, DebugLogger logger = DebugLogger{});
 
-	/**
-	 * Constructs the Lexer with the given information table and input stream.
-	 */
-	Lexer(LexerDef info, std::istream& input, DebugLogger logger = DebugLogger{});
+	//! Constructs the Lexer with the given information table and input stream.
+	Lexer(const LexerDef& info, std::istream& input, DebugLogger logger = DebugLogger{});
 
-	/**
-	 * Constructs the Lexer with the given information table and input stream.
-	 */
-	Lexer(LexerDef info, std::string input, DebugLogger logger = DebugLogger{});
+	//! Constructs the Lexer with the given information table and input stream.
+	Lexer(const LexerDef& info, std::string input, DebugLogger logger = DebugLogger{});
 
 	/**
 	 * Open given input stream.
@@ -215,7 +207,7 @@ class Lexer {
 	size_t getFileSize();
 
   private:
-	const LexerDef def_;
+	const LexerDef& def_;
 	const DebugLogger debug_;
 
 	Machine initialStateId_;
