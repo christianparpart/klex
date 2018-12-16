@@ -44,33 +44,33 @@ class Report {
 	explicit Report(Reporter reporter) : onReport_{std::move(reporter)} {}
 
 	template <typename... Args>
-	void tokenError(const SourceLocation& sloc, const std::string& f, Args... args)
+	void tokenError(const SourceLocation& sloc, const std::string& f, Args&&... args)
 	{
-		report(Type::TokenError, sloc, fmt::format(f, std::move(args)...));
+		report(Type::TokenError, sloc, fmt::format(f, std::forward<Args>(args)...));
 	}
 
 	template <typename... Args>
-	void syntaxError(const SourceLocation& sloc, const std::string& f, Args... args)
+	void syntaxError(const SourceLocation& sloc, const std::string& f, Args&&... args)
 	{
-		report(Type::SyntaxError, sloc, fmt::format(f, std::move(args)...));
+		report(Type::SyntaxError, sloc, fmt::format(f, std::forward<Args>(args)...));
 	}
 
 	template <typename... Args>
-	void typeError(const SourceLocation& sloc, const std::string& f, Args... args)
+	void typeError(const SourceLocation& sloc, const std::string& f, Args&&... args)
 	{
-		report(Type::TypeError, sloc, fmt::format(f, std::move(args)...));
+		report(Type::TypeError, sloc, fmt::format(f, std::forward<Args>(args)...));
 	}
 
 	template <typename... Args>
-	void warning(const SourceLocation& sloc, const std::string& f, Args... args)
+	void warning(const SourceLocation& sloc, const std::string& f, Args&&... args)
 	{
-		report(Type::Warning, sloc, fmt::format(f, std::move(args)...));
+		report(Type::Warning, sloc, fmt::format(f, std::forward<Args>(args)...));
 	}
 
 	template <typename... Args>
-	void linkError(const std::string& f, Args... args)
+	void linkError(const std::string& f, Args&&... args)
 	{
-		report(Type::LinkError, SourceLocation{}, fmt::format(f, std::move(args)...));
+		report(Type::LinkError, SourceLocation{}, fmt::format(f, std::forward<Args>(args)...));
 	}
 
 	void report(Type type, SourceLocation sloc, std::string text)
