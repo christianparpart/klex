@@ -56,7 +56,7 @@ TEST(cfg_ll_Analyzer, ETF)
 	log("SYNTAX TABLE:");
 	log(st.dump(grammar));
 
-	Analyzer<int> parser(move(st), &report, "2 + 3");
+	Analyzer<int> parser(st, &report, "2 + 3");
 
 	const optional<int> result = parser.analyze();
 
@@ -104,7 +104,7 @@ TEST(cfg_ll_Analyzer, action1)
 		}
 	};
 
-	Analyzer<int> parser(move(st), &report, "2 + 3", actionHandler);
+	Analyzer<int> parser(st, &report, "2 + 3", actionHandler);
 	optional<int> result = parser.analyze();
 
 	ASSERT_TRUE(result.has_value());
@@ -173,7 +173,7 @@ TEST(cfg_ll_Analyzer, ETF_with_actions)
 	};
 
 	ASSERT_FALSE(report.containsFailures());
-	Analyzer<int> parser(move(st), &report, "2 + 3 * 4", actionHandler);
+	Analyzer<int> parser(st, &report, "2 + 3 * 4", actionHandler);
 	optional<int> result = parser.analyze();
 
 	EXPECT_FALSE(report.containsFailures());

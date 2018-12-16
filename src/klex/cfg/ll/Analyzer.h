@@ -34,7 +34,7 @@ class Analyzer {
 		StateValue(int _value) : value{_value} {}
 	};
 
-	Analyzer(SyntaxTable table, Report* report, std::string input,
+	Analyzer(const SyntaxTable& table, Report* report, std::string input,
 			 ActionHandler actionHandler = ActionHandler());
 
 	const Lexer& lexer() const noexcept { return lexer_; }
@@ -67,7 +67,7 @@ class Analyzer {
 	std::string handleString(const SyntaxTable::Expression& handle) const;
 
   private:
-	const SyntaxTable def_;
+	const SyntaxTable& def_;
 	Lexer lexer_;
 	std::string lastLiteral_;
 	Report* report_;

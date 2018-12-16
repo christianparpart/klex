@@ -16,9 +16,9 @@ namespace klex::cfg::ll {
 // --------------------------------------------------------------------------------------------------------
 
 template <typename SemanticValue>
-Analyzer<SemanticValue>::Analyzer(SyntaxTable _st, Report* _report, std::string _source,
+Analyzer<SemanticValue>::Analyzer(const SyntaxTable& _st, Report* _report, std::string _source,
 								  ActionHandler actionHandler)
-	: def_{std::move(_st)},
+	: def_{_st},
 	  lexer_{def_.lexerDef, std::move(_source),
 			 std::bind(&Analyzer<SemanticValue>::log, this, std::placeholders::_1)},
 	  report_{_report},
