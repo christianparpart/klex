@@ -24,7 +24,7 @@ namespace klex::cfg {
 class GrammarParser
 {
   public:
-	GrammarParser(GrammarLexer lexer, Report* report);
+	GrammarParser(GrammarLexer&& lexer, Report* report);
 	GrammarParser(std::string source, Report* report);
 
 	Grammar parse();

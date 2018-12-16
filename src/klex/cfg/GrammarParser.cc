@@ -24,7 +24,7 @@ using namespace klex::cfg;
 	} while (0)
 // #define DEBUG(msg, ...) do { fmt::print((msg), __VA_ARGS__); fmt::print("\n"); } while (0)
 
-GrammarParser::GrammarParser(GrammarLexer _lexer, Report* _report) : report_{_report}, lexer_{move(_lexer)}
+GrammarParser::GrammarParser(GrammarLexer&& _lexer, Report* _report) : report_{_report}, lexer_{move(_lexer)}
 {
 }
 
