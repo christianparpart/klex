@@ -1,5 +1,5 @@
 # klex - A Scanner Generator
-[![Build Status](https://travis-ci.org/christianparpart/klex.svg?branch=master)](https://travis-ci.org/christianparpart/klex) [![Build Status](https://ci.appveyor.com/api/projects/status/l8isxx0k38kdnatq?svg=true)](https://ci.appveyor.com/project/christianparpart/klex) [![codecov](https://codecov.io/gh/christianparpart/klex/branch/master/graph/badge.svg)](https://codecov.io/gh/christianparpart/klex)[![Total alerts](https://img.shields.io/lgtm/alerts/g/christianparpart/klex.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/christianparpart/klex/alerts/)
+[![Build Status](https://travis-ci.org/christianparpart/klex.svg?branch=master)](https://travis-ci.org/christianparpart/klex) [![Build Status](https://ci.appveyor.com/api/projects/status/l8isxx0k38kdnatq?svg=true)](https://ci.appveyor.com/project/christianparpart/klex) [![Code Coverage](https://codecov.io/gh/christianparpart/klex/branch/master/graph/badge.svg)](https://codecov.io/gh/christianparpart/klex) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/christianparpart/klex.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/christianparpart/klex/context:cpp)
 
 
 
