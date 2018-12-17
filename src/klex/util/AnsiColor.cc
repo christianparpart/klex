@@ -32,7 +32,7 @@ string AnsiColor::make(Type AColor) {
     // special flags
     if (AColor & AllFlags) {
       for (int k = 0; k < 8; ++k) {
-        if (AColor & (1 << k)) { // FIXME
+        if (AColor & (1 << k)) {
           if (i++) {
             sb << ';';
           }
