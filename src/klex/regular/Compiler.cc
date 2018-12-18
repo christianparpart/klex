@@ -41,7 +41,7 @@ void Compiler::declareAll(RuleList rules)
 
 	// populate RegExpr
 	for (Rule& rule : rules)
-		rule.regexpr = RegExprParser{}.parse(rule.pattern, rule.line, rule.column);
+		rule.regexpr = make_unique<RegExpr>(RegExprParser{}.parse(rule.pattern, rule.line, rule.column));
 
 	containsBeginOfLine_ = any_of(rules.begin(), rules.end(), ruleContainsBeginOfLine);
 
@@ -50,9 +50,9 @@ void Compiler::declareAll(RuleList rules)
 		// We have at least one BOL-rule.
 		for (Rule& rule : rules)
 		{
-			if (!klex::regular::containsBeginOfLine(rule.regexpr.get()))
+			if (!klex::regular::containsBeginOfLine(*rule.regexpr))
 			{
-				NFA nfa = NFABuilder{}.construct(rule.regexpr.get(), rule.tag);
+				NFA nfa = NFABuilder{}.construct(*rule.regexpr, rule.tag);
 				for (const string& condition : rule.conditions)
 				{
 					NFA& fa = fa_[condition];
@@ -95,7 +95,7 @@ size_t Compiler::size() const
 
 void Compiler::declare(const Rule& rule, const string& conditionSuffix)
 {
-	NFA nfa = NFABuilder{}.construct(rule.regexpr.get(), rule.tag);
+	NFA nfa = NFABuilder{}.construct(*rule.regexpr, rule.tag);
 
 	for (const string& condition : rule.conditions)
 	{

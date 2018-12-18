@@ -6,6 +6,7 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/regular/RegExpr.h>
+#include <klex/util/overloaded.h>
 
 #include <iostream>
 #include <limits>
@@ -14,19 +15,6 @@
 #include <fmt/format.h>
 
 using namespace std;
-
-#if 0
-#	define DEBUG(msg, ...)                                     \
-		do                                                      \
-		{                                                       \
-			cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
-		} while (0)
-#else
-#	define DEBUG(msg, ...) \
-		do                  \
-		{                   \
-		} while (0)
-#endif
 
 /*
   REGULAR EXPRESSION SYNTAX:
@@ -43,206 +31,74 @@ using namespace std;
 
 namespace klex::regular {
 
-void AlternationExpr::accept(RegExprVisitor& visitor)
-{
-	return visitor.visit(*this);
-}
-
-string AlternationExpr::to_string() const
-{
-	stringstream sstr;
-
-	if (precedence() > left_->precedence())
-	{
-		sstr << '(' << left_->to_string() << ')';
-	}
+auto embrace(const RegExpr& outer, const RegExpr& inner) {
+	if (precedence(outer) > precedence(inner))
+		return "(" + to_string(inner) + ")";
 	else
-		sstr << left_->to_string();
-
-	sstr << "|";
-
-	if (precedence() > right_->precedence())
-	{
-		sstr << '(' << right_->to_string() << ')';
-	}
-	else
-		sstr << right_->to_string();
-
-	return sstr.str();
+		return to_string(inner);
 }
 
-void ConcatenationExpr::accept(RegExprVisitor& visitor)
+std::string to_string(const RegExpr& re)
 {
-	return visitor.visit(*this);
+	return visit(overloaded{
+		[&](const ClosureExpr& e) {
+			stringstream sstr;
+			sstr << embrace(re, *e.subExpr);
+			if (e.minimumOccurrences == 0 && e.maximumOccurrences == 1)
+				sstr << '?';
+			else if (e.minimumOccurrences == 0 && e.maximumOccurrences == numeric_limits<unsigned>::max())
+				sstr << '*';
+			else if (e.minimumOccurrences == 1 && e.maximumOccurrences == numeric_limits<unsigned>::max())
+				sstr << '+';
+			else
+				sstr << '{' << e.minimumOccurrences << ',' << e.maximumOccurrences << '}';
+			return sstr.str();
+		},
+		[&](const AlternationExpr& e) { return embrace(re, *e.left) + "|" + embrace(re, *e.right); },
+		[&](const ConcatenationExpr& e) { return embrace(re, *e.left) + embrace(re, *e.right); },
+		[&](const LookAheadExpr& e) { return embrace(re, *e.left) + "/" + embrace(re, *e.right); },
+		[](const CharacterExpr& e) { return string(1, e.value); },
+		[](const EndOfFileExpr& e) { return string{"<<EOF>>"}; },
+		[](const BeginOfLineExpr& e) { return string{"^"}; },
+		[](const EndOfLineExpr& e) { return string{"$"}; },
+		[](const CharacterClassExpr& e) { return e.symbols.to_string(); },
+		[](const DotExpr& e) { return string{"."}; },
+		[](const EmptyExpr& e) { return string{}; },
+	}, re);
 }
 
-string ConcatenationExpr::to_string() const
+int precedence(const RegExpr& regex)
 {
-	stringstream sstr;
-
-	if (precedence() > left_->precedence())
-	{
-		sstr << '(' << left_->to_string() << ')';
-	}
-	else
-		sstr << left_->to_string();
-
-	if (precedence() > right_->precedence())
-	{
-		sstr << '(' << right_->to_string() << ')';
-	}
-	else
-		sstr << right_->to_string();
-
-	return sstr.str();
+	return visit(overloaded{
+		[](const AlternationExpr& e) { return 1; },
+		[](const BeginOfLineExpr& e) { return 4; },
+		[](const CharacterClassExpr& e) { return 4; },
+		[](const CharacterExpr& e) { return 4; },
+		[](const ClosureExpr& e) { return 3; },
+		[](const ConcatenationExpr& e) { return 2; },
+		[](const DotExpr& e) { return 4; },
+		[](const EmptyExpr& e) { return 4; },
+		[](const EndOfFileExpr& e) { return 4; },
+		[](const EndOfLineExpr& e) { return 4; },
+		[](const LookAheadExpr& e) { return 0; },
+	}, regex);
 }
 
-void LookAheadExpr::accept(RegExprVisitor& visitor)
+bool containsBeginOfLine(const RegExpr& regex)
 {
-	return visitor.visit(*this);
+	return visit(overloaded{
+		[](const AlternationExpr& e) { return containsBeginOfLine(*e.left) || containsBeginOfLine(*e.right); },
+		[](const BeginOfLineExpr& e) { return true; },
+		[](const CharacterClassExpr& e) { return false; },
+		[](const CharacterExpr& e) { return false; },
+		[](const ClosureExpr& e) { return containsBeginOfLine(*e.subExpr); },
+		[](const ConcatenationExpr& e) { return containsBeginOfLine(*e.left) || containsBeginOfLine(*e.right); },
+		[](const DotExpr& e) { return false; },
+		[](const EmptyExpr& e) { return false; },
+		[](const EndOfFileExpr& e) { return false; },
+		[](const EndOfLineExpr& e) { return false; },
+		[](const LookAheadExpr& e) { return containsBeginOfLine(*e.left) || containsBeginOfLine(*e.right); },
+	}, regex);
 }
-
-string LookAheadExpr::to_string() const
-{
-	assert(precedence() < left_->precedence());
-	assert(precedence() < right_->precedence());
-
-	stringstream sstr;
-	sstr << left_->to_string() << '/' << right_->to_string();
-	return sstr.str();
-}
-
-void CharacterExpr::accept(RegExprVisitor& visitor)
-{
-	return visitor.visit(*this);
-}
-
-string CharacterExpr::to_string() const
-{
-	return string(1, value_);
-}
-
-void EndOfFileExpr::accept(RegExprVisitor& visitor)
-{
-	return visitor.visit(*this);
-}
-
-string EndOfFileExpr::to_string() const
-{
-	return "<<EOF>>";
-}
-
-void BeginOfLineExpr::accept(RegExprVisitor& visitor)
-{
-	return visitor.visit(*this);
-}
-
-string BeginOfLineExpr::to_string() const
-{
-	return "^";
-}
-
-void EndOfLineExpr::accept(RegExprVisitor& visitor)
-{
-	return visitor.visit(*this);
-}
-
-string EndOfLineExpr::to_string() const
-{
-	return "$";
-}
-
-string CharacterClassExpr::to_string() const
-{
-	return value_.to_string();
-}
-
-void CharacterClassExpr::accept(RegExprVisitor& visitor)
-{
-	visitor.visit(*this);
-}
-
-void DotExpr::accept(RegExprVisitor& visitor)
-{
-	return visitor.visit(*this);
-}
-
-string DotExpr::to_string() const
-{
-	return ".";
-}
-
-void ClosureExpr::accept(RegExprVisitor& visitor)
-{
-	return visitor.visit(*this);
-}
-
-string ClosureExpr::to_string() const
-{
-	stringstream sstr;
-
-	// TODO: optimize superfluous ()'s
-	if (precedence() > subExpr_->precedence())
-		sstr << '(' << subExpr_->to_string() << ')';
-	else
-		sstr << subExpr_->to_string();
-
-	if (minimumOccurrences_ == 0 && maximumOccurrences_ == 1)
-		sstr << '?';
-	else if (minimumOccurrences_ == 0 && maximumOccurrences_ == numeric_limits<unsigned>::max())
-		sstr << '*';
-	else if (minimumOccurrences_ == 1 && maximumOccurrences_ == numeric_limits<unsigned>::max())
-		sstr << '+';
-	else
-		sstr << '{' << minimumOccurrences_ << ',' << maximumOccurrences_ << '}';
-
-	return sstr.str();
-}
-
-void EmptyExpr::accept(RegExprVisitor& visitor)
-{
-	visitor.visit(*this);
-}
-
-string EmptyExpr::to_string() const
-{
-	return {};
-}
-
-// {{{ BeginOfLineTester
-class BeginOfLineTester : public RegExprVisitor {
-  public:
-	bool test(const RegExpr* re)
-	{
-		const_cast<RegExpr*>(re)->accept(*this);
-		return result_;
-	}
-
-  private:
-	void set(bool r) { result_ = r; }
-
-	void visit(LookAheadExpr& lookaheadExpr) override { test(lookaheadExpr.leftExpr()); }
-
-	void visit(ConcatenationExpr& concatenationExpr) override
-	{
-		set(test(concatenationExpr.leftExpr()) || test(concatenationExpr.rightExpr()));
-	}
-
-	void visit(AlternationExpr& alternationExpr) override
-	{
-		set(test(alternationExpr.leftExpr()) || test(alternationExpr.rightExpr()));
-	}
-
-	void visit(BeginOfLineExpr& bolExpr) override { set(true); }
-
-  private:
-	bool result_ = false;
-};
-
-bool containsBeginOfLine(const RegExpr* re)
-{
-	return BeginOfLineTester{}.test(re);
-}
-// }}}
 
 }  // namespace klex::regular

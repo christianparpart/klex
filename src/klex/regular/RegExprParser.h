@@ -7,22 +7,22 @@
 #pragma once
 
 #include <klex/regular/Symbols.h>
+#include <klex/regular/RegExpr.h>
 #include <fmt/format.h>
 #include <memory>
 #include <string_view>
 
 namespace klex::regular {
 
-class RegExpr;
 class SymbolSet;
 
 class RegExprParser {
   public:
 	RegExprParser();
 
-	std::unique_ptr<RegExpr> parse(std::string_view expr, int line, int column);
+	RegExpr parse(std::string_view expr, int line, int column);
 
-	std::unique_ptr<RegExpr> parse(std::string_view expr) { return parse(std::move(expr), 1, 1); }
+	RegExpr parse(std::string_view expr) { return parse(std::move(expr), 1, 1); }
 
 	class UnexpectedToken : public std::runtime_error {
 	  public:
@@ -63,14 +63,14 @@ class RegExprParser {
 	int consume();
 	unsigned parseInt();
 
-	std::unique_ptr<RegExpr> parse();                 // expr
-	std::unique_ptr<RegExpr> parseExpr();             // lookahead
-	std::unique_ptr<RegExpr> parseLookAheadExpr();    // alternation ('/' alternation)?
-	std::unique_ptr<RegExpr> parseAlternation();      // concatenation ('|' concatenation)*
-	std::unique_ptr<RegExpr> parseConcatenation();    // closure (closure)*
-	std::unique_ptr<RegExpr> parseClosure();          // atom ['*' | '?' | '{' NUM [',' NUM] '}']
-	std::unique_ptr<RegExpr> parseAtom();             // character | characterClass | '(' expr ')'
-	std::unique_ptr<RegExpr> parseCharacterClass();   // '[' characterClassFragment+ ']'
+	RegExpr parse();                 // expr
+	RegExpr parseExpr();             // lookahead
+	RegExpr parseLookAheadExpr();    // alternation ('/' alternation)?
+	RegExpr parseAlternation();      // concatenation ('|' concatenation)*
+	RegExpr parseConcatenation();    // closure (closure)*
+	RegExpr parseClosure();          // atom ['*' | '?' | '{' NUM [',' NUM] '}']
+	RegExpr parseAtom();             // character | characterClass | '(' expr ')'
+	RegExpr parseCharacterClass();   // '[' characterClassFragment+ ']'
 	void parseCharacterClassFragment(SymbolSet& ss);  // namedClass | character | character '-' character
 	void parseNamedCharacterClass(SymbolSet& ss);     // '[' ':' NAME ':' ']'
 	Symbol parseSingleCharacter();

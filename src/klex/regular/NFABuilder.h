@@ -26,25 +26,23 @@ class DFA;
 /*!
  * Generates a finite automaton from the given input (a regular expression).
  */
-class NFABuilder : public RegExprVisitor {
+class NFABuilder {
   public:
 	explicit NFABuilder() : fa_{} {}
 
-	NFA construct(const RegExpr* re, Tag tag);
-
-  private:
-	NFA construct(const RegExpr* re);
-	void visit(LookAheadExpr& lookaheadExpr) override;
-	void visit(ConcatenationExpr& concatenationExpr) override;
-	void visit(AlternationExpr& alternationExpr) override;
-	void visit(CharacterExpr& characterExpr) override;
-	void visit(CharacterClassExpr& characterClassExpr) override;
-	void visit(ClosureExpr& closureExpr) override;
-	void visit(BeginOfLineExpr& eolExpr) override;
-	void visit(EndOfLineExpr& eolExpr) override;
-	void visit(EndOfFileExpr& eofExpr) override;
-	void visit(DotExpr& dotExpr) override;
-	void visit(EmptyExpr& emptyExpr) override;
+	NFA construct(const RegExpr& re, Tag tag);
+	NFA construct(const RegExpr& re);
+	void operator()(const LookAheadExpr& lookaheadExpr);
+	void operator()(const ConcatenationExpr& concatenationExpr);
+	void operator()(const AlternationExpr& alternationExpr);
+	void operator()(const CharacterExpr& characterExpr);
+	void operator()(const CharacterClassExpr& characterClassExpr);
+	void operator()(const ClosureExpr& closureExpr);
+	void operator()(const BeginOfLineExpr& bolExpr);
+	void operator()(const EndOfLineExpr& eolExpr);
+	void operator()(const EndOfFileExpr& eofExpr);
+	void operator()(const DotExpr& dotExpr);
+	void operator()(const EmptyExpr& emptyExpr);
 
   private:
 	NFA fa_;

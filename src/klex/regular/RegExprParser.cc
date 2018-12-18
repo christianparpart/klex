@@ -104,7 +104,7 @@ void RegExprParser::consume(int expected)
 	}
 }
 
-unique_ptr<RegExpr> RegExprParser::parse(string_view expr, int line, int column)
+RegExpr RegExprParser::parse(string_view expr, int line, int column)
 {
 	input_ = move(expr);
 	currentChar_ = input_.begin();
@@ -114,84 +114,84 @@ unique_ptr<RegExpr> RegExprParser::parse(string_view expr, int line, int column)
 	return parseExpr();
 }
 
-unique_ptr<RegExpr> RegExprParser::parseExpr()
+RegExpr RegExprParser::parseExpr()
 {
 	return parseLookAheadExpr();
 }
 
-unique_ptr<RegExpr> RegExprParser::parseLookAheadExpr()
+RegExpr RegExprParser::parseLookAheadExpr()
 {
-	unique_ptr<RegExpr> lhs = parseAlternation();
+	RegExpr lhs = parseAlternation();
 
 	if (currentChar() == '/')
 	{
 		consume();
-		unique_ptr<RegExpr> rhs = parseAlternation();
-		lhs = make_unique<LookAheadExpr>(move(lhs), move(rhs));
+		RegExpr rhs = parseAlternation();
+		lhs = LookAheadExpr{make_unique<RegExpr>(move(lhs)), make_unique<RegExpr>(move(rhs))};
 	}
 
 	return lhs;
 }
 
-unique_ptr<RegExpr> RegExprParser::parseAlternation()
+RegExpr RegExprParser::parseAlternation()
 {
-	unique_ptr<RegExpr> lhs = parseConcatenation();
+	RegExpr lhs = parseConcatenation();
 
 	while (currentChar() == '|')
 	{
 		consume();
-		unique_ptr<RegExpr> rhs = parseConcatenation();
-		lhs = make_unique<AlternationExpr>(move(lhs), move(rhs));
+		RegExpr rhs = parseConcatenation();
+		lhs = AlternationExpr{make_unique<RegExpr>(move(lhs)), make_unique<RegExpr>(move(rhs))};
 	}
 
 	return lhs;
 }
 
-unique_ptr<RegExpr> RegExprParser::parseConcatenation()
+RegExpr RegExprParser::parseConcatenation()
 {
 	// FOLLOW-set, the set of terminal tokens that can occur right after a concatenation
 	static const string_view follow = "/|)";
-	unique_ptr<RegExpr> lhs = parseClosure();
+	RegExpr lhs = parseClosure();
 
 	while (!eof() && follow.find(currentChar()) == follow.npos)
 	{
-		unique_ptr<RegExpr> rhs = parseClosure();
-		lhs = make_unique<ConcatenationExpr>(move(lhs), move(rhs));
+		RegExpr rhs = parseClosure();
+		lhs = ConcatenationExpr{make_unique<RegExpr>(move(lhs)), make_unique<RegExpr>(move(rhs))};
 	}
 
 	return lhs;
 }
 
-unique_ptr<RegExpr> RegExprParser::parseClosure()
+RegExpr RegExprParser::parseClosure()
 {
-	unique_ptr<RegExpr> subExpr = parseAtom();
+	RegExpr subExpr = parseAtom();
 
 	switch (currentChar())
 	{
 		case '?':
 			consume();
-			return make_unique<ClosureExpr>(move(subExpr), 0, 1);
+			return ClosureExpr{make_unique<RegExpr>(move(subExpr)), 0, 1};
 		case '*':
 			consume();
-			return make_unique<ClosureExpr>(move(subExpr), 0);
+			return ClosureExpr{make_unique<RegExpr>(move(subExpr)), 0};
 		case '+':
 			consume();
-			return make_unique<ClosureExpr>(move(subExpr), 1);
+			return ClosureExpr{make_unique<RegExpr>(move(subExpr)), 1};
 		case '{':
 		{
 			consume();
-			int m = parseInt();
+			unsigned int m = parseInt();
 			if (currentChar() == ',')
 			{
 				consume();
-				int n = parseInt();
+				unsigned int n = parseInt();
 				consume('}');
-				return make_unique<ClosureExpr>(move(subExpr), m, n);
+				return ClosureExpr{make_unique<RegExpr>(move(subExpr)), m, n};
 			}
 			else
 			{
 				consume('}');
-				return make_unique<ClosureExpr>(move(subExpr), m, m);
+				return ClosureExpr{make_unique<RegExpr>(move(subExpr)), m, m};
 			}
 		}
 		default:
@@ -211,7 +211,7 @@ unsigned RegExprParser::parseInt()
 	return n;
 }
 
-unique_ptr<RegExpr> RegExprParser::parseAtom()
+RegExpr RegExprParser::parseAtom()
 {
 	// skip any whitespace (except newlines)
 	while (!eof() && isspace(currentChar()) && currentChar() != '\n')
@@ -221,7 +221,7 @@ unique_ptr<RegExpr> RegExprParser::parseAtom()
 	{
 		case -1:  // EOF
 		case ')':
-			return make_unique<EmptyExpr>();
+			return EmptyExpr{};
 		case '<':
 			consume();
 			consume('<');
@@ -230,22 +230,22 @@ unique_ptr<RegExpr> RegExprParser::parseAtom()
 			consume('F');
 			consume('>');
 			consume('>');
-			return make_unique<EndOfFileExpr>();
+			return EndOfFileExpr{};
 		case '(':
 		{
 			consume();
-			unique_ptr<RegExpr> subExpr = parseExpr();
+			RegExpr subExpr = parseExpr();
 			consume(')');
 			return subExpr;
 		}
 		case '"':
 		{
 			consume();
-			unique_ptr<RegExpr> lhs = make_unique<CharacterExpr>(consume());
+			RegExpr lhs = CharacterExpr{consume()};
 			while (!eof() && currentChar() != '"')
 			{
-				unique_ptr<RegExpr> rhs = make_unique<CharacterExpr>(consume());
-				lhs = make_unique<ConcatenationExpr>(move(lhs), move(rhs));
+				RegExpr rhs = CharacterExpr{consume()};
+				lhs = ConcatenationExpr{make_unique<RegExpr>(move(lhs)), make_unique<RegExpr>(move(rhs))};
 			}
 			consume('"');
 			return lhs;
@@ -254,19 +254,19 @@ unique_ptr<RegExpr> RegExprParser::parseAtom()
 			return parseCharacterClass();
 		case '.':
 			consume();
-			return make_unique<DotExpr>();
+			return DotExpr{};
 		case '^':
 			consume();
-			return make_unique<BeginOfLineExpr>();
+			return BeginOfLineExpr{};
 		case '$':
 			consume();
-			return make_unique<EndOfLineExpr>();
+			return EndOfLineExpr{};
 		default:
-			return make_unique<CharacterExpr>(parseSingleCharacter());
+			return CharacterExpr{parseSingleCharacter()};
 	}
 }
 
-unique_ptr<RegExpr> RegExprParser::parseCharacterClass()
+RegExpr RegExprParser::parseCharacterClass()
 {
 	consume();                               // '['
 	const bool complement = consumeIf('^');  // TODO
@@ -280,7 +280,7 @@ unique_ptr<RegExpr> RegExprParser::parseCharacterClass()
 		ss.complement();
 
 	consume(']');
-	return make_unique<CharacterClassExpr>(move(ss));
+	return CharacterClassExpr{move(ss)};
 }
 
 void RegExprParser::parseNamedCharacterClass(SymbolSet& ss)
