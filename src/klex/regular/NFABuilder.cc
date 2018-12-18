@@ -12,90 +12,86 @@ using namespace std;
 
 namespace klex::regular {
 
-NFA NFABuilder::construct(const RegExpr* re, Tag tag)
+NFA NFABuilder::construct(const RegExpr& re, Tag tag)
 {
-	const_cast<RegExpr*>(re)->accept(*this);
+	visit(*this, re);
 
 	// fa_.setAccept(acceptState_.value_or(fa_.acceptStateId()), tag);
 	if (acceptState_)
-	{
 		fa_.setAccept(acceptState_.value(), tag);
-	}
 	else
-	{
 		fa_.setAccept(tag);
-	}
 
 	return move(fa_);
 }
 
-NFA NFABuilder::construct(const RegExpr* re)
+NFA NFABuilder::construct(const RegExpr& re)
 {
-	const_cast<RegExpr*>(re)->accept(*this);
+	visit(*this, re);
 	return move(fa_);
 }
 
-void NFABuilder::visit(LookAheadExpr& lookaheadExpr)
+void NFABuilder::operator()(const LookAheadExpr& lookaheadExpr)
 {
 	// fa_ = move(construct(lookaheadExpr.leftExpr()).lookahead(construct(lookaheadExpr.rightExpr())));
-	NFA lhs = construct(lookaheadExpr.leftExpr());
-	NFA rhs = construct(lookaheadExpr.rightExpr());
+	NFA lhs = construct(*lookaheadExpr.left);
+	NFA rhs = construct(*lookaheadExpr.right);
 	lhs.lookahead(move(rhs));
 	fa_ = move(lhs);
 }
 
-void NFABuilder::visit(AlternationExpr& alternationExpr)
+void NFABuilder::operator()(const AlternationExpr& alternationExpr)
 {
-	NFA lhs = construct(alternationExpr.leftExpr());
-	NFA rhs = construct(alternationExpr.rightExpr());
+	NFA lhs = construct(*alternationExpr.left);
+	NFA rhs = construct(*alternationExpr.right);
 	lhs.alternate(move(rhs));
 	fa_ = move(lhs);
 }
 
-void NFABuilder::visit(ConcatenationExpr& concatenationExpr)
+void NFABuilder::operator()(const ConcatenationExpr& concatenationExpr)
 {
-	NFA lhs = construct(concatenationExpr.leftExpr());
-	NFA rhs = construct(concatenationExpr.rightExpr());
+	NFA lhs = construct(*concatenationExpr.left);
+	NFA rhs = construct(*concatenationExpr.right);
 	lhs.concatenate(move(rhs));
 	fa_ = move(lhs);
 }
 
-void NFABuilder::visit(CharacterExpr& characterExpr)
+void NFABuilder::operator()(const CharacterExpr& characterExpr)
 {
-	fa_ = NFA{characterExpr.value()};
+	fa_ = NFA{characterExpr.value};
 }
 
-void NFABuilder::visit(CharacterClassExpr& characterClassExpr)
+void NFABuilder::operator()(const CharacterClassExpr& characterClassExpr)
 {
-	fa_ = NFA{characterClassExpr.value()};
+	fa_ = NFA{characterClassExpr.symbols};
 }
 
-void NFABuilder::visit(ClosureExpr& closureExpr)
+void NFABuilder::operator()(const ClosureExpr& closureExpr)
 {
-	const unsigned xmin = closureExpr.minimumOccurrences();
-	const unsigned xmax = closureExpr.maximumOccurrences();
+	const unsigned xmin = closureExpr.minimumOccurrences;
+	const unsigned xmax = closureExpr.maximumOccurrences;
 	constexpr unsigned Infinity = numeric_limits<unsigned>::max();
 
 	if (xmin == 0 && xmax == 1)
-		fa_ = move(construct(closureExpr.subExpr()).optional());
+		fa_ = move(construct(*closureExpr.subExpr).optional());
 	else if (xmin == 0 && xmax == Infinity)
-		fa_ = move(construct(closureExpr.subExpr()).recurring());
+		fa_ = move(construct(*closureExpr.subExpr).recurring());
 	else if (xmin == 1 && xmax == Infinity)
-		fa_ = move(construct(closureExpr.subExpr()).positive());
+		fa_ = move(construct(*closureExpr.subExpr).positive());
 	else if (xmin < xmax)
-		fa_ = move(construct(closureExpr.subExpr()).repeat(xmin, xmax));
+		fa_ = move(construct(*closureExpr.subExpr).repeat(xmin, xmax));
 	else if (xmin == xmax)
-		fa_ = move(construct(closureExpr.subExpr()).times(xmin));
+		fa_ = move(construct(*closureExpr.subExpr).times(xmin));
 	else
 		throw invalid_argument{"closureExpr"};
 }
 
-void NFABuilder::visit(BeginOfLineExpr& bolExpr)
+void NFABuilder::operator()(const BeginOfLineExpr&)
 {
 	fa_ = NFA{Symbols::Epsilon};
 }
 
-void NFABuilder::visit(EndOfLineExpr& eolExpr)
+void NFABuilder::operator()(const EndOfLineExpr& eolExpr)
 {
 	// NFA lhs;
 	// NFA rhs{'\n'};
@@ -104,12 +100,12 @@ void NFABuilder::visit(EndOfLineExpr& eolExpr)
 	fa_ = move(NFA{}.lookahead(NFA{'\n'}));
 }
 
-void NFABuilder::visit(EndOfFileExpr& eofExpr)
+void NFABuilder::operator()(const EndOfFileExpr& eofExpr)
 {
 	fa_ = NFA{Symbols::EndOfFile};
 }
 
-void NFABuilder::visit(DotExpr& dotExpr)
+void NFABuilder::operator()(const DotExpr& dotExpr)
 {
 	// any character except LF
 	fa_ = NFA{'\t'};
@@ -119,7 +115,7 @@ void NFABuilder::visit(DotExpr& dotExpr)
 	}
 }
 
-void NFABuilder::visit(EmptyExpr& emptyExpr)
+void NFABuilder::operator()(const EmptyExpr& emptyExpr)
 {
 	fa_ = NFA{Symbols::Epsilon};
 }

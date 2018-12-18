@@ -17,8 +17,6 @@
 
 namespace klex::regular {
 
-class RegExpr;
-
 struct Rule {
 	unsigned int line;
 	unsigned int column;
@@ -38,7 +36,7 @@ struct Rule {
 							  conditions,
 							  name,
 							  pattern,
-							  RegExprParser{}.parse(pattern, line, column)}
+							  std::make_unique<RegExpr>(RegExprParser{}.parse(pattern, line, column))}
 					   : Rule{line, column, tag, conditions, name, pattern, nullptr};
 	}
 
@@ -63,7 +61,7 @@ struct Rule {
 		  conditions{v.conditions},
 		  name{v.name},
 		  pattern{v.pattern},
-		  regexpr{v.regexpr ? RegExprParser{}.parse(pattern, line, column) : nullptr}
+		  regexpr{v.regexpr ? std::make_unique<RegExpr>(RegExprParser{}.parse(pattern, line, column)) : nullptr}
 	{
 	}
 
@@ -75,7 +73,7 @@ struct Rule {
 		conditions = v.conditions;
 		name = v.name;
 		pattern = v.pattern;
-		regexpr = v.regexpr ? RegExprParser{}.parse(pattern, line, column) : nullptr;
+		regexpr = v.regexpr ? std::make_unique<RegExpr>(RegExprParser{}.parse(pattern, line, column)) : nullptr;
 		return *this;
 	}
 
@@ -91,7 +89,7 @@ using RuleList = std::vector<Rule>;
 
 inline bool ruleContainsBeginOfLine(const Rule& r)
 {
-	return containsBeginOfLine(r.regexpr.get());
+	return containsBeginOfLine(*r.regexpr);
 }
 
 }  // namespace klex::regular
