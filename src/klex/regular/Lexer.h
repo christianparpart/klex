@@ -169,10 +169,10 @@ class Lexer {
 	iterator begin()
 	{
 		const Token t = recognize();
-		return iterator{*this, 0, t, word()};
+		return iterator{*this, 0, TokenInfo{t, word()}};
 	}
 
-	iterator end() { return iterator{*this, 2, 0, ""}; }
+	iterator end() { return iterator{*this, 2, TokenInfo{0, ""}}; }
 
 	bool eof() const { return !stream_->good(); }
 
