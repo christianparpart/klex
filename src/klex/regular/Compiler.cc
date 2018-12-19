@@ -9,7 +9,6 @@
 #include <klex/regular/DFA.h>
 #include <klex/regular/DFABuilder.h>
 #include <klex/regular/DFAMinimizer.h>
-#include <klex/regular/Lexer.h>
 #include <klex/regular/LexerDef.h>
 #include <klex/regular/MultiDFA.h>
 #include <klex/regular/NFA.h>
