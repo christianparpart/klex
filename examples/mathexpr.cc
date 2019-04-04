@@ -162,6 +162,14 @@ Number expr(Lexer& lexer)
 	return addExpr(lexer);
 }
 
+Number parseExpr(Lexable&& lexer)
+{
+	auto it = begin(lexer);
+	auto n = expr(it);
+	consume(it, Token::Eof);
+	return n;
+}
+
 int main(int argc, const char* argv[])
 {
 	auto flags = klex::util::Flags{};
@@ -182,11 +190,8 @@ int main(int argc, const char* argv[])
 
 	auto input = std::string{argc == 1 ? std::string("2+3*4") : flags.parameters()[0]};
 	auto ld = cc.compile();
-	auto ls = Lexable{ld, std::make_unique<std::stringstream>(input)};
-	auto lexer = begin(ls);
 
-	auto n = expr(lexer);
-	consume(lexer, Token::Eof);
+	auto n = parseExpr(Lexable{ld, std::make_unique<std::stringstream>(input)});
 	std::cerr << fmt::format("{} = {}\n", input, n);
 
 	return EXIT_SUCCESS;
