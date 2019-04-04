@@ -6,7 +6,7 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/regular/Compiler.h>
-#include <klex/regular/Lexer.h>
+#include <klex/regular/Lexable.h>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
@@ -27,16 +27,15 @@ int main(int argc, const char* argv[])
 	size_t chars = 0;
 	size_t lines = 0;
 
-	klex::regular::Lexer<int, int, false, false> lexer{cc.compile(), std::cin};
-	for (bool eof = false; !eof;)
+	auto ld = cc.compile();
+	klex::regular::Lexable<int, int, false, false> lexer{ld, std::cin};
+	for (const auto& ti : lexer)
 	{
-		switch (lexer.recognize())
+		switch (token(ti))
 		{
 			case 4:  // EOF
-				eof = true;
 				break;
 			case 3:  // Other
-				assert(lexer.token() == 3);
 				chars++;
 				break;
 			case 2:  // LF
@@ -45,7 +44,7 @@ int main(int argc, const char* argv[])
 				break;
 			case 1:  // Word
 				words++;
-				chars += lexer.word().size();
+				chars += literal(ti).size();
 				break;
 		}
 	}

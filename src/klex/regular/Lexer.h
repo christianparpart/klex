@@ -36,6 +36,24 @@ struct TokenInfo {
 };
 
 template <typename Token>
+inline Token token(const TokenInfo<Token>& it)
+{
+	return it.token;
+}
+
+template <typename Token>
+inline size_t offset(const TokenInfo<Token>& it)
+{
+	return it.offset;
+}
+
+template <typename Token>
+inline const std::string& literal(const TokenInfo<Token>& it)
+{
+	return it.literal;
+}
+
+template <typename Token>
 inline const std::string& to_string(const TokenInfo<Token>& info) noexcept
 {
 	return info.literal;

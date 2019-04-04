@@ -8,11 +8,11 @@
 #include <klex/regular/Compiler.h>
 #include <klex/regular/DFA.h>
 #include <klex/regular/DotWriter.h>
-#include <klex/regular/Lexer.h>
+#include <klex/regular/Lexable.h>
 #include <klex/util/Flags.h>
 
-#include <algorithm>
 #include <fmt/format.h>
+#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -33,133 +33,166 @@ std::string RULES = R"(
     INVALID       ::= .
 )";
 
-using Lexer = klex::regular::Lexer<Token>;
+using Lexable = klex::regular::Lexable<Token>;
+using Lexer = Lexable::iterator;
 using Number = long long int;
 
-std::string to_string(Token t) {
-  switch (t) {
-    case Token::INVALID: return "<<INVALID>>";
-    case Token::Eof: return "<<EOF>>";
-    case Token::RndOpen: return "'('";
-    case Token::RndClose: return "')'";
-    case Token::Plus: return "'+'";
-    case Token::Minus: return "'-'";
-    case Token::Mul: return "'*'";
-    case Token::Div: return "'/'";
-    case Token::Number: return "<<NUMBER>>";
-    default: abort();
-  }
+auto to_string(Token t)
+{
+	switch (t)
+	{
+		case Token::INVALID:
+			return "<<INVALID>>";
+		case Token::Eof:
+			return "<<EOF>>";
+		case Token::RndOpen:
+			return "'('";
+		case Token::RndClose:
+			return "')'";
+		case Token::Plus:
+			return "'+'";
+		case Token::Minus:
+			return "'-'";
+		case Token::Mul:
+			return "'*'";
+		case Token::Div:
+			return "'/'";
+		case Token::Number:
+			return "<<NUMBER>>";
+		default:
+			abort();
+	}
 }
 
 namespace fmt {
-  template<>
-  struct formatter<Token> {
-    template <typename ParseContext>
-    constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+template <>
+struct formatter<Token> {
+	template <typename ParseContext>
+	constexpr auto parse(ParseContext& ctx)
+	{
+		return ctx.begin();
+	}
 
-    template <typename FormatContext>
-    constexpr auto format(const Token& v, FormatContext &ctx) {
-      return format_to(ctx.begin(), "{}", to_string(v));
-    }
-  };
-}
+	template <typename FormatContext>
+	constexpr auto format(const Token& v, FormatContext& ctx)
+	{
+		return format_to(ctx.begin(), "{}", to_string(v));
+	}
+};
+}  // namespace fmt
 
 Number expr(Lexer&);
 
-void consume(Lexer& lexer, Token t) {
-  if (lexer.token() != t)
-    throw std::runtime_error{fmt::format("Unexpected token {}. Expected {} instead.",
-                                         lexer.token(), t)};
-  lexer.recognize();
+void consume(Lexer& lexer, Token t)
+{
+	if (lexer.token() != t)
+		throw std::runtime_error{fmt::format("Unexpected token {}. Expected {} instead.", lexer.token(), t)};
+	++lexer;
 }
 
-Number primaryExpr(Lexer& lexer) {
-  switch (lexer.token()) {
-    case Token::Minus:
-      lexer.recognize();
-      return -1 * primaryExpr(lexer);
-    case Token::Number: {
-      std::string s;
-      std::for_each(lexer.word().begin(), lexer.word().end(), [&](char ch) { if (ch != '_') s += ch; });
-      Number y = std::stoi(s);
-      lexer.recognize();
-      return y;
-    }
-    case Token::RndOpen: {
-      lexer.recognize();
-      Number y = expr(lexer);
-      consume(lexer, Token::RndClose);
-      return y;
-    }
-    default:
-      throw std::runtime_error{fmt::format("Unexpected token {}. Expected primary expression instead.",
-                                           lexer.token())};
-  }
+auto primaryExpr(Lexer& lexer)
+{
+	switch (lexer.token())
+	{
+		case Token::Number:
+		{
+			std::string s;
+			std::for_each(begin(literal(lexer)), end(literal(lexer)), [&](char ch) {
+				if (ch != '_')
+					s += ch;
+			});
+			auto y = Number{std::stoi(s)};
+			++lexer;
+			return y;
+		}
+		case Token::Minus:
+			return -1 * primaryExpr(++lexer);
+		case Token::RndOpen:
+		{
+			auto y = expr(++lexer);
+			consume(lexer, Token::RndClose);
+			return y;
+		}
+		default:
+			throw std::runtime_error{
+				fmt::format("Unexpected token {}. Expected primary expression instead.", lexer.token())};
+	}
 }
 
-Number mulExpr(Lexer& lexer) {
-  Number lhs = primaryExpr(lexer);
-  for (;;) {
-    switch (lexer.token()) {
-      case Token::Mul:
-        lexer.recognize();
-        lhs = lhs * primaryExpr(lexer);
-        break;
-      case Token::Div:
-        lexer.recognize();
-        lhs = lhs / primaryExpr(lexer);
-        break;
-      default:
-        return lhs;
-    }
-  }
+auto mulExpr(Lexer& lexer)
+{
+	auto lhs = primaryExpr(lexer);
+	for (;;)
+	{
+		switch (lexer.token())
+		{
+			case Token::Mul:
+				lhs = lhs * primaryExpr(++lexer);
+				break;
+			case Token::Div:
+				lhs = lhs / primaryExpr(++lexer);
+				break;
+			default:
+				return lhs;
+		}
+	}
 }
 
-Number addExpr(Lexer& lexer) {
-  Number lhs = mulExpr(lexer);
-  for (;;) {
-    switch (lexer.token()) {
-      case Token::Plus:
-        lexer.recognize();
-        lhs = lhs + mulExpr(lexer);
-        break;
-      case Token::Minus:
-        lexer.recognize();
-        lhs = lhs - mulExpr(lexer);
-        break;
-      default:
-        return lhs;
-    }
-  }
+auto addExpr(Lexer& lexer)
+{
+	auto lhs = mulExpr(lexer);
+	for (;;)
+	{
+		switch (lexer.token())
+		{
+			case Token::Plus:
+				lhs = lhs + mulExpr(++lexer);
+				break;
+			case Token::Minus:
+				lhs = lhs - mulExpr(++lexer);
+				break;
+			default:
+				return lhs;
+		}
+	}
 }
 
-Number expr(Lexer& lexer) {
-  return addExpr(lexer);
+Number expr(Lexer& lexer)
+{
+	return addExpr(lexer);
 }
 
-int main(int argc, const char* argv[]) {
-  klex::util::Flags flags;
-  flags.defineBool("dfa", 'x', "Dumps DFA dotfile and exits.");
-  flags.enableParameters("EXPRESSION", "Mathematical expression to calculate");
-  flags.parse(argc, argv);
+Number parseExpr(Lexable&& lexer)
+{
+	auto it = begin(lexer);
+	auto n = expr(it);
+	consume(it, Token::Eof);
+	return n;
+}
 
-  klex::regular::Compiler cc;
-  cc.parse(std::make_unique<std::stringstream>(RULES));
+int main(int argc, const char* argv[])
+{
+	auto flags = klex::util::Flags{};
+	flags.defineBool("dfa", 'x', "Dumps DFA dotfile and exits.");
+	flags.enableParameters("EXPRESSION", "Mathematical expression to calculate");
+	flags.parse(argc, argv);
 
-  if (flags.getBool("dfa")) {
-    klex::regular::DotWriter writer { std::cout, "n" };
-    klex::regular::DFA dfa = cc.compileMinimalDFA();
-    dfa.visit(writer);
-    return EXIT_SUCCESS;
-  }
+	auto cc = klex::regular::Compiler{};
+	cc.parse(std::make_unique<std::stringstream>(RULES));
 
-  std::string input = argc == 1 ? std::string("2+3*4") : flags.parameters()[0];
-  Lexer lexer { cc.compile(), std::make_unique<std::stringstream>(input) };
+	if (flags.getBool("dfa"))
+	{
+		auto writer = klex::regular::DotWriter{std::cout, "n"};
+		auto dfa = cc.compileMinimalDFA();
+		dfa.visit(writer);
+		return EXIT_SUCCESS;
+	}
 
-  lexer.recognize();
-  Number n = expr(lexer);
-  consume(lexer, Token::Eof);
-  std::cerr << fmt::format("{} = {}\n", input, n);
+	auto input = std::string{argc == 1 ? std::string("2+3*4") : flags.parameters()[0]};
+	auto ld = cc.compile();
 
-  return EXIT_SUCCESS;
+	auto n = parseExpr(Lexable{ld, std::make_unique<std::stringstream>(input)});
+	std::cerr << fmt::format("{} = {}\n", input, n);
+
+	return EXIT_SUCCESS;
 }

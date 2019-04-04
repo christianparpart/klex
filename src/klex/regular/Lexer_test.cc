@@ -8,7 +8,7 @@
 #include <klex/regular/Compiler.h>
 #include <klex/regular/DFA.h>
 #include <klex/regular/DotWriter.h>
-#include <klex/regular/Lexer.h>
+#include <klex/regular/Lexable.h>
 #include <klex/regular/MultiDFA.h>
 #include <klex/util/literals.h>
 #include <klex/util/testing.h>
@@ -87,13 +87,50 @@ TEST(regular_Lexer, lookahead)
 
 	const LexerDef lexerDef = cc.compile();
 	logf("LexerDef:\n{}", lexerDef.to_string());
-	Lexer<LookaheadToken, StateId, false, true> lexer{lexerDef, "abba abcdef",
-													  [this](const string& msg) { log(msg); }};
+	Lexable<LookaheadToken, StateId, false, true> ls{lexerDef, "abba abcdef",
+													 [this](const string& msg) { log(msg); }};
+	auto lexer = begin(ls);
 
-	ASSERT_EQ(LookaheadToken::ABBA, lexer.recognize());
-	ASSERT_EQ(LookaheadToken::AB_CD, lexer.recognize());
-	ASSERT_EQ(LookaheadToken::CDEF, lexer.recognize());
-	ASSERT_EQ(LookaheadToken::Eof, lexer.recognize());
+	ASSERT_EQ(LookaheadToken::ABBA, *lexer);
+	ASSERT_EQ(LookaheadToken::AB_CD, *++lexer);
+	ASSERT_EQ(LookaheadToken::CDEF, *++lexer);
+	ASSERT_EQ(LookaheadToken::Eof, *++lexer);
+	ASSERT_EQ(end(ls), ++lexer);
+}
+
+TEST(regular_Lexable, one)
+{
+	Compiler cc;
+	cc.parse(RULES);
+
+	const LexerDef ld = cc.compile();
+	logf("LexerDef:\n{}", ld.to_string());
+	auto src = Lexable<LookaheadToken, StateId, false, true>{
+		ld,
+		make_unique<stringstream>("abba abcdef"),
+		[this](const string& msg) { log(msg); }
+	};
+	auto lexer = begin(src);
+	auto eof = end(src);
+
+	ASSERT_TRUE(lexer != eof);
+	EXPECT_EQ(LookaheadToken::ABBA, token(lexer));
+	EXPECT_EQ(0, offset(lexer));
+
+	++lexer;
+	EXPECT_EQ(LookaheadToken::AB_CD, token(lexer));
+	EXPECT_EQ(5, offset(lexer));
+
+	++lexer;
+	EXPECT_EQ(LookaheadToken::CDEF, token(lexer));
+	EXPECT_EQ(7, offset(lexer));
+
+	++lexer;
+	EXPECT_EQ(LookaheadToken::Eof, token(lexer));
+	EXPECT_EQ(11, offset(lexer));
+
+	++lexer;
+	ASSERT_FALSE(lexer != eof); // TODO: make that work
 }
 
 TEST(regular_Lexer, LexerError)
@@ -101,11 +138,9 @@ TEST(regular_Lexer, LexerError)
 	Compiler cc;
 	cc.parse(RULES);
 
-	using LookaheadLexer = Lexer<LookaheadToken, StateId, false, false>;
-	const LexerDef lexerDef = cc.compile();
-	LookaheadLexer lexer{lexerDef, "invalid"};
-
-	EXPECT_THROW(lexer.recognize(), LookaheadLexer::LexerError);
+	const LexerDef ld = cc.compile();
+	Lexable<LookaheadToken, StateId, false, false> ls{ld, "invalid"};
+	EXPECT_THROW(begin(ls), LexerError);
 }
 
 TEST(regular_Lexer, evaluateDotToken)
@@ -113,11 +148,12 @@ TEST(regular_Lexer, evaluateDotToken)
 	Compiler cc;
 	cc.parse(RULES);
 
-	const LexerDef lexerDef = cc.compile();
-	Lexer<LookaheadToken, StateId, false, false> lexer{lexerDef, "xanything"};
+	const LexerDef ld = cc.compile();
+	Lexable<LookaheadToken, StateId, false, false> ls{ld, "xanything"};
+	auto lexer = begin(ls);
 
-	ASSERT_EQ(LookaheadToken::XAnyLine, lexer.recognize());
-	ASSERT_EQ(LookaheadToken::Eof, lexer.recognize());
+	ASSERT_EQ(LookaheadToken::XAnyLine, *lexer);
+	ASSERT_EQ(LookaheadToken::Eof, *++lexer);
 }
 
 TEST(regular_Lexer, match_eol)
@@ -125,24 +161,21 @@ TEST(regular_Lexer, match_eol)
 	Compiler cc;
 	cc.parse(RULES);
 
-	LexerDef lexerDef = cc.compile();
-	logf("LexerDef:\n{}", lexerDef.to_string());
-	Lexer<LookaheadToken, StateId, false, true> lexer{lexerDef, "abba eol\nabba",
-													  [this](const string& msg) { log(msg); }};
+	LexerDef ld = cc.compile();
+	Lexable<LookaheadToken, StateId, false, true> ls{ld, "abba eol\nabba",
+													 [this](const string& msg) { log(msg); }};
+	auto lexer = begin(ls);
 
-	ASSERT_EQ(LookaheadToken::ABBA, lexer.recognize());
-	EXPECT_EQ(0, lexer.offset().first);
-	ASSERT_EQ(4, lexer.offset().second);
+	ASSERT_EQ(LookaheadToken::ABBA, *lexer);
+	EXPECT_EQ(0, offset(lexer));
 
-	ASSERT_EQ(LookaheadToken::EOL_LF, lexer.recognize());
-	EXPECT_EQ(5, lexer.offset().first);
-	ASSERT_EQ(8, lexer.offset().second);
+	ASSERT_EQ(LookaheadToken::EOL_LF, *++lexer);
+	EXPECT_EQ(5, offset(lexer));
 
-	ASSERT_EQ(LookaheadToken::ABBA, lexer.recognize());
-	EXPECT_EQ(9, lexer.offset().first);    // EOF
-	ASSERT_EQ(13, lexer.offset().second);  // EOF
+	ASSERT_EQ(LookaheadToken::ABBA, *++lexer);
+	EXPECT_EQ(9, offset(lexer));
 
-	ASSERT_EQ(LookaheadToken::Eof, lexer.recognize());
+	ASSERT_EQ(LookaheadToken::Eof, *++lexer);
 }
 
 TEST(regular_Lexer, bol)
@@ -156,10 +189,10 @@ TEST(regular_Lexer, bol)
 				|)"_multiline);
 
 	LexerDef ld = cc.compileMulti();
-	logf("LexerDef:\n{}", ld.to_string());
-	Lexer<Tag, StateId, true, true> lexer{ld, "pragma", [this](const string& msg) { log(msg); }};
-	ASSERT_EQ(1, lexer.recognize());  // ^pragma
-	ASSERT_EQ(4, lexer.recognize());  // EOS
+	Lexable<Tag, StateId, true, true> ls{ld, "pragma", [this](const string& msg) { log(msg); }};
+	auto lexer = begin(ls);
+	ASSERT_EQ(1, *lexer);    // ^pragma
+	ASSERT_EQ(4, *++lexer);  // EOS
 }
 
 TEST(regular_Lexer, bol_no_match)
@@ -174,18 +207,19 @@ TEST(regular_Lexer, bol_no_match)
 
 	LexerDef ld = cc.compileMulti();
 	logf("LexerDef:\n{}", ld.to_string());
-	Lexer<Tag, StateId, true, true> lexer{ld, "test pragma", [this](const string& msg) { log(msg); }};
-	ASSERT_EQ(2, lexer.recognize());  // test
+	Lexable<Tag, StateId, true, true> ls{ld, "test pragma", [this](const string& msg) { log(msg); }};
+	auto lexer = begin(ls);
+	ASSERT_EQ(2, *lexer);  // test
 
 	// pragma (char-wise) - must not be recognized as ^pragma
-	ASSERT_EQ(3, lexer.recognize());
-	ASSERT_EQ(3, lexer.recognize());
-	ASSERT_EQ(3, lexer.recognize());
-	ASSERT_EQ(3, lexer.recognize());
-	ASSERT_EQ(3, lexer.recognize());
-	ASSERT_EQ(3, lexer.recognize());
+	ASSERT_EQ(3, *++lexer);
+	ASSERT_EQ(3, *++lexer);
+	ASSERT_EQ(3, *++lexer);
+	ASSERT_EQ(3, *++lexer);
+	ASSERT_EQ(3, *++lexer);
+	ASSERT_EQ(3, *++lexer);
 
-	ASSERT_EQ(4, lexer.recognize());  // EOS
+	ASSERT_EQ(4, *++lexer);  // EOS
 }
 
 TEST(regular_Lexer, bol_line2)
@@ -199,10 +233,11 @@ TEST(regular_Lexer, bol_line2)
 
 	LexerDef ld = cc.compileMulti();
 	logf("LexerDef:\n{}", ld.to_string());
-	Lexer<Tag, StateId, true, true> lexer{ld, "test\npragma", [this](const string& msg) { log(msg); }};
-	ASSERT_EQ(2, lexer.recognize());  // test
-	ASSERT_EQ(1, lexer.recognize());  // ^pragma
-	ASSERT_EQ(3, lexer.recognize());  // EOS
+	Lexable<Tag, StateId, true, true> ls{ld, "test\npragma", [this](const string& msg) { log(msg); }};
+	auto lexer = begin(ls);
+	ASSERT_EQ(2, *lexer);    // test
+	ASSERT_EQ(1, *++lexer);  // ^pragma
+	ASSERT_EQ(3, *++lexer);  // EOS
 }
 
 TEST(regular_Lexer, bol_and_other_conditions)
@@ -216,10 +251,11 @@ TEST(regular_Lexer, bol_and_other_conditions)
 	LexerDef ld = cc.compileMulti();
 	logf("LexerDef:\n{}", ld.to_string());
 
-	Lexer<Tag, StateId, true, true> lexer{ld, "pragma test", [this](const string& msg) { log(msg); }};
-	ASSERT_EQ(1, lexer.recognize());  // ^pragma
-	ASSERT_EQ(2, lexer.recognize());  // test
-	ASSERT_EQ(3, lexer.recognize());  // <<EOF>>
+	Lexable<Tag, StateId, true, true> ls{ld, "pragma test", [this](const string& msg) { log(msg); }};
+	auto lexer = begin(ls);
+	ASSERT_EQ(1, *lexer);  // ^pragma
+	ASSERT_EQ(2, *++lexer);  // test
+	ASSERT_EQ(3, *++lexer);  // <<EOF>>
 }
 
 TEST(regular_Lexer, bol_rules_on_non_bol_lexer)
@@ -232,9 +268,9 @@ TEST(regular_Lexer, bol_rules_on_non_bol_lexer)
 			    |Unknown          ::= .
 			    |)"_multiline);
 
-	LexerDef lexerDef = cc.compile();
-	using SimpleLexer = Lexer<Tag, StateId, false, false>;
-	ASSERT_THROW(SimpleLexer(lexerDef, "pragma"), invalid_argument);
+	LexerDef ld = cc.compile();
+	using SimpleLexer = Lexable<Tag, StateId, false, false>;
+	ASSERT_THROW(SimpleLexer(ld, "pragma"), invalid_argument);
 }
 
 TEST(regular_Lexer, non_bol_rules_on_non_bol_lexer)
@@ -246,11 +282,12 @@ TEST(regular_Lexer, non_bol_rules_on_non_bol_lexer)
 			    |Unknown          ::= .
 			    |)"_multiline);
 
-	LexerDef lexerDef = cc.compile();
-	Lexer<Tag, StateId, false, false> lexer{lexerDef, " test "};
+	LexerDef ld = cc.compile();
+	Lexable<Tag, StateId, false, false> ls{ld, " test "};
+	auto lexer = begin(ls);
 
-	ASSERT_EQ(2, lexer.recognize());  // "test"
-	ASSERT_EQ(1, lexer.recognize());  // <<EOF>>
+	ASSERT_EQ(2, *lexer);    // "test"
+	ASSERT_EQ(1, *++lexer);  // <<EOF>>
 }
 
 TEST(regular_Lexer, non_bol_rules_on_bol_lexer)
@@ -262,11 +299,12 @@ TEST(regular_Lexer, non_bol_rules_on_bol_lexer)
 			    |Unknown          ::= .
 			    |)"_multiline);
 
-	LexerDef lexerDef = cc.compile();
-	Lexer<Tag, StateId, false, false> lexer{lexerDef, " test "};
+	LexerDef ld = cc.compile();
+	Lexable<Tag, StateId, false, false> ls{ld, " test "};
+	auto lexer = begin(ls);
 
-	ASSERT_EQ(2, lexer.recognize());  // "test"
-	ASSERT_EQ(1, lexer.recognize());  // <<EOF>>
+	ASSERT_EQ(2, *lexer);  // "test"
+	ASSERT_EQ(1, *++lexer);  // <<EOF>>
 }
 
 TEST(regular_Lexer, iterator)
@@ -279,11 +317,10 @@ TEST(regular_Lexer, iterator)
 		Eof             ::= <<EOF>>
 	)"));
 
-	const LexerDef lexerDef = cc.compile();
-	Lexer<Tag> lexer{lexerDef, make_unique<stringstream>("a b b a")};
-
-	Lexer<Tag>::iterator i = lexer.begin();
-	Lexer<Tag>::iterator e = lexer.end();
+	auto const ld = cc.compile();
+	auto const ls = Lexable<Tag>{ld, make_unique<stringstream>("a b b a")};
+	auto const e = ls.end();
+	auto i = ls.begin();
 
 	// a
 	ASSERT_EQ(1, *i);
@@ -323,13 +360,13 @@ TEST(regular_Lexer, empty_alt)
 			    |)"_multiline);
 
 	LexerDef ld = cc.compileMulti();
-	logf("LexerDef:\n{}", ld.to_string());
-	Lexer<Tag, StateId, false, true> lexer{ld, "aabb aa aabb", [this](const string& msg) { log(msg); }};
+	Lexable<Tag, StateId, false, true> ls{ld, "aabb aa aabb", [this](const string& msg) { log(msg); }};
+	auto lexer = begin(ls);
 
-	ASSERT_EQ(1, lexer.recognize());
-	ASSERT_EQ(1, lexer.recognize());
-	ASSERT_EQ(1, lexer.recognize());
-	ASSERT_EQ(2, lexer.recognize());  // EOF
+	ASSERT_EQ(1, *lexer);
+	ASSERT_EQ(1, *++lexer);
+	ASSERT_EQ(1, *++lexer);
+	ASSERT_EQ(2, *++lexer);  // EOF
 }
 
 TEST(regular_Lexer, ignore_many)
@@ -342,9 +379,8 @@ TEST(regular_Lexer, ignore_many)
 			    |Bar              ::= bar
 			    |)"_multiline);
 
-	LexerDef lexerDef = cc.compileMulti();
-	logf("LexerDef:\n{}", lexerDef.to_string());
-	Lexer<int, StateId, false, true> lexer{lexerDef,
+	LexerDef ld = cc.compileMulti();
+	Lexable<int, StateId, false, true> ls{ld,
 										   R"(|# some foo
                                               |foo
                                               |
@@ -352,14 +388,15 @@ TEST(regular_Lexer, ignore_many)
                                               |bar
                                               |)"_multiline,
 										   [this](const string& msg) { log(msg); }};
+	auto lexer = begin(ls);
 
-	ASSERT_EQ(2, lexer.recognize());
-	ASSERT_EQ("foo", lexer.word());
+	ASSERT_EQ(2, *lexer);
+	ASSERT_EQ("foo", literal(lexer));
 
-	ASSERT_EQ(3, lexer.recognize());
-	ASSERT_EQ("bar", lexer.word());
+	ASSERT_EQ(3, *++lexer);
+	ASSERT_EQ("bar", literal(lexer));
 
-	ASSERT_EQ(1, lexer.recognize());  // EOF
+	ASSERT_EQ(1, *++lexer);  // EOF
 }
 
 TEST(regular_Lexer, realworld_ipv4)
@@ -373,24 +410,25 @@ TEST(regular_Lexer, realworld_ipv4)
 			    |IPv4Literal       ::= {IPv4}
 			    |)"_multiline);
 
-	auto lexerDef = cc.compile();
-	Lexer<int, StateId, false, true> lexer{lexerDef,
-										   R"(0.0.0.0 4.2.2.1 10.10.40.199 255.255.255.255)",
-										   [this](const string& msg) { log(msg); }};
+	auto ld = cc.compile();
+	auto ls = Lexable<int, StateId, false, true>{ld,
+												 R"(0.0.0.0 4.2.2.1 10.10.40.199 255.255.255.255)",
+												 [this](const string& msg) { log(msg); }};
+	auto lexer = begin(ls);
 
-	ASSERT_EQ(2, lexer.recognize());
-	ASSERT_EQ("0.0.0.0", lexer.word());
+	ASSERT_EQ(2, *lexer);
+	ASSERT_EQ("0.0.0.0", literal(lexer));
 
-	ASSERT_EQ(2, lexer.recognize());
-	ASSERT_EQ("4.2.2.1", lexer.word());
+	ASSERT_EQ(2, *++lexer);
+	ASSERT_EQ("4.2.2.1", literal(lexer));
 
-	ASSERT_EQ(2, lexer.recognize());
-	ASSERT_EQ("10.10.40.199", lexer.word());
+	ASSERT_EQ(2, *++lexer);
+	ASSERT_EQ("10.10.40.199", literal(lexer));
 
-	ASSERT_EQ(2, lexer.recognize());
-	ASSERT_EQ("255.255.255.255", lexer.word());
+	ASSERT_EQ(2, *++lexer);
+	ASSERT_EQ("255.255.255.255", literal(lexer));
 
-	ASSERT_EQ(1, lexer.recognize());
+	ASSERT_EQ(1, *++lexer);
 }
 
 enum class RealWorld { Eof = 1, IPv4, IPv6 };
@@ -464,59 +502,60 @@ TEST(regular_Lexer, realworld_ipv6)
 								  |::ffff:c000:0280
 								  |)"_multiline;
 
-	LexerDef lexerDef = cc.compileMulti();
-	Lexer<RealWorld, StateId, false, true> lexer{lexerDef, TEXT,
-												 [this](const string& msg) { log(msg); }};
+	auto ld = cc.compileMulti();
+	auto ls = Lexable<RealWorld, StateId, false, true>{ld, TEXT,
+													   [this](const string& msg) { log(msg); }};
+	auto lexer = begin(ls);
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("0:0:0:0:0:0:0:0", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *lexer);
+	ASSERT_EQ("0:0:0:0:0:0:0:0", literal(lexer));
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("1234:5678:90ab:cdef:aaaa:bbbb:cccc:dddd", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *++lexer);
+	ASSERT_EQ("1234:5678:90ab:cdef:aaaa:bbbb:cccc:dddd", literal(lexer));
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("2001:0db8:85a3:0000:0000:8a2e:0370:7334", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *++lexer);
+	ASSERT_EQ("2001:0db8:85a3:0000:0000:8a2e:0370:7334", literal(lexer));
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("1234:5678::", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *++lexer);
+	ASSERT_EQ("1234:5678::", literal(lexer));
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("0::", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *++lexer);
+	ASSERT_EQ("0::", literal(lexer));
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("::0", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *++lexer);
+	ASSERT_EQ("::0", literal(lexer));
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("::", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *++lexer);
+	ASSERT_EQ("::", literal(lexer));
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("1::3:4:5:6:7:8", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *++lexer);
+	ASSERT_EQ("1::3:4:5:6:7:8", literal(lexer));
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("1::4:5:6:7:8", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *++lexer);
+	ASSERT_EQ("1::4:5:6:7:8", literal(lexer));
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("1::5:6:7:8", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *++lexer);
+	ASSERT_EQ("1::5:6:7:8", literal(lexer));
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("1::8", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *++lexer);
+	ASSERT_EQ("1::8", literal(lexer));
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("1:2::4:5:6:7:8", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *++lexer);
+	ASSERT_EQ("1:2::4:5:6:7:8", literal(lexer));
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("1:2::5:6:7:8", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *++lexer);
+	ASSERT_EQ("1:2::5:6:7:8", literal(lexer));
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("1:2::8", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *++lexer);
+	ASSERT_EQ("1:2::8", literal(lexer));
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("::ffff:127.0.0.1", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *++lexer);
+	ASSERT_EQ("::ffff:127.0.0.1", literal(lexer));
 
-	ASSERT_EQ(RealWorld::IPv6, lexer.recognize());
-	ASSERT_EQ("::ffff:c000:0280", lexer.word());
+	ASSERT_EQ(RealWorld::IPv6, *++lexer);
+	ASSERT_EQ("::ffff:c000:0280", literal(lexer));
 
-	ASSERT_EQ(RealWorld::Eof, lexer.recognize());
+	ASSERT_EQ(RealWorld::Eof, *++lexer);
 }
 
 TEST(regular_Lexer, internal)
