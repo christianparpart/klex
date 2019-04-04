@@ -57,11 +57,11 @@ using namespace std;
 
 klex::ll::Def pd = klex::ll::Compiler{ETF_RULES}.compile();
 klex::ll::Analyzer<int> parser{ pd, "2 + 3 * (10 - 6)" };
-parser.hook("numberLiteral", [](auto& args) { return stoi(args.literal(1)); })
-      .hook("mulExpr", [](auto& args) { return args(1) * args(2); })
-      .hook("divExpr", [](auto& args) { return args(1) / args(2); })
-      .hook("addExpr", [](auto& args) { return args(1) + args(2); })
-      .hook("subExpr", [](auto& args) { return args(1) - args(2); });
+parser.action("numberLiteral", [](auto& args) { return stoi(args.literal(1)); })
+      .action("mulExpr", [](auto const& args) { return args(1) * args(2); })
+      .action("divExpr", [](auto const& args) { return args(1) / args(2); })
+      .action("addExpr", [](auto const& args) { return args(1) + args(2); })
+      .action("subExpr", [](auto const& args) { return args(1) - args(2); });
 unique_ptr<Expr> expr = parser.analyze();
 ```
 
