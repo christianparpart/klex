@@ -108,9 +108,9 @@ struct formatter<klex::regular::Rule> {
 	{
 		// TODO: inject conditions in the beginning, if present
 		if (v.tag == klex::regular::IgnoreTag)
-			return format_to(ctx.begin(), "{}({}) ::= {}", v.name, "ignore", v.pattern);
+			return format_to(ctx.out(), "{}({}) ::= {}", v.name, "ignore", v.pattern);
 		else
-			return format_to(ctx.begin(), "{}({}) ::= {}", v.name, v.tag, v.pattern);
+			return format_to(ctx.out(), "{}({}) ::= {}", v.name, v.tag, v.pattern);
 	}
 };
 }  // namespace fmt

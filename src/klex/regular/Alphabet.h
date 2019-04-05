@@ -48,7 +48,7 @@ struct formatter<klex::regular::Alphabet> {
 	template <typename FormatContext>
 	constexpr auto format(const klex::regular::Alphabet& v, FormatContext& ctx)
 	{
-		return format_to(ctx.begin(), "{}", v.to_string());
+		return format_to(ctx.out(), "{}", v.to_string());
 	}
 };
 }  // namespace fmt

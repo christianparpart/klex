@@ -60,21 +60,21 @@ struct formatter<LookaheadToken> {
 		switch (v)
 		{
 			case LookaheadToken::Eof:
-				return format_to(ctx.begin(), "Eof");
+				return format_to(ctx.out(), "Eof");
 			case LookaheadToken::ABBA:
-				return format_to(ctx.begin(), "abba");
+				return format_to(ctx.out(), "abba");
 			case LookaheadToken::AB_CD:
-				return format_to(ctx.begin(), "ab/cd");
+				return format_to(ctx.out(), "ab/cd");
 			case LookaheadToken::CD:
-				return format_to(ctx.begin(), "cd");
+				return format_to(ctx.out(), "cd");
 			case LookaheadToken::CDEF:
-				return format_to(ctx.begin(), "cdef");
+				return format_to(ctx.out(), "cdef");
 			case LookaheadToken::EOL_LF:
-				return format_to(ctx.begin(), "eol$");
+				return format_to(ctx.out(), "eol$");
 			case LookaheadToken::XAnyLine:
-				return format_to(ctx.begin(), "<XAnyLine>");
+				return format_to(ctx.out(), "<XAnyLine>");
 			default:
-				return format_to(ctx.begin(), "<{}>", static_cast<unsigned>(v));
+				return format_to(ctx.out(), "<{}>", static_cast<unsigned>(v));
 		}
 	}
 };
@@ -447,13 +447,13 @@ struct formatter<RealWorld> {
 		switch (v)
 		{
 			case RealWorld::Eof:
-				return format_to(ctx.begin(), "Eof");
+				return format_to(ctx.out(), "Eof");
 			case RealWorld::IPv4:
-				return format_to(ctx.begin(), "IPv4");
+				return format_to(ctx.out(), "IPv4");
 			case RealWorld::IPv6:
-				return format_to(ctx.begin(), "IPv6");
+				return format_to(ctx.out(), "IPv6");
 			default:
-				return format_to(ctx.begin(), "<{}>", static_cast<unsigned>(v));
+				return format_to(ctx.out(), "<{}>", static_cast<unsigned>(v));
 		}
 	}
 };

@@ -91,7 +91,7 @@ struct formatter<typename klex::cfg::ll::Analyzer<int>::StateValue> {
 	template <typename FormatContext>
 	constexpr auto format(const klex::cfg::ll::Analyzer<int>::StateValue& v, FormatContext& ctx)
 	{
-		return format_to(ctx.begin(), "{}", "hello");
+		return format_to(ctx.out(), "{}", "hello");
 	}
 };
 }  // namespace fmt

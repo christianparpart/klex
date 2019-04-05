@@ -551,7 +551,7 @@ struct formatter<klex::regular::LexerIterator<Token, Machine, RequiresBeginOfLin
 	template <typename FormatContext>
 	constexpr auto format(const LexerIterator& v, FormatContext& ctx)
 	{
-		return format_to(ctx.begin(), "{} ({})", v.literal(), v.name());
+		return format_to(ctx.out(), "{} ({})", v.literal(), v.name());
 	}
 };
 }  // namespace fmt

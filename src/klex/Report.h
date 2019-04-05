@@ -143,33 +143,32 @@ DifferenceReport difference(const BufferedReport& first, const BufferedReport& s
 
 namespace fmt {
 template <>
-struct formatter<klex::Report::Type> {
+struct formatter<klex::Report::Type>: formatter<std::string_view> {
 	using Type = klex::Report::Type;
 
-	template <typename ParseContext>
-	constexpr auto parse(ParseContext& ctx)
+	static std::string_view to_stringview(Type t)
 	{
-		return ctx.begin();
+		switch (t)
+		{
+			case Type::TokenError:
+				return "TokenError";
+			case Type::SyntaxError:
+				return "SyntaxError";
+			case Type::TypeError:
+				return "TypeError";
+			case Type::Warning:
+				return "Warning";
+			case Type::LinkError:
+				return "LinkError";
+			default:
+				return "???";
+		}
 	}
 
 	template <typename FormatContext>
-	constexpr auto format(const Type& v, FormatContext& ctx)
+	constexpr auto format(Type v, FormatContext& ctx)
 	{
-		switch (v)
-		{
-			case Type::TokenError:
-				return format_to(ctx.begin(), "TokenError");
-			case Type::SyntaxError:
-				return format_to(ctx.begin(), "SyntaxError");
-			case Type::TypeError:
-				return format_to(ctx.begin(), "TypeError");
-			case Type::Warning:
-				return format_to(ctx.begin(), "Warning");
-			case Type::LinkError:
-				return format_to(ctx.begin(), "LinkError");
-			default:
-				return format_to(ctx.begin(), "{}", static_cast<unsigned>(v));
-		}
+		return formatter<std::string_view>::format(to_stringview(v), ctx);
 	}
 };
 }  // namespace fmt
@@ -186,7 +185,7 @@ struct formatter<klex::SourceLocation> {
 	template <typename FormatContext>
 	constexpr auto format(const klex::SourceLocation& sloc, FormatContext& ctx)
 	{
-		return format_to(ctx.begin(), "{} ({}-{})", sloc.filename, sloc.offset, sloc.offset + sloc.count);
+		return format_to(ctx.out(), "{} ({}-{})", sloc.filename, sloc.offset, sloc.offset + sloc.count);
 	}
 };
 }  // namespace fmt
@@ -205,7 +204,7 @@ struct formatter<klex::Report::Message> {
 	template <typename FormatContext>
 	constexpr auto format(const Message& v, FormatContext& ctx)
 	{
-		return format_to(ctx.begin(), "{}", v.to_string());
+		return format_to(ctx.out(), "{}", v.to_string());
 	}
 };
 }  // namespace fmt

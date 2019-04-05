@@ -37,7 +37,7 @@ using Lexable = klex::regular::Lexable<Token>;
 using Lexer = Lexable::iterator;
 using Number = long long int;
 
-auto to_string(Token t)
+std::string_view to_string(Token t)
 {
 	switch (t)
 	{
@@ -66,17 +66,11 @@ auto to_string(Token t)
 
 namespace fmt {
 template <>
-struct formatter<Token> {
-	template <typename ParseContext>
-	constexpr auto parse(ParseContext& ctx)
-	{
-		return ctx.begin();
-	}
-
+struct formatter<Token> : formatter<std::string_view> {
 	template <typename FormatContext>
-	constexpr auto format(const Token& v, FormatContext& ctx)
+	auto format(Token v, FormatContext& ctx)
 	{
-		return format_to(ctx.begin(), "{}", to_string(v));
+		return formatter<std::string_view>::format(to_string(v), ctx);
 	}
 };
 }  // namespace fmt

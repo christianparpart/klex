@@ -99,7 +99,7 @@ struct formatter<klex::cfg::GrammarLexer::Token> {
 	template <typename FormatContext>
 	constexpr auto format(const klex::cfg::GrammarLexer::Token& v, FormatContext& ctx)
 	{
-		return format_to(ctx.begin(), "{}", to_string(v));
+		return format_to(ctx.out(), "{}", to_string(v));
 	}
 };
 }  // namespace fmt

@@ -44,7 +44,7 @@ struct formatter<klex::regular::StateIdVec> {
 	template <typename FormatContext>
 	constexpr auto format(const klex::regular::StateIdVec& v, FormatContext& ctx)
 	{
-		return format_to(ctx.begin(), "{}", klex::regular::to_string(v));
+		return format_to(ctx.out(), "{}", klex::regular::to_string(v));
 	}
 };
 }  // namespace fmt

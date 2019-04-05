@@ -316,11 +316,11 @@ struct formatter<klex::cfg::Terminal> {
 	constexpr auto format(const klex::cfg::Terminal& v, FormatContext& ctx)
 	{
 		if (!v.name.empty())
-			return format_to(ctx.begin(), "{}", v.name);
+			return format_to(ctx.out(), "{}", v.name);
 		else if (std::holds_alternative<klex::regular::Rule>(v.literal))
-			return format_to(ctx.begin(), "{}", std::get<klex::regular::Rule>(v.literal).name);
+			return format_to(ctx.out(), "{}", std::get<klex::regular::Rule>(v.literal).name);
 		else
-			return format_to(ctx.begin(), "\"{}\"", std::get<std::string>(v.literal));
+			return format_to(ctx.out(), "\"{}\"", std::get<std::string>(v.literal));
 	}
 };
 
@@ -335,7 +335,7 @@ struct formatter<klex::cfg::NonTerminal> {
 	template <typename FormatContext>
 	constexpr auto format(const klex::cfg::NonTerminal& v, FormatContext& ctx)
 	{
-		return format_to(ctx.begin(), "{}", v.name);
+		return format_to(ctx.out(), "{}", v.name);
 	}
 };
 
@@ -350,7 +350,7 @@ struct formatter<klex::cfg::Action> {
 	template <typename FormatContext>
 	constexpr auto format(const klex::cfg::Action& v, FormatContext& ctx)
 	{
-		return format_to(ctx.begin(), "{{{}}}", v.id);
+		return format_to(ctx.out(), "{{{}}}", v.id);
 	}
 };
 
@@ -366,11 +366,11 @@ struct formatter<klex::cfg::HandleElement> {
 	constexpr auto format(const klex::cfg::HandleElement& v, FormatContext& ctx)
 	{
 		if (std::holds_alternative<klex::cfg::Terminal>(v))
-			return format_to(ctx.begin(), "{}", std::get<klex::cfg::Terminal>(v));
+			return format_to(ctx.out(), "{}", std::get<klex::cfg::Terminal>(v));
 		else if (std::holds_alternative<klex::cfg::NonTerminal>(v))
-			return format_to(ctx.begin(), "{}", std::get<klex::cfg::NonTerminal>(v));
+			return format_to(ctx.out(), "{}", std::get<klex::cfg::NonTerminal>(v));
 		else
-			return format_to(ctx.begin(), "{}", std::get<klex::cfg::Action>(v));
+			return format_to(ctx.out(), "{}", std::get<klex::cfg::Action>(v));
 	}
 };
 
@@ -386,9 +386,9 @@ struct formatter<klex::cfg::Symbol> {
 	constexpr auto format(const klex::cfg::Symbol& v, FormatContext& ctx)
 	{
 		if (std::holds_alternative<klex::cfg::Terminal>(v))
-			return format_to(ctx.begin(), "{}", std::get<klex::cfg::Terminal>(v));
+			return format_to(ctx.out(), "{}", std::get<klex::cfg::Terminal>(v));
 		else
-			return format_to(ctx.begin(), "{}", std::get<klex::cfg::NonTerminal>(v));
+			return format_to(ctx.out(), "{}", std::get<klex::cfg::NonTerminal>(v));
 	}
 };
 
@@ -403,7 +403,7 @@ struct formatter<klex::cfg::Handle> {
 	template <typename FormatContext>
 	constexpr auto format(const klex::cfg::Handle& handle, FormatContext& ctx)
 	{
-		return format_to(ctx.begin(), "{}", to_string(handle));
+		return format_to(ctx.out(), "{}", to_string(handle));
 	}
 };
 
@@ -418,7 +418,7 @@ struct formatter<klex::cfg::Production> {
 	template <typename FormatContext>
 	constexpr auto format(const klex::cfg::Production& v, FormatContext& ctx)
 	{
-		return format_to(ctx.begin(), "{}", v.name, v.handle);
+		return format_to(ctx.out(), "{}", v.name, v.handle);
 	}
 };
 
@@ -441,7 +441,7 @@ struct formatter<std::vector<klex::cfg::Terminal>> {
 			else
 				sstr << fmt::format("{}", t);
 
-		return format_to(ctx.begin(), "{}", sstr.str());
+		return format_to(ctx.out(), "{}", sstr.str());
 	}
 };
 
@@ -464,7 +464,7 @@ struct formatter<std::set<klex::cfg::Terminal>> {
 			else
 				sstr << fmt::format("{}", t);
 
-		return format_to(ctx.begin(), "{}", sstr.str());
+		return format_to(ctx.out(), "{}", sstr.str());
 	}
 };
 
@@ -487,7 +487,7 @@ struct formatter<std::set<klex::cfg::NonTerminal>> {
 			else
 				sstr << fmt::format("{}", nt);
 
-		return format_to(ctx.begin(), "{}", sstr.str());
+		return format_to(ctx.out(), "{}", sstr.str());
 	}
 };
 }  // namespace fmt

@@ -265,7 +265,7 @@ struct formatter<klex::regular::TokenInfo<Token>> {
 	template <typename FormatContext>
 	constexpr auto format(const TokenInfo& v, FormatContext& ctx)
 	{
-		return format_to(ctx.begin(), "{}", v.literal);
+		return format_to(ctx.out(), "{}", v.literal);
 	}
 };
 }  // namespace fmt

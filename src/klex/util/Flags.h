@@ -202,7 +202,7 @@ namespace fmt {
 
     template <typename FormatContext>
     constexpr auto format(const klex::util::Flags& v, FormatContext &ctx) {
-      return format_to(ctx.begin(), v.to_s());
+      return format_to(ctx.out(), v.to_s());
     }
   };
 }
