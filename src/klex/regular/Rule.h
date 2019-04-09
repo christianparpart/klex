@@ -106,7 +106,16 @@ struct formatter<klex::regular::Rule> {
 	template <typename FormatContext>
 	constexpr auto format(const klex::regular::Rule& v, FormatContext& ctx)
 	{
-		// TODO: inject conditions in the beginning, if present
+		if (!v.conditions.empty())
+		{
+			format_to(ctx.out(), "<");
+			for (size_t i = 0; i < v.conditions.size(); ++i)
+				if (i != 0)
+					format_to(ctx.out(), ", {}", v.conditions[i]);
+				else
+					format_to(ctx.out(), "{}", v.conditions[i]);
+			format_to(ctx.out(), ">");
+		}
 		if (v.tag == klex::regular::IgnoreTag)
 			return format_to(ctx.out(), "{}({}) ::= {}", v.name, "ignore", v.pattern);
 		else
