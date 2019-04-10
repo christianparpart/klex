@@ -81,17 +81,23 @@ struct TerminalRuleBuilder {
 
 SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 {
-	map<NonTerminal, int> idNonTerminals = createIdMap(grammar.nonterminals, 0);
-	map<Terminal, int> idTerminals =
+	const auto idNonTerminals = createIdMap(grammar.nonterminals, 0);
+
+	const auto idTerminals =
 		createIdMap(grammar.terminals, (int) grammar.nonterminals.size(), [](const Terminal& w) -> bool {
 			return !holds_alternative<regular::Rule>(w.literal)
 				   || get<regular::Rule>(w.literal).tag != regular::IgnoreTag;
 		});
-	map<Action, int> idActions =
+
+	const auto idActions =
 		createIdMap(actions(grammar), static_cast<int>(idNonTerminals.size() + idTerminals.size()));
-	map<NonTerminal, int> idProductionsByName;
-	for (auto i = begin(grammar.productions); i != end(grammar.productions); ++i)
-		idProductionsByName[NonTerminal{i->name}] = static_cast<int>(distance(begin(grammar.productions), i));
+
+	const auto idProductionsByName = [&]() {
+		map<NonTerminal, int> result;
+		for (auto i = begin(grammar.productions); i != end(grammar.productions); ++i)
+			result[NonTerminal{i->name}] = static_cast<int>(distance(begin(grammar.productions), i));
+		return result;
+	}();
 
 	SyntaxTable st;
 
@@ -118,62 +124,32 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 			st.terminalNames.emplace_back(terminal.name);
 
 	{
-		regular::RuleList terminalRules = grammar.explicitTerminals;
-		int nextTerminalId = static_cast<int>(grammar.nonterminals.size());
-		set<string> autoLiterals;
-		cout << "terminalRules in grammar: " << grammar.terminals.size() << "\n";
-		// FIXME: ^^ count is zero in ETF grammar?
-		for (const Terminal& w: grammar.terminals)
-		{
-			if (holds_alternative<regular::Rule>(w.literal))
-			{
-				cout << fmt::format("explicit literal: {}", get<regular::Rule>(w.literal));
-				regular::Rule literal = get<regular::Rule>(w.literal);
-				if (literal.tag != regular::IgnoreTag)
-					literal.tag = nextTerminalId++;
-				terminalRules.emplace_back(move(literal));
-			}
-			else if (!autoLiterals.count(get<string>(w.literal)))
-			{
-				cout << fmt::format("auto literal: new '{}'\n", get<string>(w.literal));
-				autoLiterals.emplace(get<string>(w.literal));
-				const string pattern = fmt::format("\"{}\"", get<string>(w.literal));
-				terminalRules.emplace_back(regular::Rule{0, 0, nextTerminalId, {"INITIAL"}, w.name, pattern});
-				nextTerminalId++;
-			} else
-				cout << fmt::format("auto literal: duplicate '{}'\n", get<string>(w.literal));
-		}
-		// transform(begin(grammar.terminals), end(grammar.terminals), back_inserter(terminalRules),
-		// 		  TerminalRuleBuilder{static_cast<int>(grammar.nonterminals.size())});
-
-		for (const regular::Rule& rule: terminalRules)
-			cout << fmt::format("terminalRule: {}\n", rule);
-
 		// compile terminals
 		regular::Compiler rgc;
-		rgc.declareAll(move(terminalRules));
+		rgc.declareAll(terminalRules(grammar, static_cast<int>(grammar.nonterminals.size())));
 
 		regular::Compiler::OvershadowMap overshadows;
-		regular::LexerDef lexerDef = rgc.compileMulti(&overshadows);
-		// TODO: care about `overshadows`
-		assert(overshadows.empty() && "Overshadowing lexical rules found.");
+		st.lexerDef = rgc.compileMulti(&overshadows);
 
-		st.lexerDef = move(lexerDef);
+		// TODO: care about `overshadows`
+		// for (const auto& shadow: overshadows)
+		// 	fmt::print("overshadow {} - {}\n", shadow.first, shadow.second);
+		assert(overshadows.empty() && "Overshadowing lexical rules found.");
 	}
 
 	// syntax table
 	st.nonterminalNames.resize(grammar.nonterminals.size());
 	for (const NonTerminal& nt : grammar.nonterminals)
 	{
-		const int nt_ = idNonTerminals[nt];
+		const int nt_ = idNonTerminals.at(nt);
 		st.nonterminalNames[nt_] = nt.name;
 		st.names[nt_] = nt.name;
 		for (const Production* p : grammar.getProductions(nt))
 		{
 			for (const Terminal& w : p->first1())
 			{
-				assert(st.table[nt_].find(idTerminals[w]) == st.table[nt_].end());
-				st.table[nt_][idTerminals[w]] = p->id;
+				assert(st.table[nt_].find(idTerminals.at(w)) == st.table[nt_].end());
+				st.table[nt_][idTerminals.at(w)] = p->id;
 			}
 
 			// TODO if (p->first1().contains(eof))
@@ -189,11 +165,11 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 
 		for (const HandleElement b : p.handle)
 			if (holds_alternative<NonTerminal>(b))
-				expr.emplace_back(idNonTerminals[get<NonTerminal>(b)]);
+				expr.emplace_back(idNonTerminals.at(get<NonTerminal>(b)));
 			else if (holds_alternative<Terminal>(b))
-				expr.emplace_back(idTerminals[get<Terminal>(b)]);
+				expr.emplace_back(idTerminals.at(get<Terminal>(b)));
 			else
-				expr.emplace_back(idActions[get<Action>(b)]);
+				expr.emplace_back(idActions.at(get<Action>(b)));
 
 		st.productionNames.emplace_back(p.name);
 		st.productions.emplace_back(move(expr));
@@ -201,7 +177,7 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 
 	// TODO: action names
 
-	st.startSymbol = idNonTerminals[NonTerminal{grammar.productions[0].name}];
+	st.startSymbol = idNonTerminals.at(NonTerminal{grammar.productions[0].name});
 
 	return st;
 }
