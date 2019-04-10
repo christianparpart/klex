@@ -11,6 +11,7 @@
 #include <klex/regular/Lexable.h>
 
 #include <klex/cfg/GrammarParser.h>
+#include <klex/cfg/LeftRecursion.h>
 #include <klex/cfg/ll/Analyzer.h>
 
 #include <klex/util/Flags.h>
@@ -33,7 +34,7 @@ token {
 }
 
 # NTS     ::= HANDLES            {ACTION_LABELS}
-Start     ::= Expr Eof
+Start     ::= Expr # TODO: Eof
             ;
 Expr      ::= Expr '+' Term      {add}
             | Expr '-' Term      {sub}
@@ -59,6 +60,8 @@ int main(int argc, const char* argv[])
 	klex::ConsoleReport report;
 	klex::cfg::GrammarParser grammarParser(std::string(grammarSpec), &report);
 	klex::cfg::Grammar g = grammarParser.parse();
+	klex::cfg::LeftRecursion{g}.direct();
+	g.finalize(); // ?
 
 	std::cout << g.dump() << "\n";
 
@@ -66,7 +69,7 @@ int main(int argc, const char* argv[])
 
 	st.dump(g);
 
-	const std::string inputStr = "2 + 3 * (5 - 1)";
+	const std::string inputStr = "2 + 3 * 4";
 
 	using SemanticValue = int;
 	auto handler = [](int action, const klex::cfg::ll::Analyzer<SemanticValue>& analyzer) -> SemanticValue
