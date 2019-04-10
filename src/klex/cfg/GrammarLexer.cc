@@ -47,6 +47,13 @@ GrammarLexer::Token GrammarLexer::recognizeOne()
 				consumeChar();
 			while (!eof() && isspace(currentChar()));
 			return Token::Spacing;
+		case '#':
+			consumeChar();
+			while (!eof() && currentChar() != '\n')
+				consumeChar();
+			if (currentChar() == '\n')
+				consumeChar();
+			return Token::Spacing;
 		case '{':
 			consumeChar();
 			return Token::SetOpen;

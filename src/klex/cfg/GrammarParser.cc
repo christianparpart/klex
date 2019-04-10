@@ -22,7 +22,7 @@ using namespace klex::cfg;
 	do                  \
 	{                   \
 	} while (0)
-// #define DEBUG(msg, ...) do { fmt::print((msg), __VA_ARGS__); fmt::print("\n"); } while (0)
+//#define DEBUG(msg, ...) do { fmt::print((msg), __VA_ARGS__); fmt::print("\n"); } while (0)
 
 GrammarParser::GrammarParser(GrammarLexer&& _lexer, Report* _report) : report_{_report}, lexer_{move(_lexer)}
 {
@@ -66,7 +66,7 @@ Grammar GrammarParser::parse()
 void GrammarParser::consumeToken()
 {
 	lexer_.recognize();
-	// DEBUG("consumeToken: {} \"{}\"", lexer_.currentToken(), lexer_.currentLiteral());
+	DEBUG("consumeToken: {} \"{}\"", lexer_.currentToken(), lexer_.currentLiteral());
 }
 
 void GrammarParser::consumeToken(Token expectedToken)

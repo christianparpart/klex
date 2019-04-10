@@ -272,6 +272,13 @@ string Grammar::dump() const
 {
 	stringstream sstr;
 
+	if (!explicitTerminals.empty())
+	{
+		sstr << fmt::format("Explicit terminal rules (#{}):\n", explicitTerminals.size());
+		for (const regular::Rule& rule: explicitTerminals)
+			sstr << fmt::format("  {}\n", rule);
+	}
+
 	sstr << " ID | NON-TERMINAL  | EXPRESSION           | FIRST                      | FOLLOW                "
 			"     | FIRST+\n";
 	sstr << "----+---------------+----------------------+----------------------------+-----------------------"
@@ -287,6 +294,7 @@ string Grammar::dump() const
 		if (next(p) != end(productions))
 			sstr << '\n';
 	}
+
 	return sstr.str();
 }
 

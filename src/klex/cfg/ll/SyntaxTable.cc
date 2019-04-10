@@ -63,10 +63,16 @@ struct TerminalRuleBuilder {
 		}
 		else
 		{
-			const string rule = fmt::format("{} ::= \"{}\"", w.name, get<string>(w.literal));
-			regular::RuleList rules = regular::RuleParser{rule, nextTerminalId}.parseRules();
-			assert(rules.size() == 1 && "Only one rule expected.");
-			assert(rules.front().tag == static_cast<regular::Tag>(nextTerminalId));
+			// const string rule = fmt::format("<INITIAL>{} ::= \"{}\"", w.name, get<string>(w.literal));
+			// regular::RuleList rules = regular::RuleParser{rule, nextTerminalId}.parseRules();
+			// TODO: don't do duplicates
+			regular::RuleList rules {{
+				0, 0,
+				nextTerminalId,
+				{"INITIAL"},
+				w.name,
+				fmt::format("\"{}\"", get<string>(w.literal)),
+			}};
 			nextTerminalId++;
 			return rules.front();
 		}
@@ -110,12 +116,38 @@ SyntaxTable SyntaxTable::construct(const Grammar& grammar)
 		if (holds_alternative<string>(terminal.literal)
 			|| get<regular::Rule>(terminal.literal).tag != regular::IgnoreTag)
 			st.terminalNames.emplace_back(terminal.name);
-	// transform(begin(grammar.terminals), end(grammar.terminals), back_inserter(st.terminalNames),
-	// 		  [](const Terminal& w) { return w.name; });  // TODO:back_insert only if non-ignoring!
+
 	{
-		regular::RuleList terminalRules;
-		transform(begin(grammar.terminals), end(grammar.terminals), back_inserter(terminalRules),
-				  TerminalRuleBuilder{static_cast<int>(grammar.nonterminals.size())});
+		regular::RuleList terminalRules = grammar.explicitTerminals;
+		int nextTerminalId = static_cast<int>(grammar.nonterminals.size());
+		set<string> autoLiterals;
+		cout << "terminalRules in grammar: " << grammar.terminals.size() << "\n";
+		// FIXME: ^^ count is zero in ETF grammar?
+		for (const Terminal& w: grammar.terminals)
+		{
+			if (holds_alternative<regular::Rule>(w.literal))
+			{
+				cout << fmt::format("explicit literal: {}", get<regular::Rule>(w.literal));
+				regular::Rule literal = get<regular::Rule>(w.literal);
+				if (literal.tag != regular::IgnoreTag)
+					literal.tag = nextTerminalId++;
+				terminalRules.emplace_back(move(literal));
+			}
+			else if (!autoLiterals.count(get<string>(w.literal)))
+			{
+				cout << fmt::format("auto literal: new '{}'\n", get<string>(w.literal));
+				autoLiterals.emplace(get<string>(w.literal));
+				const string pattern = fmt::format("\"{}\"", get<string>(w.literal));
+				terminalRules.emplace_back(regular::Rule{0, 0, nextTerminalId, {"INITIAL"}, w.name, pattern});
+				nextTerminalId++;
+			} else
+				cout << fmt::format("auto literal: duplicate '{}'\n", get<string>(w.literal));
+		}
+		// transform(begin(grammar.terminals), end(grammar.terminals), back_inserter(terminalRules),
+		// 		  TerminalRuleBuilder{static_cast<int>(grammar.nonterminals.size())});
+
+		for (const regular::Rule& rule: terminalRules)
+			cout << fmt::format("terminalRule: {}\n", rule);
 
 		// compile terminals
 		regular::Compiler rgc;

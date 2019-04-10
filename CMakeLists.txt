@@ -157,6 +157,11 @@ if(KLEX_EXAMPLES)
   target_link_libraries(example_mathexpr klex)
   target_include_directories(example_mathexpr PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/examples)
 
+  add_executable(example_mathexpr_ll examples/mathexpr_ll.cc)
+  set_target_properties(example_mathexpr_ll PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+  target_link_libraries(example_mathexpr_ll klex)
+  target_include_directories(example_mathexpr_ll PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/examples)
+
   add_executable(example_wordcount examples/wordcount.cc)
   set_target_properties(example_wordcount PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
   target_link_libraries(example_wordcount klex)
