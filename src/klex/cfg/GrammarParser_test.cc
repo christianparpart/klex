@@ -103,6 +103,7 @@ TEST(cfg_GrammarParser, customTokens)
 	ASSERT_TRUE(any_of(begin(grammar.terminals), end(grammar.terminals), CheckTerminalPattern{"[\\s\\t]+"}));
 	ASSERT_TRUE(any_of(begin(grammar.terminals), end(grammar.terminals), CheckTerminalPattern{"("}));
 	ASSERT_TRUE(any_of(begin(grammar.terminals), end(grammar.terminals), CheckTerminalPattern{")"}));
+	ASSERT_TRUE(any_of(begin(grammar.terminals), end(grammar.terminals), CheckTerminalPattern{"<<EOF>>"}));
 
 	// verify production rule to be in the form as the input mandates
 	const auto symbols = klex::cfg::symbols(grammar.productions[0].handle);
