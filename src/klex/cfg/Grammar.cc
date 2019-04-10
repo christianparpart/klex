@@ -279,14 +279,14 @@ string Grammar::dump() const
 			sstr << fmt::format("  {}\n", rule);
 	}
 
-	sstr << " ID | NON-TERMINAL  | EXPRESSION           | FIRST                      | FOLLOW                "
+	sstr << " ID | NON-TERMINAL  | EXPRESSION             | FIRST                      | FOLLOW                "
 			"     | FIRST+\n";
-	sstr << "----+---------------+----------------------+----------------------------+-----------------------"
+	sstr << "----+---------------+------------------------+----------------------------+-----------------------"
 			"-----+-----------\n";
 	for (auto p = begin(productions); p != end(productions); ++p)
 	{
 		char buf[255];
-		snprintf(buf, sizeof(buf), "%3zu | %13s | %-20s | %6s%-20s | %-26s | %s",
+		snprintf(buf, sizeof(buf), "%3zu | %13s | %-22s | %6s%-20s | %-26s | %s",
 				 distance(productions.begin(), p), p->name.c_str(), fmt::format("{}", p->handle).c_str(),
 				 p->epsilon ? "{eps} " : "", fmt::format("{{{}}}", p->first).c_str(),
 				 fmt::format("{{{}}}", p->follow).c_str(), fmt::format("{{{}}}", p->first1()).c_str());
