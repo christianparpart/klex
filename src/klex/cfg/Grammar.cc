@@ -346,6 +346,30 @@ bool isLeftRecursive(const Grammar& grammar)
 	return LeftRecursion::isLeftRecursive(grammar);
 }
 
+regular::RuleList terminalRules(const Grammar& grammar, int nextTerminalId)
+{
+	regular::RuleList rules;
+	set<string> autoLiterals;
+	for (const Terminal& w: grammar.terminals)
+	{
+		if (holds_alternative<regular::Rule>(w.literal))
+		{
+			regular::Rule literal = get<regular::Rule>(w.literal);
+			if (literal.tag != regular::IgnoreTag)
+				literal.tag = nextTerminalId++;
+			rules.emplace_back(move(literal));
+		}
+		else if (!autoLiterals.count(get<string>(w.literal)))
+		{
+			autoLiterals.emplace(get<string>(w.literal));
+			const string pattern = fmt::format("\"{}\"", get<string>(w.literal));
+			rules.emplace_back(regular::Rule{0, 0, nextTerminalId, {"INITIAL"}, w.name, pattern});
+			nextTerminalId++;
+		}
+	}
+	return rules;
+}
+
 }  // namespace klex::cfg
 
 // vim:ts=4:sw=4:noet

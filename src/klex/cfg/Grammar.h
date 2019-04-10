@@ -285,6 +285,13 @@ std::vector<Terminal> terminals(const Grammar& grammar);
 std::vector<NonTerminal> nonterminals(const Grammar& grammar);
 std::vector<Action> actions(const Grammar& grammar);
 
+/**
+ * @param grammar the context free greammar to collect the terminals from
+ * @param nextTerminalId first free terminal ID to use as tag
+ * @returns all terminals as a rule set suitable for constructing a lexer
+ */
+regular::RuleList terminalRules(const Grammar& grammar, int nextTerminalId);
+
 bool isLeftRecursive(const Grammar& grammar);
 
 }  // namespace klex::cfg
