@@ -272,28 +272,20 @@ string Grammar::dump() const
 {
 	stringstream sstr;
 
-	if (!explicitTerminals.empty())
-	{
-		sstr << fmt::format("Explicit terminal rules (#{}):\n", explicitTerminals.size());
-		for (const regular::Rule& rule: explicitTerminals)
-			sstr << fmt::format("  {}\n", rule);
-	}
+	sstr << fmt::format(" {:<2} | {:<13} | {:<22} | {:<26} | {:<26} | {:}\n",
+			"ID", "NON-TERMINAL", "EXPRESSION", "FIRST", "FOLLOW", "FIRST+");
+	sstr << fmt::format("-{:-<2}-+-{:-<13}-+-{:-<22}-+-{:-<26}-+-{:-<26}-+-{:-<10}\n",
+			"-", "-", "-", "-", "-", "-");
 
-	sstr << " ID | NON-TERMINAL  | EXPRESSION             | FIRST                      | FOLLOW                "
-			"     | FIRST+\n";
-	sstr << "----+---------------+------------------------+----------------------------+-----------------------"
-			"-----+-----------\n";
 	for (auto p = begin(productions); p != end(productions); ++p)
-	{
-		char buf[255];
-		snprintf(buf, sizeof(buf), "%3zu | %13s | %-22s | %6s%-20s | %-26s | %s",
-				 distance(productions.begin(), p), p->name.c_str(), fmt::format("{}", p->handle).c_str(),
-				 p->epsilon ? "{eps} " : "", fmt::format("{{{}}}", p->first).c_str(),
-				 fmt::format("{{{}}}", p->follow).c_str(), fmt::format("{{{}}}", p->first1()).c_str());
-		sstr << buf;
-		if (next(p) != end(productions))
-			sstr << '\n';
-	}
+		sstr << fmt::format(" {:>2} | {:<13} | {:<22} | {:<6}{:<20} | {:<26} | {:}\n",
+							distance(productions.begin(), p),
+							p->name,
+							fmt::format("{}", p->handle),
+							p->epsilon ? "{eps} " : "",
+							fmt::format("{}", p->first),
+							fmt::format("{}", p->follow),
+							fmt::format("{}", p->first1()));
 
 	return sstr.str();
 }
