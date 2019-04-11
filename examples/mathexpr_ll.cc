@@ -74,7 +74,7 @@ int main(int argc, const char* argv[])
 	cout << grammar.dump() << "\n";
 
 	auto const st = SyntaxTable::construct(grammar);
-	st.dump(grammar);
+	st.dump(grammar, cout);
 
 	auto const inputStr = string{"2 + 3 * 4"};
 
@@ -82,12 +82,12 @@ int main(int argc, const char* argv[])
 		{"add", [](const auto& args) { return args(-2) + args(-4); }},
 		{"mul", [](const auto& args) { return args(-2) * args(-4); }},
 		{"num", [](const auto& args) { return stoi(args.lastLiteral()); }},
-		{"var", [](const auto& args) { return 3.14; /* TODO */ }}
+		{"var", [](const auto& args) { return args.lastLiteral() == "e" ? 2 : 1; /* TODO */ }}
 	};
 
 	auto analyzer = Analyzer<SemanticValue>{st, &report, inputStr, actions};
 
-	optional<SemanticValue> result = analyzer.analyze();
+	auto const result = analyzer.analyze();
 	if (result)
 		cout << "Result: " << *result << "\n";
 	else
