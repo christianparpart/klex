@@ -17,13 +17,13 @@ namespace klex::cfg::ll {
 
 template <typename SemanticValue>
 Analyzer<SemanticValue>::Analyzer(const SyntaxTable& _st, Report* _report, std::string _source,
-								  ActionHandler actionHandler)
+								  ActionHandlerMap actionHandlers)
 	: def_{_st},
 	  lexer_{def_.lexerDef, std::move(_source),
 			 std::bind(&Analyzer<SemanticValue>::log, this, std::placeholders::_1)},
 	  report_{_report},
 	  stack_{},
-	  actionHandler_{move(actionHandler)}
+	  actionHandlers_{move(actionHandlers)}
 {
 	log(def_.lexerDef.to_string());
 }
@@ -132,8 +132,9 @@ std::optional<SemanticValue> Analyzer<SemanticValue>::analyze()
 			assert(isAction(X));
 			log(fmt::format("    running action: {}", actionName(X)));
 			stack_.pop_back();
-			if (actionHandler_)
-				valueStack_.emplace_back(actionHandler_(X, *this));
+			const auto i = actionHandlers_.find(X);
+			if (i != actionHandlers_.end())
+				valueStack_.emplace_back(i->second()); // TODO: pass context (semantic-value stack)
 			else
 				valueStack_.emplace_back(SemanticValue{});
 		}

@@ -13,6 +13,7 @@
 
 #include <deque>
 #include <functional>
+#include <map>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -26,7 +27,8 @@ class Analyzer {
 	using NonTerminal = int;
 	using Action = int;
 	using Lexer = regular::Lexer<regular::Tag, regular::StateId, true, false>;
-	using ActionHandler = std::function<SemanticValue(int, const Analyzer<SemanticValue>&)>;
+	using ActionHandler = std::function<SemanticValue()>;
+	using ActionHandlerMap = std::map<int, ActionHandler>;
 
 	struct StateValue {
 		int value;
@@ -34,13 +36,19 @@ class Analyzer {
 		StateValue(int _value) : value{_value} {}
 	};
 
-	Analyzer(const SyntaxTable& table, Report* report, std::string input,
-			 ActionHandler actionHandler = ActionHandler());
+	Analyzer(const SyntaxTable& table, Report* report, std::string input, ActionHandlerMap actionMap);
 
 	const Lexer& lexer() const noexcept { return lexer_; }
 	const std::string& lastLiteral() const noexcept { return lastLiteral_; }
 
 	const std::string& actionName(int id) const noexcept { return def_.actionNames[id - def_.actionMin()]; }
+	int actionId(const std::string& name) const noexcept { return def_.actionId(name); }
+
+	Analyzer<SemanticValue> action(const std::string& actionName, ActionHandler handler)
+	{
+		actionHandlers_[actionId] = move(handler);
+		return *this;
+	}
 
 	const SemanticValue& semanticValue(int offset) const {
 		if (offset < 0)
@@ -74,7 +82,7 @@ class Analyzer {
 	std::deque<StateValue> stack_;
 	std::deque<SemanticValue> valueStack_;
 	size_t valueStackBase_;
-	ActionHandler actionHandler_;
+	ActionHandlerMap actionHandlers_;
 };
 
 }  // namespace klex::cfg::ll
