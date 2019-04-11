@@ -312,22 +312,16 @@ struct iterator_traits<klex::cfg::_Symbols::const_iterator> {
 // {{{ fmtlib integration
 namespace fmt {
 template <>
-struct formatter<klex::cfg::Terminal> {
-	template <typename ParseContext>
-	constexpr auto parse(ParseContext& ctx)
-	{
-		return ctx.begin();
-	}
-
+struct formatter<klex::cfg::Terminal> : formatter<std::string> {
 	template <typename FormatContext>
 	constexpr auto format(const klex::cfg::Terminal& v, FormatContext& ctx)
 	{
 		if (!v.name.empty())
-			return format_to(ctx.out(), "{}", v.name);
+			return formatter<std::string>::format(v.name, ctx);
 		else if (std::holds_alternative<klex::regular::Rule>(v.literal))
-			return format_to(ctx.out(), "{}", std::get<klex::regular::Rule>(v.literal).name);
+			return formatter<std::string>::format(std::get<klex::regular::Rule>(v.literal).name, ctx);
 		else
-			return format_to(ctx.out(), "\"{}\"", std::get<std::string>(v.literal));
+			return formatter<std::string>::format("\"" + std::get<std::string>(v.literal) + "\"", ctx);
 	}
 };
 
