@@ -97,7 +97,7 @@ std::optional<SemanticValue> Analyzer<SemanticValue>::analyze()
 			SemanticValue y = valueStack_.back();
 			valueStack_.resize(valueStack_.size() + X);
 			valueStack_.emplace_back(move(y));
-			log("    rewinding");
+			log(fmt::format("    rewinding by {}", X));
 		}
 		else if (isTerminal(X))
 		{
@@ -149,13 +149,18 @@ std::optional<SemanticValue> Analyzer<SemanticValue>::analyze()
 		else  // if (isAction(X))
 		{
 			assert(isAction(X));
-			log(fmt::format("    running action: {}", actionName(X)));
 			stack_.pop_back();
 			const auto i = actionHandlers_.find(X);
 			if (i != actionHandlers_.end())
+			{
+				log(fmt::format("   run action {}", actionName(X)));
 				valueStack_.emplace_back(i->second(Context{*this}));
+			}
 			else
+			{
+				log(fmt::format("   action {} not found", actionName(X)));
 				valueStack_.emplace_back(SemanticValue{});
+			}
 		}
 	}
 }
