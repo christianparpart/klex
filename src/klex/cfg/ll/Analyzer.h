@@ -22,13 +22,25 @@ namespace klex::cfg::ll {
 
 template <typename SemanticValue>
 class Analyzer {
-  public:
+  private:
+	using ValueStack = std::deque<SemanticValue>;
 	using Terminal = regular::Tag;  // typename regular::Lexer<regular::Tag>::value_type;
 	using NonTerminal = int;
 	using Action = int;
+
+  public:
+	struct Context {
+		Analyzer<SemanticValue>& analyzer;
+
+		const std::string& lastLiteral() const;
+		SemanticValue at(int offset) const;
+		SemanticValue operator()(int offset) const { return at(offset); }
+	};
+
 	using Lexer = regular::Lexer<regular::Tag, regular::StateId, true, false>;
-	using ActionHandler = std::function<SemanticValue()>;
-	using ActionHandlerMap = std::map<int, ActionHandler>;
+	using ActionHandler = std::function<SemanticValue(const Context&)>;
+	using ActionMap = std::map<int, ActionHandler>;
+	using ActionNameMap = std::map<std::string, ActionHandler>;
 
 	struct StateValue {
 		int value;
@@ -36,7 +48,10 @@ class Analyzer {
 		StateValue(int _value) : value{_value} {}
 	};
 
-	Analyzer(const SyntaxTable& table, Report* report, std::string input, ActionHandlerMap actionMap);
+	Analyzer(const SyntaxTable& table, Report* report, std::string input, ActionMap actionMap = {});
+	Analyzer(const SyntaxTable& table, Report* report, std::string input, ActionNameMap actionMap);
+
+	static ActionMap convert(const SyntaxTable& table, ActionNameMap&& namedMap);
 
 	const Lexer& lexer() const noexcept { return lexer_; }
 	const std::string& lastLiteral() const noexcept { return lastLiteral_; }
@@ -44,11 +59,7 @@ class Analyzer {
 	const std::string& actionName(int id) const noexcept { return def_.actionNames[id - def_.actionMin()]; }
 	int actionId(const std::string& name) const noexcept { return def_.actionId(name); }
 
-	Analyzer<SemanticValue> action(const std::string& actionName, ActionHandler handler)
-	{
-		actionHandlers_[actionId] = move(handler);
-		return *this;
-	}
+	Analyzer<SemanticValue>& action(const std::string& actionName, ActionHandler handler);
 
 	const SemanticValue& semanticValue(int offset) const {
 		if (offset < 0)
@@ -80,9 +91,9 @@ class Analyzer {
 	std::string lastLiteral_;
 	Report* report_;
 	std::deque<StateValue> stack_;
-	std::deque<SemanticValue> valueStack_;
+	ValueStack valueStack_;
 	size_t valueStackBase_;
-	ActionHandlerMap actionHandlers_;
+	ActionMap actionHandlers_;
 };
 
 }  // namespace klex::cfg::ll

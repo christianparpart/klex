@@ -17,7 +17,7 @@ namespace klex::cfg::ll {
 
 template <typename SemanticValue>
 Analyzer<SemanticValue>::Analyzer(const SyntaxTable& _st, Report* _report, std::string _source,
-								  ActionHandlerMap actionHandlers)
+								  ActionMap actionHandlers)
 	: def_{_st},
 	  lexer_{def_.lexerDef, std::move(_source),
 			 std::bind(&Analyzer<SemanticValue>::log, this, std::placeholders::_1)},
@@ -26,6 +26,25 @@ Analyzer<SemanticValue>::Analyzer(const SyntaxTable& _st, Report* _report, std::
 	  actionHandlers_{move(actionHandlers)}
 {
 	log(def_.lexerDef.to_string());
+}
+
+template <typename SemanticValue>
+Analyzer<SemanticValue>::Analyzer(const SyntaxTable& _st, Report* _report, std::string _source,
+								ActionNameMap _actionMap)
+	: Analyzer(_st, _report, move(_source), convert(_st, move(_actionMap)))
+{
+}
+
+template <typename SemanticValue>
+typename Analyzer<SemanticValue>::ActionMap Analyzer<SemanticValue>::convert(const SyntaxTable& _st,
+		                                                                     ActionNameMap&& namedMap)
+{
+	ActionMap map;
+
+	for (auto&& item: namedMap)
+		map[_st.actionId(item.first)] = move(item.second);
+
+	return map;
 }
 
 template <typename Container>
@@ -134,7 +153,7 @@ std::optional<SemanticValue> Analyzer<SemanticValue>::analyze()
 			stack_.pop_back();
 			const auto i = actionHandlers_.find(X);
 			if (i != actionHandlers_.end())
-				valueStack_.emplace_back(i->second()); // TODO: pass context (semantic-value stack)
+				valueStack_.emplace_back(i->second(Context{*this}));
 			else
 				valueStack_.emplace_back(SemanticValue{});
 		}
@@ -208,6 +227,25 @@ template <typename SemanticValue>
 std::string Analyzer<SemanticValue>::handleString(const SyntaxTable::Expression& handle) const
 {
 	return util::join(util::translate(handle, [this](auto v) { return stateValue(v); }), " ");
+}
+
+template <typename SemanticValue>
+Analyzer<SemanticValue>& Analyzer<SemanticValue>::action(const std::string& actionName, ActionHandler handler)
+{
+	actionHandlers_[def_.actionId(actionName)] = move(handler);
+	return *this;
+}
+
+template <typename SemanticValue>
+SemanticValue Analyzer<SemanticValue>::Context::at(int offset) const
+{
+	return SemanticValue{}; // TODO
+}
+
+template <typename SemanticValue>
+const std::string& Analyzer<SemanticValue>::Context::lastLiteral() const
+{
+	return analyzer.lastLiteral();
 }
 
 }  // namespace klex::cfg::ll
