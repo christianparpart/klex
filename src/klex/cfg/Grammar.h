@@ -31,6 +31,7 @@ struct Terminal {
 	std::variant<regular::Rule, std::string> literal;  // such as [0-9]+ or "if"
 
 	std::string name;  // such as "KW_IF"
+	std::string label;
 
 	const std::string& pattern() const
 	{
@@ -48,6 +49,7 @@ struct Terminal {
  */
 struct NonTerminal {
 	std::string name;  // such as "IfStmt"
+	std::string label;
 
 	bool operator==(const std::string& other) const { return name == other; }
 	bool operator==(const NonTerminal& other) const { return name == other.name; }

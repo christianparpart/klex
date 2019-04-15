@@ -60,6 +60,12 @@ GrammarLexer::Token GrammarLexer::recognizeOne()
 		case '}':
 			consumeChar();
 			return Token::SetClose;
+		case '[':
+			consumeChar();
+			return Token::BrOpen;
+		case ']':
+			consumeChar();
+			return Token::BrClose;
 		case '|':
 			consumeChar();
 			return Token::Or;

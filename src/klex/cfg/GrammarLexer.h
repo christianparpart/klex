@@ -28,6 +28,8 @@ class GrammarLexer
 		Assoc,       // '::='
 		SetOpen,     // '{'
 		SetClose,    // '}'
+		BrOpen,      // '['
+		BrClose,     // ']'
 		Eof,         // <<EOF>>
 	};
 
@@ -77,6 +79,10 @@ inline std::string to_string(klex::cfg::GrammarLexer::Token v)
 			return "'{'";
 		case klex::cfg::GrammarLexer::Token::SetClose:
 			return "'}'";
+		case klex::cfg::GrammarLexer::Token::BrOpen:
+			return "'['";
+		case klex::cfg::GrammarLexer::Token::BrClose:
+			return "']'";
 		case klex::cfg::GrammarLexer::Token::Eof:
 			return "<<EOF>>";
 		// case klex::cfg::GrammarLexer::Illegal:

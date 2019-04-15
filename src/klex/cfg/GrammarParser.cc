@@ -125,12 +125,26 @@ Handle GrammarParser::parseHandle()
 				consumeToken();
 				break;
 			case Token::Identifier:
-				if (optional<const regular::Rule*> r = findExplicitTerminal(currentLiteral()); r.has_value())
-					handle.emplace_back(Terminal{**r, currentLiteral()});
-				else
-					handle.emplace_back(NonTerminal{currentLiteral()});
+			{
+				auto name = currentLiteral();
+				auto label = string{};
 				consumeToken();
+				if (currentToken() == Token::BrOpen)
+				{
+					consumeToken();
+					if (currentToken() == Token::Identifier)
+					{
+						label = currentLiteral();
+						consumeToken(Token::Identifier);
+					}
+					consumeToken(Token::BrClose);
+				}
+				if (optional<const regular::Rule*> r = findExplicitTerminal(name); r.has_value())
+					handle.emplace_back(Terminal{**r, name, label});
+				else
+					handle.emplace_back(NonTerminal{name, label});
 				break;
+			}
 			case Token::SetOpen:
 			{
 				consumeToken();
