@@ -63,9 +63,9 @@ class Analyzer {
 
 	const SemanticValue& semanticValue(int offset) const {
 		if (offset < 0)
-			return valueStack_[valueStack_.size() + offset];
+			return valueStack_.at(valueStack_.size() + offset);
 		else
-			return valueStack_[valueStackBase_ + offset];
+			return valueStack_.at(valueStackBase_ + offset);
 	}
 
 	[[nodiscard]] std::optional<SemanticValue> analyze();

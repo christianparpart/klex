@@ -244,7 +244,7 @@ Analyzer<SemanticValue>& Analyzer<SemanticValue>::action(const std::string& acti
 template <typename SemanticValue>
 SemanticValue Analyzer<SemanticValue>::Context::at(int offset) const
 {
-	return SemanticValue{}; // TODO
+	return analyzer.semanticValue(offset);
 }
 
 template <typename SemanticValue>
