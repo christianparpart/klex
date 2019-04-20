@@ -14,6 +14,7 @@
 #include <optional>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <variant>
 #include <vector>
@@ -62,6 +63,17 @@ struct NonTerminal {
  */
 using Symbol = std::variant<NonTerminal, Terminal>;
 
+/**
+ * Extracts the label of a given symbol (must be a Terminal or NonTerminal).
+ */
+inline const std::string& label(const Symbol& sym)
+{
+	if (std::holds_alternative<NonTerminal>(sym))
+		return std::get<NonTerminal>(sym).label;
+	else
+		return std::get<Terminal>(sym).label;
+}
+
 //! @returns true if symbol @p a is by string-comparison smaller then symbol @p b.
 bool operator<(const Symbol& a, const Symbol& b);
 
@@ -81,6 +93,16 @@ using HandleElement = std::variant<Terminal, NonTerminal, Action>;
  * @see Production, Terminal, NonTerminal
  */
 using Handle = std::vector<HandleElement>;
+
+inline const std::string& label(const HandleElement& e)
+{
+	if (std::holds_alternative<NonTerminal>(e))
+		return std::get<NonTerminal>(e).label;
+	else if (std::holds_alternative<Terminal>(e))
+		return std::get<Terminal>(e).label;
+	else
+		throw std::invalid_argument{"e"};
+}
 
 struct _Symbols {
 	const Handle& handle;
@@ -206,6 +228,9 @@ struct Production {
 	std::vector<Terminal> follow = {};  //!< Accumulated set of terminals representing the FOLLOW-set.
 
 	std::vector<Terminal> first1() const;  //!< @returns the FIRST+-set of this production's handle.
+
+	decltype(auto) operator[](size_t i) const { return handle[i]; }
+	decltype(auto) operator[](size_t i) { return handle[i]; }
 };
 
 //! @returns a human readable form of Production @p p.

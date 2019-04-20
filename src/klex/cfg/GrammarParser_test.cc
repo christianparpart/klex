@@ -72,6 +72,26 @@ TEST(cfg_GrammarParser, action_on_epsilon)
 	ASSERT_FALSE(report.containsFailures());
 }
 
+TEST(cfg_GrammarParser, labels)
+{
+	BufferedReport report;
+	Grammar grammar = GrammarParser{GrammarLexer{
+		R"(`
+		   `token {
+		   `  Number ::= [0-9]+
+		   `}
+		   `
+		   `Start ::= '(' Number[lhs] ',' Number[rhs] ')';
+		   `)"_multiline}, &report}.parse();
+	ASSERT_FALSE(report.containsFailures());
+	grammar.finalize();
+	log(grammar.dump());
+
+	const Production& start = grammar.productions[0];
+	ASSERT_EQ("lhs", label(start[1]));
+	ASSERT_EQ("rhs", label(start[3]));
+}
+
 struct CheckTerminalPattern {
 	string pattern;
 	bool operator()(const Terminal& w) const { return pattern == w.pattern(); }
