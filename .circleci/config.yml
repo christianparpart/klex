@@ -1,0 +1,76 @@
+# vim:ts=2:sw=2:et
+version: 2
+
+# -----------------------------------------------------------------------------------------------
+defaults:
+
+  - workflow_trigger_on_tags: &workflow_trigger_on_tags
+      filters:
+        tags:
+          only: /.*/
+
+  - workflow_x64_ubuntu1810: &workflow_x64_ubuntu1810
+      <<: *workflow_trigger_on_tags
+      requires:
+        - build_x64_ubuntu1810
+
+  - setup_prerelease_commit_hash: &setup_prerelease_commit_hash
+      name: Store commit hash and prerelease
+      command: |
+        if [ "$CIRCLE_BRANCH" = release -o -n "$CIRCLE_TAG" ]; then echo -n > prerelease.txt; else date -u +"nightly.%Y.%-m.%-d" > prerelease.txt; fi
+        echo -n "$CIRCLE_SHA1" > commit_hash.txt
+
+  - run_build: &run_build
+      name: Build
+      command: |
+        set -ex
+        if [ "$CIRCLE_BRANCH" = release -o -n "$CIRCLE_TAG" ]; then echo -n > prerelease.txt; else date -u +"nightly.%Y.%-m.%-d" > prerelease.txt; fi
+        echo -n "$CIRCLE_SHA1" > commit_hash.txt
+        mkdir -p build
+        cd build
+        [ -n "$COVERAGE" -a "$CIRCLE_BRANCH" != release -a -z "$CIRCLE_TAG" ] && CMAKE_OPTIONS="$CMAKE_OPTIONS -DCOVERAGE=ON"
+        cmake .. -DCMAKE_BUILD_TYPE="Debug" $CMAKE_OPTIONS -G Ninja
+        ninja -j3
+
+  - solc_artifact: &solc_artifact
+      path: build/solc/solc
+      destination: solc
+
+  - test_steps: &test_steps
+      - checkout
+      - attach_workspace:
+          at: build
+      - run:
+          name: klextest
+          command: ./klextest
+
+  - test_x64_ubuntu1810: &test_x64_ubuntu1810
+    docker:
+      - image: buildpack-deps:cosmic
+    steps: *test_steps
+
+# -----------------------------------------------------------------------------------------------
+jobs:
+
+  build_x64_ubuntu1810:
+    docker:
+      - image: buildpack-deps:cosmic
+    environment:
+      COVERAGE: "ON"
+    steps:
+      - checkout
+      - run: *run_build
+      - persist_to_workspace:
+          root: build
+          paths:
+            - "*"
+
+  test_x64_ubuntu1810: *test_x64_ubuntu1810
+
+workflows:
+  version: 2
+
+  build_and_test:
+    jobs:
+      - build_x64_ubuntu1810: *workflow_trigger_on_tags
+      - test_x64_ubuntu1810: *workflow_x64_ubuntu1810
