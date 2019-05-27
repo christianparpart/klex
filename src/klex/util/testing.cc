@@ -27,6 +27,12 @@ using namespace std;
 
 namespace klex::util::testing {
 
+auto static constexpr colorsReset = AnsiColor::codes<AnsiColor::Reset>();
+auto static constexpr colorsTestCaseHeader = AnsiColor::codes<AnsiColor::Cyan>();
+auto static constexpr colorsError = AnsiColor::codes<AnsiColor::Red | AnsiColor::Bold>();
+auto static constexpr colorsOk = AnsiColor::codes<AnsiColor::Green>();
+auto static constexpr colorsLog = AnsiColor::codes<AnsiColor::Blue | AnsiColor::Bold>();
+
 int main(int argc, const char* argv[]) {
   return UnitTest::instance()->main(argc, argv);
 }
@@ -89,12 +95,6 @@ TestInfo::TestInfo(const string& testCaseName,
 }
 
 // ############################################################################
-
-static string colorsReset = AnsiColor::make(AnsiColor::Reset);
-static string colorsTestCaseHeader = AnsiColor::make(AnsiColor::Cyan);
-static string colorsError = AnsiColor::make(AnsiColor::Red | AnsiColor::Bold);
-static string colorsOk = AnsiColor::make(AnsiColor::Green);
-static string colorsLog = AnsiColor::make(AnsiColor::Blue | AnsiColor::Bold);
 
 UnitTest::UnitTest()
   : environments_(),
@@ -281,15 +281,14 @@ void UnitTest::printTestList() {
 
 void UnitTest::printSummary() {
   // print summary
-  printf("%sFinished running %zu tests (%d repeats). %zu success, %d failed, %zu disabled.%s\n",
-      failCount_ ? colorsError.c_str()
-                : colorsOk.c_str(),
+  fmt::print("{}Finished running {} tests ({} repeats). {} success, {} failed, {} disabled.{}\n",
+      failCount_ ? colorsError.data() : colorsOk.data(),
       repeats_ * activeTests_.size(),
       repeats_,
       successCount_,
       failCount_,
       disabledCount(),
-      colorsReset.c_str());
+      colorsReset.data());
 
   if (printSummaryDetails_ && !failures_.empty()) {
     printf("================================\n");
@@ -298,10 +297,7 @@ void UnitTest::printSummary() {
 
     for (size_t i = 0, e = failures_.size(); i != e; ++i) {
       const auto& failure = failures_[i];
-      printf("%s%s%s\n",
-          colorsError.c_str(),
-          failure.c_str(),
-          colorsReset.c_str());
+	  fmt::print("{}{}{}\n", colorsError.data(), failure, colorsReset.data());
     }
   }
 }
@@ -345,12 +341,12 @@ void UnitTest::runAllTestsOnce() {
     size_t percentage = currentCount_ * 100 / totalCount;
 
     if (printProgress_) {
-      printf("%s%3zu%% Running test: %s.%s%s\n",
-          colorsTestCaseHeader.c_str(),
+		fmt::print("{}{:>3} Running test: {}.{}{}\n",
+          colorsTestCaseHeader.data(),
           percentage,
-          testCase->testCaseName().c_str(),
-          testCase->testName().c_str(),
-          colorsReset.c_str());
+          testCase->testCaseName(),
+          testCase->testName(),
+          colorsReset.data());
     }
 
     int failed = 0;
@@ -491,10 +487,7 @@ void UnitTest::reportMessage(const char* fileName, int lineNo, bool fatal, const
 }
 
 void UnitTest::reportMessage(const string& message, bool fatal) {
-  printf("%s%s%s\n",
-      colorsError.c_str(),
-      message.c_str(),
-      colorsReset.c_str());
+  fmt::print("{}{}{}\n", colorsError.data(), message, colorsReset.data());
 
   failCount_++;
   failures_.emplace_back(message);
@@ -536,12 +529,14 @@ void UnitTest::log(const string& message) {
       eol = message.find('\n', bol);
       string line = message.substr(bol, eol - bol);
       if (eol + 1 < message.size() || (!line.empty() && line != "\n"))
-        cerr << fmt::format("{}{}.{}:{} {}\n",
-                                 colorsLog,
-                                 currentTestCase_->testCaseName(),
-                                 currentTestCase_->testName(),
-                                 colorsReset,
-                                 line);
+	  {
+        fmt::print("{}{}.{}:{} {}\n",
+                   colorsLog.data(),
+                   currentTestCase_->testCaseName(),
+                   currentTestCase_->testName(),
+                   colorsReset.data(),
+                   line);
+	  }
       bol = eol + 1;
     } while (eol != string::npos);
   }
