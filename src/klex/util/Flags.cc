@@ -6,8 +6,8 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include "Flags.h"
+#include "AnsiColor.h"
 
-#include <fmt/format.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -16,9 +16,14 @@ using namespace std;
 
 namespace klex::util {
 
+auto static constexpr clearColor = AnsiColor::codes<AnsiColor::Clear>();
+auto static constexpr optionColor = AnsiColor::codes<AnsiColor::Bold | AnsiColor::Cyan>();
+auto static constexpr valueColor = AnsiColor::codes<AnsiColor::Bold | AnsiColor::Red>();
+auto static constexpr headerColor = AnsiColor::codes<AnsiColor::Bold | AnsiColor::Green>();
+
 // {{{ Flags::Error
 Flags::Error::Error(ErrorCode code, string arg)
-    : runtime_error{fmt::format("{}: {}", FlagsErrorCategory::get().message(static_cast<int>(code)), arg)},
+    : runtime_error{FlagsErrorCategory::get().message(static_cast<int>(code)) + ": " + arg},
       code_{code}, arg_{move(arg)}
 {
 }
@@ -32,7 +37,7 @@ Flags::Flag::Flag(const string& opt, const string& val, FlagStyle fs, FlagType f
 // }}}
 
 Flags::Flags()
-    : flagDefs_(), parametersEnabled_(false), parametersPlaceholder_(), parametersHelpText_(), set_(), raw_()
+    : flagDefs_{}, parametersEnabled_{false}, parametersPlaceholder_{}, parametersHelpText_{}, set_{}, raw_{}
 {
 }
 
@@ -291,19 +296,13 @@ void Flags::parse(const vector<string>& args)
         string arg = args[i];
         i++;
         if (pstate == ParsingState::Parameters)
-        {
             params.push_back(arg);
-        }
         else if (arg == "--")
         {
             if (parametersEnabled_)
-            {
                 pstate = ParsingState::Parameters;
-            }
             else
-            {
                 throw Error{ErrorCode::UnknownOption, arg};
-            }
         }
         else if (arg.size() > 2 && arg[0] == '-' && arg[1] == '-')
         {
@@ -316,27 +315,21 @@ void Flags::parse(const vector<string>& args)
                 name = name.substr(0, eq);
                 const FlagDef* fd = findDef(name);
                 if (fd == nullptr)
-                {
                     throw Error{ErrorCode::UnknownOption, arg};
-                }
                 else
-                {
                     invokeCallback(fd, FlagStyle::LongWithValue, value);
-                }
             }
             else
             {  // --name [VALUE]
                 const FlagDef* fd = findDef(name);
                 if (fd == nullptr)
-                {
                     throw Error{ErrorCode::UnknownOption, arg};
-                }
                 else if (fd->type == FlagType::Bool)
-                {  // --name
+                    // --name
                     invokeCallback(fd, FlagStyle::LongSwitch, "true");
-                }
                 else
-                {  // --name VALUE
+                {
+                    // --name VALUE
                     if (i >= args.size())
                         throw Error{ErrorCode::MissingOption, arg};
 
@@ -354,23 +347,22 @@ void Flags::parse(const vector<string>& args)
             while (!arg.empty())
             {
                 const FlagDef* fd = findDef(arg[0]);
-                if (fd == nullptr)
-                {  // option not found
+                if (fd == nullptr)  // option not found
                     throw Error{ErrorCode::UnknownOption, "-" + arg.substr(0, 1)};
-                }
                 else if (fd->type == FlagType::Bool)
                 {
                     invokeCallback(fd, FlagStyle::ShortSwitch, "true");
                     arg = arg.substr(1);
                 }
-                else if (arg.size() > 1)
-                {  // -fVALUE
+                else if (arg.size() > 1)  // -fVALUE
+                {
                     string value = arg.substr(1);
                     invokeCallback(fd, FlagStyle::ShortSwitch, value);
                     arg.clear();
                 }
                 else
-                {  // -f VALUE
+                {
+                    // -f VALUE
                     string name = fd->longOption;
 
                     if (i >= args.size())
@@ -394,14 +386,9 @@ void Flags::parse(const vector<string>& args)
             }
         }
         else if (parametersEnabled_)
-        {
             params.push_back(arg);
-        }
         else
-        {
-            // oops
             throw Error{ErrorCode::UnknownOption, arg};
-        }
     }
 
     setParameters(params);
@@ -412,25 +399,27 @@ void Flags::parse(const vector<string>& args)
         if (fd.defaultValue.has_value())
         {
             if (!isSet(fd.longOption))
-            {
                 invokeCallback(&fd, FlagStyle::LongWithValue, fd.defaultValue.value());
-            }
         }
         else if (fd.type == FlagType::Bool)
         {
             if (!isSet(fd.longOption))
-            {
                 invokeCallback(&fd, FlagStyle::LongWithValue, "false");
-            }
         }
     }
 }
 
 // -----------------------------------------------------------------------------
 
-string Flags::helpText(size_t width, size_t helpTextOffset) const
+string Flags::helpText(string_view const& header, size_t width, size_t helpTextOffset) const
 {
     stringstream sstr;
+
+    if (!header.empty())
+        sstr << headerColor.data() << header << clearColor.data();
+
+    if (parametersEnabled_ || !flagDefs_.empty())
+        sstr << headerColor.data() << "Options:\n" << clearColor.data();
 
     for (const FlagDef& fd : flagDefs_)
         sstr << fd.makeHelpText(width, helpTextOffset);
@@ -442,7 +431,7 @@ string Flags::helpText(size_t width, size_t helpTextOffset) const
         const streampos p = sstr.tellp();
         const size_t column = static_cast<size_t>(sstr.tellp() - p);
 
-        sstr << "    [--] " << parametersPlaceholder_;
+        sstr << "    [--] " << valueColor.data() << parametersPlaceholder_ << clearColor.data();
         if (column < helpTextOffset)
             sstr << setw(helpTextOffset - column) << ' ';
         else
@@ -485,36 +474,32 @@ string Flags::FlagDef::makeHelpText(size_t width, size_t helpTextOffset) const
 {
     stringstream sstr;
 
-    sstr << ' ';
+    sstr << "  ";
 
     // short option
     if (shortOption)
-        sstr << "-" << shortOption << ", ";
+        sstr << optionColor.data() << "-" << shortOption << clearColor.data() << ", ";
     else
         sstr << "    ";
 
     // long option
-    sstr << "--" << longOption;
+    sstr << optionColor.data() << "--" << longOption;
 
     // value placeholder
     if (type != FlagType::Bool)
     {
+        sstr << "=" << valueColor.data();
         if (!valuePlaceholder.empty())
-        {
-            sstr << "=" << valuePlaceholder;
-        }
+            sstr << valuePlaceholder;
         else
-        {
-            sstr << "=VALUE";
-        }
+            sstr << "VALUE";
     }
+    sstr << clearColor.data();
 
     // spacer
     size_t column = static_cast<size_t>(sstr.tellp());
     if (column < helpTextOffset)
-    {
         sstr << setw(helpTextOffset - sstr.tellp()) << ' ';
-    }
     else
     {
         sstr << endl << setw(helpTextOffset) << ' ';
@@ -523,13 +508,9 @@ string Flags::FlagDef::makeHelpText(size_t width, size_t helpTextOffset) const
 
     // help output with default value hint.
     if (type != FlagType::Bool && defaultValue.has_value())
-    {
         sstr << wordWrap(helpText + " [" + *defaultValue + "]", column, width, helpTextOffset);
-    }
     else
-    {
         sstr << wordWrap(helpText, column, width, helpTextOffset);
-    }
 
     sstr << endl;
 

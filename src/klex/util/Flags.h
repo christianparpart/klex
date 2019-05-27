@@ -6,11 +6,11 @@
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <fmt/format.h>
 #include <functional>
 #include <list>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <unordered_map>
 #include <utility>
@@ -89,8 +89,8 @@ class Flags {
 
     Flags& enableParameters(const std::string& valuePlaceholder, const std::string& helpText);
 
-    std::string helpText() const { return helpText(78, 30); }
-    std::string helpText(size_t width, size_t helpTextOffset) const;
+    std::string helpText(std::string_view const& header = "") const { return helpText(header, 78, 30); }
+    std::string helpText(std::string_view const& header, size_t width, size_t helpTextOffset) const;
 
     const FlagDef* findDef(const std::string& longOption) const;
     const FlagDef* findDef(char shortOption) const;
@@ -169,20 +169,3 @@ template <>
 struct is_error_code_enum<klex::util::Flags::ErrorCode> : public std::true_type {
 };
 }  // namespace std
-
-namespace fmt {
-template <>
-struct formatter<klex::util::Flags> {
-    template <typename ParseContext>
-    constexpr auto parse(ParseContext& ctx)
-    {
-        return ctx.begin();
-    }
-
-    template <typename FormatContext>
-    constexpr auto format(const klex::util::Flags& v, FormatContext& ctx)
-    {
-        return format_to(ctx.out(), v.to_s());
-    }
-};
-}  // namespace fmt
