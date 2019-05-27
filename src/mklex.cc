@@ -253,10 +253,11 @@ optional<int> prepareAndParseCLI(Flags& flags, int argc, const char* argv[])
 
 	if (flags.getBool("help"))
 	{
-		cout << "mklex - klex lexer generator\n"
-			 << "(c) 2018 Christian Parpart <christian@parpart.family>\n"
-			 << "\n"
-			 << flags.helpText() << "\n";
+        static string_view const title =
+            "mklex - klex lexer generator\n"
+            "(c) 2018 Christian Parpart <christian@parpart.family>\n"
+            "\n";
+        cerr << flags.helpText(title) << "\n";
 		return EXIT_SUCCESS;
 	}
 
