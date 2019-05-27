@@ -1,18 +1,16 @@
 // This file is part of the "x0" project, http://github.com/christianparpart/x0>
-//   (c) 2009-2018 Christian Parpart <christian@parpart.family>
+//   (c) 2009-2019 Christian Parpart <christian@parpart.family>
 //
 // Licensed under the MIT License (the "License"); you may not use this
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <string>
+#include <array>
 
-namespace klex::util {
+namespace AnsiColor {
 
-class AnsiColor {
- public:
-  enum Type {
+enum Code : unsigned {
     Clear = 0,
     Reset = Clear,
     Bold = 0x0001,  // 1
@@ -42,14 +40,114 @@ class AnsiColor {
     OnCyan = 0x7000,
     OnWhite = 0x8000,
     AnyBg = 0xF000
-  };
-
-  static std::string make(Type AColor);
-  static std::string colorize(Type AColor, const std::string& AText);
 };
 
-inline AnsiColor::Type operator|(AnsiColor::Type a, AnsiColor::Type b) {
-  return AnsiColor::Type(int(a) | int(b));
+/// Combines two ANSI escape sequences into one Code.
+constexpr inline Code operator|(Code a, Code b)
+{
+    return Code{unsigned(a) | unsigned(b)};
 }
 
-}  // namespace klex::util
+/**
+ * Counts the number of ANSI escape sequences in @p codes.
+ */
+constexpr unsigned count(Code codes)
+{
+    if (codes == Clear)
+        return 1;
+
+    unsigned i = 0;
+
+    if (codes & AllFlags)
+        for (int k = 0; k < 8; ++k)
+            if (codes & (1 << k))
+                ++i;
+
+    if (codes & AnyFg)
+        ++i;
+
+    if (codes & AnyBg)
+        ++i;
+
+    return i;
+}
+
+/**
+ * Retrieves the number of bytes required to store the ANSI escape sequences of @p codes
+ * without prefix/suffix notation.
+ */
+constexpr unsigned capacity(Code codes)
+{
+    if (codes == Clear)
+        return 1;
+
+    unsigned i = 0;
+
+    if (codes & AllFlags)
+        for (int k = 0; k < 8; ++k)
+            if (codes & (1 << k))
+                ++i;
+
+    if (codes & AnyFg)
+        i += 2;
+
+    if (codes & AnyBg)
+        i += 2;
+
+    return i + (count(codes) - 1);
+}
+
+/// Constructs a sequence of ANSI codes for the colors in this @p codes.
+template <const Code value, const bool EOS = true>
+constexpr auto codes()
+{
+    std::array<char, capacity(value) + 3 + (EOS ? 1 : 0)> result{};
+
+    size_t n = 0;  // n'th escape sequence being iterate through
+    size_t i = 0;  // i'th byte in output array
+
+    result[i++] = '\x1B';
+    result[i++] = '[';
+
+    if constexpr (value != 0)
+    {
+        if (value & AllFlags)
+        {
+            for (int k = 0; k < 8; ++k)
+            {
+                if (value & (1 << k))
+                {
+                    if (n++)
+                        result[i++] = ';';
+                    result[i++] = k + '1';
+                }
+            }
+        }
+
+        if (value & AnyFg)
+        {
+            if (n++)
+                result[i++] = ';';
+            unsigned const val = ((value >> 8) & 0x0F) + 29;  // 36 -> {'3', '6'}
+            result[i++] = (val / 10) + '0';
+            result[i++] = (val % 10) + '0';
+        }
+
+        if (value & AnyBg)
+        {
+            if (n++)
+                result[i++] = ';';
+            unsigned const val = ((value >> 12) & 0x0F) + 39;
+            result[i++] = (val / 10) + '0';
+            result[i++] = (val % 10) + '0';
+        }
+    }
+    else
+        result[i++] = '0';  // reset/clear
+
+    result[i++] = 'm';
+
+    return result;
+}
+
+}  // namespace AnsiColor
