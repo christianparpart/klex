@@ -9,68 +9,77 @@ defaults:
         tags:
           only: /.*/
 
-  - workflow_x64_ubuntu1810: &workflow_x64_ubuntu1810
-      <<: *workflow_trigger_on_tags
-      requires:
-        - build_x64_ubuntu1810
-
-  - setup_prerelease_commit_hash: &setup_prerelease_commit_hash
-      name: Store commit hash and prerelease
+  - run_prepare: &run_prepare
+      name: Prepare
       command: |
-        if [ "$CIRCLE_BRANCH" = release -o -n "$CIRCLE_TAG" ]; then echo -n > prerelease.txt; else date -u +"nightly.%Y.%-m.%-d" > prerelease.txt; fi
-        echo -n "$CIRCLE_SHA1" > commit_hash.txt
+        set -ex
+        apt-get -q update
+        apt-get -qy install cmake clang++-8
 
   - run_build: &run_build
       name: Build
       command: |
         set -ex
-        if [ "$CIRCLE_BRANCH" = release -o -n "$CIRCLE_TAG" ]; then echo -n > prerelease.txt; else date -u +"nightly.%Y.%-m.%-d" > prerelease.txt; fi
-        echo -n "$CIRCLE_SHA1" > commit_hash.txt
         mkdir -p build
         cd build
-        [ -n "$COVERAGE" -a "$CIRCLE_BRANCH" != release -a -z "$CIRCLE_TAG" ] && CMAKE_OPTIONS="$CMAKE_OPTIONS -DCOVERAGE=ON"
-        cmake .. -DCMAKE_BUILD_TYPE="Debug" $CMAKE_OPTIONS -G Ninja
-        ninja -j3
+        cmake .. -G "Unix Makefiles" \
+            -DCMAKE_CXX_COMPILER=$CMAKE_CXX_COMPILER \
+            -DCMAKE_C_COMPILER=$CMAKE_C_COMPILER \
+            -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" \
+            $CMAKE_OPTIONS
+        make -j3
 
-  - solc_artifact: &solc_artifact
-      path: build/solc/solc
-      destination: solc
+  - run_test: &run_test
+      name: klex_test
+      command: ./build/klex_test
 
-  - test_steps: &test_steps
-      - checkout
-      - attach_workspace:
-          at: build
-      - run:
-          name: klextest
-          command: ./klextest
-
-  - test_x64_ubuntu1810: &test_x64_ubuntu1810
-    docker:
-      - image: buildpack-deps:cosmic
-    steps: *test_steps
+  - run_git_sm_init: &run_git_sm_init
+      name: git submodule init
+      command: git submodule update --init
 
 # -----------------------------------------------------------------------------------------------
 jobs:
 
-  build_x64_ubuntu1810:
+  build_ubuntu1904_gcc:
     docker:
-      - image: buildpack-deps:cosmic
+      - image: buildpack-deps:disco
     environment:
-      COVERAGE: "ON"
+      CMAKE_BUILD_TYPE: "Release"
+      CMAKE_C_COMPILER: "gcc-8"
+      CMAKE_CXX_COMPILER: "g++-8"
     steps:
       - checkout
+      - run: *run_git_sm_init
+      - run: *run_prepare
       - run: *run_build
+      - run: *run_test
       - persist_to_workspace:
           root: build
           paths:
             - "*"
 
-  test_x64_ubuntu1810: *test_x64_ubuntu1810
+  build_ubuntu1904_clang:
+    docker:
+      - image: buildpack-deps:disco
+    environment:
+      CMAKE_BUILD_TYPE: "Release"
+      CMAKE_C_COMPILER: "clang-8"
+      CMAKE_CXX_COMPILER: "clang++-8"
+    steps:
+      - checkout
+      - run: *run_git_sm_init
+      - run: *run_prepare
+      - run: *run_build
+      - run: *run_test
+      - persist_to_workspace:
+          root: build
+          paths:
+            - "*"
 
 workflows:
   version: 2
 
   build_and_test:
     jobs:
-      - build_x64_ubuntu1810: *workflow_trigger_on_tags
-      - test_x64_ubuntu1810: *workflow_x64_ubuntu1810
+      - build_ubuntu1904_gcc: *workflow_trigger_on_tags
+      - build_ubuntu1904_clang: *workflow_trigger_on_tags
