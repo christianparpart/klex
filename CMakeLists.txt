@@ -4,6 +4,7 @@ project(klex VERSION "0.0.0" LANGUAGES CXX)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(mklex)
 include(ClangTidy)
+include(EnableCcache)
 
 set(MASTER_PROJECT OFF)
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
