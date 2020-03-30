@@ -36,7 +36,7 @@ Eof             ::= <<EOF>>
 # symbols
 Plus            ::= \+
 RndOpen         ::= \(
-RndOpen         ::= \)
+RndClose        ::= \)
 
 # keywords
 If              ::= if
