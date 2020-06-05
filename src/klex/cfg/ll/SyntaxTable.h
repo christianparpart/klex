@@ -80,6 +80,7 @@ struct SyntaxTable {
 
 	const std::string& actionName(int s) const noexcept { return actionNames[s - actionMin()]; }
 
+	void dump(const Grammar& grammar, std::ostream& os) const;
 	std::string dump(const Grammar& grammar) const;
 
 	static SyntaxTable construct(const Grammar& grammar);

@@ -22,7 +22,7 @@ using namespace klex::cfg;
 	do                  \
 	{                   \
 	} while (0)
-// #define DEBUG(msg, ...) do { fmt::print((msg), __VA_ARGS__); fmt::print("\n"); } while (0)
+//#define DEBUG(msg, ...) do { fmt::print((msg), __VA_ARGS__); fmt::print("\n"); } while (0)
 
 GrammarParser::GrammarParser(GrammarLexer&& _lexer, Report* _report) : report_{_report}, lexer_{move(_lexer)}
 {
@@ -66,7 +66,7 @@ Grammar GrammarParser::parse()
 void GrammarParser::consumeToken()
 {
 	lexer_.recognize();
-	// DEBUG("consumeToken: {} \"{}\"", lexer_.currentToken(), lexer_.currentLiteral());
+	DEBUG("consumeToken: {} \"{}\"", lexer_.currentToken(), lexer_.currentLiteral());
 }
 
 void GrammarParser::consumeToken(Token expectedToken)
@@ -125,12 +125,26 @@ Handle GrammarParser::parseHandle()
 				consumeToken();
 				break;
 			case Token::Identifier:
-				if (optional<const regular::Rule*> r = findExplicitTerminal(currentLiteral()); r.has_value())
-					handle.emplace_back(Terminal{**r, currentLiteral()});
-				else
-					handle.emplace_back(NonTerminal{currentLiteral()});
+			{
+				auto name = currentLiteral();
+				auto label = string{};
 				consumeToken();
+				if (currentToken() == Token::BrOpen)
+				{
+					consumeToken();
+					if (currentToken() == Token::Identifier)
+					{
+						label = currentLiteral();
+						consumeToken(Token::Identifier);
+					}
+					consumeToken(Token::BrClose);
+				}
+				if (optional<const regular::Rule*> r = findExplicitTerminal(name); r.has_value())
+					handle.emplace_back(Terminal{**r, name, label});
+				else
+					handle.emplace_back(NonTerminal{name, label});
 				break;
+			}
 			case Token::SetOpen:
 			{
 				consumeToken();

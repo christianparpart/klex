@@ -272,21 +272,21 @@ string Grammar::dump() const
 {
 	stringstream sstr;
 
-	sstr << " ID | NON-TERMINAL  | EXPRESSION           | FIRST                      | FOLLOW                "
-			"     | FIRST+\n";
-	sstr << "----+---------------+----------------------+----------------------------+-----------------------"
-			"-----+-----------\n";
+	sstr << fmt::format(" {:<2} | {:<13} | {:<22} | {:<26} | {:<26} | {:}\n",
+			"ID", "NON-TERMINAL", "EXPRESSION", "FIRST", "FOLLOW", "FIRST+");
+	sstr << fmt::format("-{:-<2}-+-{:-<13}-+-{:-<22}-+-{:-<26}-+-{:-<26}-+-{:-<10}\n",
+			"-", "-", "-", "-", "-", "-");
+
 	for (auto p = begin(productions); p != end(productions); ++p)
-	{
-		char buf[255];
-		snprintf(buf, sizeof(buf), "%3zu | %13s | %-20s | %6s%-20s | %-26s | %s",
-				 distance(productions.begin(), p), p->name.c_str(), fmt::format("{}", p->handle).c_str(),
-				 p->epsilon ? "{eps} " : "", fmt::format("{{{}}}", p->first).c_str(),
-				 fmt::format("{{{}}}", p->follow).c_str(), fmt::format("{{{}}}", p->first1()).c_str());
-		sstr << buf;
-		if (next(p) != end(productions))
-			sstr << '\n';
-	}
+		sstr << fmt::format(" {:>2} | {:<13} | {:<22} | {:<6}{:<20} | {:<26} | {:}\n",
+							distance(productions.begin(), p),
+							p->name,
+							fmt::format("{}", p->handle),
+							p->epsilon ? "{eps} " : "",
+							fmt::format("{}", p->first),
+							fmt::format("{}", p->follow),
+							fmt::format("{}", p->first1()));
+
 	return sstr.str();
 }
 
@@ -336,6 +336,30 @@ vector<Action> actions(const Grammar& grammar)
 bool isLeftRecursive(const Grammar& grammar)
 {
 	return LeftRecursion::isLeftRecursive(grammar);
+}
+
+regular::RuleList terminalRules(const Grammar& grammar, int nextTerminalId)
+{
+	regular::RuleList rules;
+	set<string> autoLiterals;
+	for (const Terminal& w: grammar.terminals)
+	{
+		if (holds_alternative<regular::Rule>(w.literal))
+		{
+			regular::Rule literal = get<regular::Rule>(w.literal);
+			if (literal.tag != regular::IgnoreTag)
+				literal.tag = nextTerminalId++;
+			rules.emplace_back(move(literal));
+		}
+		else if (!autoLiterals.count(get<string>(w.literal)))
+		{
+			autoLiterals.emplace(get<string>(w.literal));
+			const string pattern = fmt::format("\"{}\"", get<string>(w.literal));
+			rules.emplace_back(regular::Rule{0, 0, nextTerminalId, {"INITIAL"}, w.name, pattern});
+			nextTerminalId++;
+		}
+	}
+	return rules;
 }
 
 }  // namespace klex::cfg

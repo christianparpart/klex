@@ -90,19 +90,16 @@ TEST(cfg_ll_Analyzer, action1)
 
 	deque<vector<int>> valueStack;
 	valueStack.emplace_back(vector<int>());
-	const auto actionHandler = [&](int id, const Analyzer<int>& analyzer) -> int {
-		log(fmt::format("-> run action({}): {}", id, analyzer.actionName(id)));
-		if (analyzer.actionName(id) == "add")
-			// S = F '+' F <<EOF>> {add}
-			return analyzer.semanticValue(-2) + analyzer.semanticValue(-4);
-		else if (analyzer.actionName(id) == "num")
-			return stoi(analyzer.lastLiteral());  // return valueStack[-1]
-		else
-		{
-			log("!!! UNKNOWN ACTION !!!");
-			return -1;
-		}
-	};
+
+	const Analyzer<int>::ActionNameMap actionHandler = {
+		{"add",
+		 [](const auto& context) -> int {
+			 // S = F '+' F <<EOF>> {add}
+			 return context(-2) + context(-4);
+		 }},
+		{"num", [](const auto& context) -> int {
+			 return stoi(context.lastLiteral());  // return valueStack[-1]
+		 }}};
 
 	Analyzer<int> parser(st, &report, "2 + 3", actionHandler);
 	optional<int> result = parser.analyze();
@@ -115,7 +112,7 @@ TEST(cfg_ll_Analyzer, ETF_with_actions)
 {
 	ConsoleReport report;
 	Grammar grammar = GrammarParser(
-		R"(`token {
+						  R"(`token {
 		   `  Spacing(ignore) ::= [\s\t\n]+
 		   `  Number          ::= [0-9]+
 		   `}
@@ -146,34 +143,14 @@ TEST(cfg_ll_Analyzer, ETF_with_actions)
 	log("SYNTAX TABLE:");
 	log(st.dump(grammar));
 
-	stack<int> stack;
-	const map<int, function<int(const Analyzer<int>&)>> actionMap{
-		{st.actionId("num"),
-		 [&](const Analyzer<int>& analyzer) -> int {
-			 return stoi(analyzer.lastLiteral());
-		 }},
-		{st.actionId("add"),
-		 [&](const Analyzer<int>& analyzer) -> int {
-			 return analyzer.semanticValue(-2) + analyzer.semanticValue(-4);
-		 }},
-		{st.actionId("mul"),
-		 [&](const Analyzer<int>& analyzer) -> int {
-			 return analyzer.semanticValue(-2) * analyzer.semanticValue(-4);
-		 }},
-	};
-
-	const auto actionHandler = [&](int id, const Analyzer<int>& analyzer) -> int {
-		if (const auto x = actionMap.find(id); x != actionMap.end())
-		{
-			log(fmt::format("-> run action({}): {}", id, analyzer.actionName(id)));
-			return x->second(analyzer);
-		}
-		assert(!"woot");
-		return 0;
+	const auto actionMap = Analyzer<int>::ActionNameMap{
+		{"num", [&](const auto& context) -> int { return stoi(context.lastLiteral()); }},
+		{"add", [&](const auto& context) -> int { return context(-2) + context(-4); }},
+		{"mul", [&](const auto& context) -> int { return context(-2) * context(-4); }},
 	};
 
 	ASSERT_FALSE(report.containsFailures());
-	Analyzer<int> parser(st, &report, "2 + 3 * 4", actionHandler);
+	Analyzer<int> parser(st, &report, "2 + 3 * 4", actionMap);
 	optional<int> result = parser.analyze();
 
 	EXPECT_FALSE(report.containsFailures());

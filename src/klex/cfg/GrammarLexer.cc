@@ -47,12 +47,25 @@ GrammarLexer::Token GrammarLexer::recognizeOne()
 				consumeChar();
 			while (!eof() && isspace(currentChar()));
 			return Token::Spacing;
+		case '#':
+			consumeChar();
+			while (!eof() && currentChar() != '\n')
+				consumeChar();
+			if (currentChar() == '\n')
+				consumeChar();
+			return Token::Spacing;
 		case '{':
 			consumeChar();
 			return Token::SetOpen;
 		case '}':
 			consumeChar();
 			return Token::SetClose;
+		case '[':
+			consumeChar();
+			return Token::BrOpen;
+		case ']':
+			consumeChar();
+			return Token::BrClose;
 		case '|':
 			consumeChar();
 			return Token::Or;

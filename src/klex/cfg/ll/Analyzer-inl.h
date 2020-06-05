@@ -17,15 +17,34 @@ namespace klex::cfg::ll {
 
 template <typename SemanticValue>
 Analyzer<SemanticValue>::Analyzer(const SyntaxTable& _st, Report* _report, std::string _source,
-								  ActionHandler actionHandler)
+								  ActionMap actionHandlers)
 	: def_{_st},
 	  lexer_{def_.lexerDef, std::move(_source),
 			 std::bind(&Analyzer<SemanticValue>::log, this, std::placeholders::_1)},
 	  report_{_report},
 	  stack_{},
-	  actionHandler_{move(actionHandler)}
+	  actionHandlers_{move(actionHandlers)}
 {
 	log(def_.lexerDef.to_string());
+}
+
+template <typename SemanticValue>
+Analyzer<SemanticValue>::Analyzer(const SyntaxTable& _st, Report* _report, std::string _source,
+								ActionNameMap _actionMap)
+	: Analyzer(_st, _report, move(_source), convert(_st, move(_actionMap)))
+{
+}
+
+template <typename SemanticValue>
+typename Analyzer<SemanticValue>::ActionMap Analyzer<SemanticValue>::convert(const SyntaxTable& _st,
+		                                                                     ActionNameMap&& namedMap)
+{
+	ActionMap map;
+
+	for (auto&& item: namedMap)
+		map[_st.actionId(item.first)] = move(item.second);
+
+	return map;
 }
 
 template <typename Container>
@@ -78,7 +97,7 @@ std::optional<SemanticValue> Analyzer<SemanticValue>::analyze()
 			SemanticValue y = valueStack_.back();
 			valueStack_.resize(valueStack_.size() + X);
 			valueStack_.emplace_back(move(y));
-			log("    rewinding");
+			log(fmt::format("    rewinding by {}", X));
 		}
 		else if (isTerminal(X))
 		{
@@ -130,12 +149,18 @@ std::optional<SemanticValue> Analyzer<SemanticValue>::analyze()
 		else  // if (isAction(X))
 		{
 			assert(isAction(X));
-			log(fmt::format("    running action: {}", actionName(X)));
 			stack_.pop_back();
-			if (actionHandler_)
-				valueStack_.emplace_back(actionHandler_(X, *this));
+			const auto i = actionHandlers_.find(X);
+			if (i != actionHandlers_.end())
+			{
+				log(fmt::format("   run action {}", actionName(X)));
+				valueStack_.emplace_back(i->second(Context{*this}));
+			}
 			else
+			{
+				log(fmt::format("   action {} not found", actionName(X)));
 				valueStack_.emplace_back(SemanticValue{});
+			}
 		}
 	}
 }
@@ -207,6 +232,25 @@ template <typename SemanticValue>
 std::string Analyzer<SemanticValue>::handleString(const SyntaxTable::Expression& handle) const
 {
 	return util::join(util::translate(handle, [this](auto v) { return stateValue(v); }), " ");
+}
+
+template <typename SemanticValue>
+Analyzer<SemanticValue>& Analyzer<SemanticValue>::action(const std::string& actionName, ActionHandler handler)
+{
+	actionHandlers_[def_.actionId(actionName)] = move(handler);
+	return *this;
+}
+
+template <typename SemanticValue>
+SemanticValue Analyzer<SemanticValue>::Context::at(int offset) const
+{
+	return analyzer.semanticValue(offset);
+}
+
+template <typename SemanticValue>
+const std::string& Analyzer<SemanticValue>::Context::lastLiteral() const
+{
+	return analyzer.lastLiteral();
 }
 
 }  // namespace klex::cfg::ll

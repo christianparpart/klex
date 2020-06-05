@@ -14,6 +14,7 @@
 #include <optional>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <variant>
 #include <vector>
@@ -31,6 +32,7 @@ struct Terminal {
 	std::variant<regular::Rule, std::string> literal;  // such as [0-9]+ or "if"
 
 	std::string name;  // such as "KW_IF"
+	std::string label;
 
 	const std::string& pattern() const
 	{
@@ -48,6 +50,7 @@ struct Terminal {
  */
 struct NonTerminal {
 	std::string name;  // such as "IfStmt"
+	std::string label;
 
 	bool operator==(const std::string& other) const { return name == other; }
 	bool operator==(const NonTerminal& other) const { return name == other.name; }
@@ -59,6 +62,17 @@ struct NonTerminal {
  * @see Terminal, NonTerminal, Production.
  */
 using Symbol = std::variant<NonTerminal, Terminal>;
+
+/**
+ * Extracts the label of a given symbol (must be a Terminal or NonTerminal).
+ */
+inline const std::string& label(const Symbol& sym)
+{
+	if (std::holds_alternative<NonTerminal>(sym))
+		return std::get<NonTerminal>(sym).label;
+	else
+		return std::get<Terminal>(sym).label;
+}
 
 //! @returns true if symbol @p a is by string-comparison smaller then symbol @p b.
 bool operator<(const Symbol& a, const Symbol& b);
@@ -79,6 +93,16 @@ using HandleElement = std::variant<Terminal, NonTerminal, Action>;
  * @see Production, Terminal, NonTerminal
  */
 using Handle = std::vector<HandleElement>;
+
+inline const std::string& label(const HandleElement& e)
+{
+	if (std::holds_alternative<NonTerminal>(e))
+		return std::get<NonTerminal>(e).label;
+	else if (std::holds_alternative<Terminal>(e))
+		return std::get<Terminal>(e).label;
+	else
+		throw std::invalid_argument{"e"};
+}
 
 struct _Symbols {
 	const Handle& handle;
@@ -204,6 +228,9 @@ struct Production {
 	std::vector<Terminal> follow = {};  //!< Accumulated set of terminals representing the FOLLOW-set.
 
 	std::vector<Terminal> first1() const;  //!< @returns the FIRST+-set of this production's handle.
+
+	decltype(auto) operator[](size_t i) const { return handle[i]; }
+	decltype(auto) operator[](size_t i) { return handle[i]; }
 };
 
 //! @returns a human readable form of Production @p p.
@@ -285,6 +312,13 @@ std::vector<Terminal> terminals(const Grammar& grammar);
 std::vector<NonTerminal> nonterminals(const Grammar& grammar);
 std::vector<Action> actions(const Grammar& grammar);
 
+/**
+ * @param grammar the context free greammar to collect the terminals from
+ * @param nextTerminalId first free terminal ID to use as tag
+ * @returns all terminals as a rule set suitable for constructing a lexer
+ */
+regular::RuleList terminalRules(const Grammar& grammar, int nextTerminalId);
+
 bool isLeftRecursive(const Grammar& grammar);
 
 }  // namespace klex::cfg
@@ -305,22 +339,16 @@ struct iterator_traits<klex::cfg::_Symbols::const_iterator> {
 // {{{ fmtlib integration
 namespace fmt {
 template <>
-struct formatter<klex::cfg::Terminal> {
-	template <typename ParseContext>
-	constexpr auto parse(ParseContext& ctx)
-	{
-		return ctx.begin();
-	}
-
+struct formatter<klex::cfg::Terminal> : formatter<std::string> {
 	template <typename FormatContext>
 	constexpr auto format(const klex::cfg::Terminal& v, FormatContext& ctx)
 	{
 		if (!v.name.empty())
-			return format_to(ctx.out(), "{}", v.name);
+			return formatter<std::string>::format(v.name, ctx);
 		else if (std::holds_alternative<klex::regular::Rule>(v.literal))
-			return format_to(ctx.out(), "{}", std::get<klex::regular::Rule>(v.literal).name);
+			return formatter<std::string>::format(std::get<klex::regular::Rule>(v.literal).name, ctx);
 		else
-			return format_to(ctx.out(), "\"{}\"", std::get<std::string>(v.literal));
+			return formatter<std::string>::format("\"" + std::get<std::string>(v.literal) + "\"", ctx);
 	}
 };
 
