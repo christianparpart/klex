@@ -55,7 +55,7 @@ inline std::string LexerDef::to_string() const {
   sstr << "transitions:\n";
   for (StateId inputState : transitions.states()) {
     std::map<StateId, std::vector<Symbol>> T;
-    for (const std::pair<Symbol, StateId>& p : transitions.map(inputState)) {
+    for (const std::pair<Symbol, StateId> p : transitions.map(inputState)) {
       T[p.second].push_back(p.first);
     }
     for (auto& t : T) {
