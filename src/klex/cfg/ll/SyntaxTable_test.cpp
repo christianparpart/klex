@@ -20,9 +20,10 @@ using namespace klex::util::literals;
 
 TEST(cfg_ll_SyntaxTable, construct_right_recursive)
 {
-	BufferedReport report;
-	Grammar grammar = GrammarParser(GrammarLexer{
-		R"(`token {
+    BufferedReport report;
+    Grammar grammar = GrammarParser(
+                          GrammarLexer {
+                              R"(`token {
 		   `  Spacing(ignore) ::= [\s\t]+
 		   `  Number          ::= [0-9]+
 		   `}
@@ -37,20 +38,22 @@ TEST(cfg_ll_SyntaxTable, construct_right_recursive)
 		   `Factor ::= '(' Expr ')'
 		   `         | Number
 		   `         ;
-		   `)"_multiline}, &report).parse();
+		   `)"_multiline },
+                          &report)
+                          .parse();
 
-	ASSERT_FALSE(report.containsFailures());
+    ASSERT_FALSE(report.containsFailures());
 
-	grammar.finalize();
-	log("Grammar:");
-	log(grammar.dump());
+    grammar.finalize();
+    log("Grammar:");
+    log(grammar.dump());
 
-	ll::SyntaxTable st = ll::SyntaxTable::construct(grammar);
+    ll::SyntaxTable st = ll::SyntaxTable::construct(grammar);
 
-	log("Syntax Table:");
-	log(st.dump(grammar));
+    log("Syntax Table:");
+    log(st.dump(grammar));
 
-	// TODO
+    // TODO
 }
 
 // vim:ts=4:sw=4:noet

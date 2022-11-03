@@ -6,7 +6,9 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/cfg/GrammarLexer.h>
+
 #include <fmt/format.h>
+
 #include <cassert>
 #include <cctype>
 #include <iostream>
@@ -15,146 +17,136 @@ using namespace std;
 using namespace klex;
 using namespace klex::cfg;
 
-GrammarLexer::GrammarLexer(string content)
-	: content_{std::move(content)}, offset_{0}, currentLiteral_{}, currentToken_{Token::Illegal}
+GrammarLexer::GrammarLexer(string content):
+    content_ { std::move(content) }, offset_ { 0 }, currentLiteral_ {}, currentToken_ { Token::Illegal }
 {
 }
 
 GrammarLexer::Token GrammarLexer::recognize()
 {
-	for (;;)
-	{
-		if (Token t = recognizeOne(); t != Token::Spacing)
-		{
-			// cout << "recognize: " << fmt::format("{}", t) << "\n";
-			return currentToken_ = t;
-		}
-	}
+    for (;;)
+    {
+        if (Token t = recognizeOne(); t != Token::Spacing)
+        {
+            // cout << "recognize: " << fmt::format("{}", t) << "\n";
+            return currentToken_ = t;
+        }
+    }
 }
 
 GrammarLexer::Token GrammarLexer::recognizeOne()
 {
-	currentLiteral_.clear();
+    currentLiteral_.clear();
 
-	switch (currentChar())
-	{
-		case -1:
-			return Token::Eof;
-		case ' ':
-		case '\t':
-		case '\n':
-			do
-				consumeChar();
-			while (!eof() && isspace(currentChar()));
-			return Token::Spacing;
-		case '{':
-			consumeChar();
-			return Token::SetOpen;
-		case '}':
-			consumeChar();
-			return Token::SetClose;
-		case '|':
-			consumeChar();
-			return Token::Or;
-		case ';':
-			consumeChar();
-			return Token::Semicolon;
-		case ':':
-			if (peekChar(1) == ':' && peekChar(2) == '=')
-			{
-				consumeChar(3);
-				return Token::Assoc;
-			}
-			return Token::Illegal;
-		case '\'':
-		case '"':
-			return consumeLiteral();
-		default:
-			if (isalpha(currentChar()) || currentChar() == '_')
-			{
-				return consumeIdentifier();
-			}
-			consumeChar();
-			return Token::Illegal;
-	}
+    switch (currentChar())
+    {
+        case -1: return Token::Eof;
+        case ' ':
+        case '\t':
+        case '\n':
+            do
+                consumeChar();
+            while (!eof() && isspace(currentChar()));
+            return Token::Spacing;
+        case '{': consumeChar(); return Token::SetOpen;
+        case '}': consumeChar(); return Token::SetClose;
+        case '|': consumeChar(); return Token::Or;
+        case ';': consumeChar(); return Token::Semicolon;
+        case ':':
+            if (peekChar(1) == ':' && peekChar(2) == '=')
+            {
+                consumeChar(3);
+                return Token::Assoc;
+            }
+            return Token::Illegal;
+        case '\'':
+        case '"': return consumeLiteral();
+        default:
+            if (isalpha(currentChar()) || currentChar() == '_')
+            {
+                return consumeIdentifier();
+            }
+            consumeChar();
+            return Token::Illegal;
+    }
 }
 
 string GrammarLexer::consumeLiteralUntilLF()
 {
-	currentLiteral_.clear();
+    currentLiteral_.clear();
 
-	while (!eof() && currentChar() != '\n')
-	{
-		currentLiteral_ += static_cast<char>(currentChar());
-		consumeChar();
-	}
+    while (!eof() && currentChar() != '\n')
+    {
+        currentLiteral_ += static_cast<char>(currentChar());
+        consumeChar();
+    }
 
-	if (!eof())
-	{
-		currentLiteral_ += static_cast<char>(currentChar());
-		consumeChar();
-	}
+    if (!eof())
+    {
+        currentLiteral_ += static_cast<char>(currentChar());
+        consumeChar();
+    }
 
-	return currentLiteral_;
+    return currentLiteral_;
 }
 
 GrammarLexer::Token GrammarLexer::consumeIdentifier()
 {
-	assert(!eof() && (isalpha(currentChar()) || currentChar() == '_'));
+    assert(!eof() && (isalpha(currentChar()) || currentChar() == '_'));
 
-	do
-	{
-		currentLiteral_ += static_cast<char>(currentChar());
-		consumeChar();
-	} while (!eof() && (isalnum(currentChar()) || currentChar() == '_'));
+    do
+    {
+        currentLiteral_ += static_cast<char>(currentChar());
+        consumeChar();
+    } while (!eof() && (isalnum(currentChar()) || currentChar() == '_'));
 
-	if (currentLiteral_ == "token")
-		return Token::Token;
+    if (currentLiteral_ == "token")
+        return Token::Token;
 
-	return Token::Identifier;
+    return Token::Identifier;
 }
 
 // ' ... ' | " ... "
 GrammarLexer::Token GrammarLexer::consumeLiteral()
 {
-	assert(!eof() && (currentChar() == '"' || currentChar() == '\''));
-	const int delimiter = currentChar();
-	consumeChar();
+    assert(!eof() && (currentChar() == '"' || currentChar() == '\''));
+    const int delimiter = currentChar();
+    consumeChar();
 
-	while (!eof() && currentChar() != delimiter)
-	{
-		currentLiteral_ += static_cast<char>(currentChar());
-		consumeChar();
-	}
+    while (!eof() && currentChar() != delimiter)
+    {
+        currentLiteral_ += static_cast<char>(currentChar());
+        consumeChar();
+    }
 
-	if (eof())
-		return Token::Illegal;  // Unexpected EOF
+    if (eof())
+        return Token::Illegal; // Unexpected EOF
 
-	consumeChar();  // delimiter
+    consumeChar(); // delimiter
 
-	return Token::Literal;
+    return Token::Literal;
 }
 
 int GrammarLexer::currentChar() const
 {
-	if (offset_ < content_.size())
-		return content_[offset_];
-	else
-		return -1;  // EOF
+    if (offset_ < content_.size())
+        return content_[offset_];
+    else
+        return -1; // EOF
 }
 
 int GrammarLexer::peekChar(size_t offset) const
 {
-	if (offset_ + offset < content_.size())
-		return content_[offset_ + offset];
-	else
-		return -1;  // EOF
+    if (offset_ + offset < content_.size())
+        return content_[offset_ + offset];
+    else
+        return -1; // EOF
 }
 
 int GrammarLexer::consumeChar(size_t count)
 {
-	offset_ += min(count, content_.size() - offset_);
-	return currentChar();
+    offset_ += min(count, content_.size() - offset_);
+    return currentChar();
 }
 
 // vim:ts=4:sw=4:noet

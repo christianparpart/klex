@@ -9,24 +9,25 @@
 
 using namespace std;
 
-namespace klex::regular {
+namespace klex::regular
+{
 
 MultiDFA constructMultiDFA(map<string, DFA> many)
 {
-	MultiDFA multiDFA{};
-	multiDFA.dfa.createStates(1 + many.size());
-	multiDFA.dfa.setInitialState(0);
+    MultiDFA multiDFA {};
+    multiDFA.dfa.createStates(1 + many.size());
+    multiDFA.dfa.setInitialState(0);
 
-	StateId q0 = 1;
-	for (pair<const string, DFA>& p : many)
-	{
-		multiDFA.dfa.append(move(p.second), q0);
-		multiDFA.initialStates[p.first] = q0;
-		multiDFA.dfa.setTransition(0, static_cast<Symbol>(q0), q0);
-		q0++;
-	}
+    StateId q0 = 1;
+    for (pair<const string, DFA>& p: many)
+    {
+        multiDFA.dfa.append(move(p.second), q0);
+        multiDFA.initialStates[p.first] = q0;
+        multiDFA.dfa.setTransition(0, static_cast<Symbol>(q0), q0);
+        q0++;
+    }
 
-	return multiDFA;
+    return multiDFA;
 }
 
-}  // namespace klex::regular
+} // namespace klex::regular

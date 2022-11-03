@@ -67,14 +67,8 @@ Standard: Cpp11
 TabWidth: '4'
 UseTab: Never
 IncludeCategories:
-  - Regex:     '^<(contour)/'
+  - Regex:     '^<(klex)/'
     Priority:  0
-  - Regex:     '^<(terminal)/'
-    Priority:  1
-  - Regex:     '^<(terminal_renderer)/'
-    Priority:  2
-  - Regex:     '^<(text_shaper)/'
-    Priority:  3
   - Regex:     '^<(crispy)/'
     Priority:  4
   - Regex:     '^<(unicode)/'
@@ -87,12 +81,6 @@ IncludeCategories:
     Priority:  8
   - Regex:     '^<gsl/'
     Priority:  9
-  - Regex:     '^<fontconfig/'
-    Priority:  10
-  - Regex:     '^<harfbuzz/'
-    Priority:  11
-  - Regex:     '^<(QtCore|QtGui|QtWidgets|QtQml|QtQuick|QtNetwork|QtMultimedia)/'
-    Priority:  12
   - Regex:     '^<catch2/'
     Priority:  20
   - Regex:     '^<sys/'

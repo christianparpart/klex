@@ -15,6 +15,7 @@
 #include <klex/regular/Lexer.h>
 #include <klex/util/literals.h>
 #include <klex/util/testing.h>
+
 #include <variant>
 
 using namespace std;
@@ -27,8 +28,8 @@ const string balancedParentheses = "A ::= '(' A ')' | '(' ')'";
 
 TEST(cfg_ll_Analyzer, ETF)
 {
-	ConsoleReport report;
-	Grammar grammar = GrammarParser(R"(`token {
+    ConsoleReport report;
+    Grammar grammar = GrammarParser(R"(`token {
 		   `  Spacing(ignore) ::= [\s\t\n]+
 		   `  Number          ::= [0-9]+
 		   `}
@@ -43,31 +44,31 @@ TEST(cfg_ll_Analyzer, ETF)
 		   `            | '(' Expr ')'
 		   `            ;
 		   `)"_multiline,
-									&report)
-						  .parse();
+                                    &report)
+                          .parse();
 
-	ASSERT_FALSE(report.containsFailures());
-	grammar.finalize();
-	log("GRAMMAR:");
-	log(grammar.dump());
+    ASSERT_FALSE(report.containsFailures());
+    grammar.finalize();
+    log("GRAMMAR:");
+    log(grammar.dump());
 
-	SyntaxTable st = SyntaxTable::construct(grammar);
+    SyntaxTable st = SyntaxTable::construct(grammar);
 
-	log("SYNTAX TABLE:");
-	log(st.dump(grammar));
+    log("SYNTAX TABLE:");
+    log(st.dump(grammar));
 
-	Analyzer<int> parser(st, &report, "2 + 3");
+    Analyzer<int> parser(st, &report, "2 + 3");
 
-	const optional<int> result = parser.analyze();
+    const optional<int> result = parser.analyze();
 
-	ASSERT_FALSE(report.containsFailures());
-	ASSERT_TRUE(result.has_value());
+    ASSERT_FALSE(report.containsFailures());
+    ASSERT_TRUE(result.has_value());
 }
 
 TEST(cfg_ll_Analyzer, action1)
 {
-	BufferedReport report;
-	Grammar grammar = GrammarParser(R"(`
+    BufferedReport report;
+    Grammar grammar = GrammarParser(R"(`
 			   `token {
 			   `  Spacing(ignore) ::= [\s\t\n]+
 			   `  Number          ::= [0-9]+
@@ -75,47 +76,47 @@ TEST(cfg_ll_Analyzer, action1)
 			   `Start     ::= F '+' F    {add};
 			   `F         ::= Number     {num};
 			   `)"_multiline,
-									&report)
-						  .parse();
-	ASSERT_FALSE(report.containsFailures());
-	grammar.finalize();
+                                    &report)
+                          .parse();
+    ASSERT_FALSE(report.containsFailures());
+    grammar.finalize();
 
-	log("GRAMMAR:");
-	log(grammar.dump());
+    log("GRAMMAR:");
+    log(grammar.dump());
 
-	SyntaxTable st = SyntaxTable::construct(grammar);
+    SyntaxTable st = SyntaxTable::construct(grammar);
 
-	log("SYNTAX TABLE:");
-	log(st.dump(grammar));
+    log("SYNTAX TABLE:");
+    log(st.dump(grammar));
 
-	deque<vector<int>> valueStack;
-	valueStack.emplace_back(vector<int>());
-	const auto actionHandler = [&](int id, const Analyzer<int>& analyzer) -> int {
-		log(fmt::format("-> run action({}): {}", id, analyzer.actionName(id)));
-		if (analyzer.actionName(id) == "add")
-			// S = F '+' F <<EOF>> {add}
-			return analyzer.semanticValue(-2) + analyzer.semanticValue(-4);
-		else if (analyzer.actionName(id) == "num")
-			return stoi(analyzer.lastLiteral());  // return valueStack[-1]
-		else
-		{
-			log("!!! UNKNOWN ACTION !!!");
-			return -1;
-		}
-	};
+    deque<vector<int>> valueStack;
+    valueStack.emplace_back(vector<int>());
+    const auto actionHandler = [&](int id, const Analyzer<int>& analyzer) -> int {
+        log(fmt::format("-> run action({}): {}", id, analyzer.actionName(id)));
+        if (analyzer.actionName(id) == "add")
+            // S = F '+' F <<EOF>> {add}
+            return analyzer.semanticValue(-2) + analyzer.semanticValue(-4);
+        else if (analyzer.actionName(id) == "num")
+            return stoi(analyzer.lastLiteral()); // return valueStack[-1]
+        else
+        {
+            log("!!! UNKNOWN ACTION !!!");
+            return -1;
+        }
+    };
 
-	Analyzer<int> parser(st, &report, "2 + 3", actionHandler);
-	optional<int> result = parser.analyze();
+    Analyzer<int> parser(st, &report, "2 + 3", actionHandler);
+    optional<int> result = parser.analyze();
 
-	ASSERT_TRUE(result.has_value());
-	ASSERT_EQ(5, *result);
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(5, *result);
 }
 
 TEST(cfg_ll_Analyzer, ETF_with_actions)
 {
-	ConsoleReport report;
-	Grammar grammar = GrammarParser(
-		R"(`token {
+    ConsoleReport report;
+    Grammar grammar = GrammarParser(
+                          R"(`token {
 		   `  Spacing(ignore) ::= [\s\t\n]+
 		   `  Number          ::= [0-9]+
 		   `}
@@ -134,51 +135,51 @@ TEST(cfg_ll_Analyzer, ETF_with_actions)
 		   `            | '(' Expr ')'
 		   `            ;
 		   `)"_multiline,
-						  &report)
-						  .parse();
+                          &report)
+                          .parse();
 
-	ASSERT_FALSE(report.containsFailures());
-	grammar.finalize();
-	log("GRAMMAR:");
-	log(grammar.dump());
+    ASSERT_FALSE(report.containsFailures());
+    grammar.finalize();
+    log("GRAMMAR:");
+    log(grammar.dump());
 
-	SyntaxTable st = SyntaxTable::construct(grammar);
-	log("SYNTAX TABLE:");
-	log(st.dump(grammar));
+    SyntaxTable st = SyntaxTable::construct(grammar);
+    log("SYNTAX TABLE:");
+    log(st.dump(grammar));
 
-	stack<int> stack;
-	const map<int, function<int(const Analyzer<int>&)>> actionMap{
-		{st.actionId("num"),
-		 [&](const Analyzer<int>& analyzer) -> int {
-			 return stoi(analyzer.lastLiteral());
-		 }},
-		{st.actionId("add"),
-		 [&](const Analyzer<int>& analyzer) -> int {
-			 return analyzer.semanticValue(-2) + analyzer.semanticValue(-4);
-		 }},
-		{st.actionId("mul"),
-		 [&](const Analyzer<int>& analyzer) -> int {
-			 return analyzer.semanticValue(-2) * analyzer.semanticValue(-4);
-		 }},
-	};
+    stack<int> stack;
+    const map<int, function<int(const Analyzer<int>&)>> actionMap {
+        { st.actionId("num"),
+          [&](const Analyzer<int>& analyzer) -> int {
+              return stoi(analyzer.lastLiteral());
+          } },
+        { st.actionId("add"),
+          [&](const Analyzer<int>& analyzer) -> int {
+              return analyzer.semanticValue(-2) + analyzer.semanticValue(-4);
+          } },
+        { st.actionId("mul"),
+          [&](const Analyzer<int>& analyzer) -> int {
+              return analyzer.semanticValue(-2) * analyzer.semanticValue(-4);
+          } },
+    };
 
-	const auto actionHandler = [&](int id, const Analyzer<int>& analyzer) -> int {
-		if (const auto x = actionMap.find(id); x != actionMap.end())
-		{
-			log(fmt::format("-> run action({}): {}", id, analyzer.actionName(id)));
-			return x->second(analyzer);
-		}
-		assert(!"woot");
-		return 0;
-	};
+    const auto actionHandler = [&](int id, const Analyzer<int>& analyzer) -> int {
+        if (const auto x = actionMap.find(id); x != actionMap.end())
+        {
+            log(fmt::format("-> run action({}): {}", id, analyzer.actionName(id)));
+            return x->second(analyzer);
+        }
+        assert(!"woot");
+        return 0;
+    };
 
-	ASSERT_FALSE(report.containsFailures());
-	Analyzer<int> parser(st, &report, "2 + 3 * 4", actionHandler);
-	optional<int> result = parser.analyze();
+    ASSERT_FALSE(report.containsFailures());
+    Analyzer<int> parser(st, &report, "2 + 3 * 4", actionHandler);
+    optional<int> result = parser.analyze();
 
-	EXPECT_FALSE(report.containsFailures());
-	ASSERT_TRUE(result.has_value());
-	// TODO EXPECT_EQ(14, *result);
+    EXPECT_FALSE(report.containsFailures());
+    ASSERT_TRUE(result.has_value());
+    // TODO EXPECT_EQ(14, *result);
 }
 
 // vim:ts=4:sw=4:noet

@@ -17,37 +17,41 @@ using namespace klex;
 using namespace klex::cfg;
 using namespace klex::util::literals;
 
-TEST(cfg_Grammar, handle_symbols) {
-	Handle h;
-	h.emplace_back(Terminal{"a", ""});
-	h.emplace_back(Action{"a1"});
-	h.emplace_back(NonTerminal{"A"});
+TEST(cfg_Grammar, handle_symbols)
+{
+    Handle h;
+    h.emplace_back(Terminal { "a", "" });
+    h.emplace_back(Action { "a1" });
+    h.emplace_back(NonTerminal { "A" });
 
-	ASSERT_TRUE(holds_alternative<Terminal>(symbols(h)[0]));
-	ASSERT_TRUE(holds_alternative<NonTerminal>(symbols(h)[1]));
-	ASSERT_EQ(2, symbols(h).size());
+    ASSERT_TRUE(holds_alternative<Terminal>(symbols(h)[0]));
+    ASSERT_TRUE(holds_alternative<NonTerminal>(symbols(h)[1]));
+    ASSERT_EQ(2, symbols(h).size());
 
-	// Make sure symbols() still reports as expected when handle doesn't contain symbols (but an action).
-	h.clear();
-	h.emplace_back(Action{"a1"});
-	auto syms = symbols(h);
-	EXPECT_EQ(0, syms.size());
-	EXPECT_TRUE(syms.begin() == syms.end());
-	for (const Symbol sym : syms)
-		REPORT_ERROR("Should have never been invoked");
+    // Make sure symbols() still reports as expected when handle doesn't contain symbols (but an action).
+    h.clear();
+    h.emplace_back(Action { "a1" });
+    auto syms = symbols(h);
+    EXPECT_EQ(0, syms.size());
+    EXPECT_TRUE(syms.begin() == syms.end());
+    for (const Symbol sym: syms)
+        REPORT_ERROR("Should have never been invoked");
 }
 
-TEST(cfg_Grammar, missing_production) {
-	BufferedReport report;
-	Grammar grammar = GrammarParser(GrammarLexer{"Start ::= Expr;"}, &report).parse();
-	ASSERT_TRUE(report.containsFailures());
-	// TODO: assert actgual error message
+TEST(cfg_Grammar, missing_production)
+{
+    BufferedReport report;
+    Grammar grammar = GrammarParser(GrammarLexer { "Start ::= Expr;" }, &report).parse();
+    ASSERT_TRUE(report.containsFailures());
+    // TODO: assert actgual error message
 }
 
-TEST(cfg_Grammar, right_recursive) {
-	ConsoleReport report;
-	Grammar grammar = GrammarParser(GrammarLexer{
-		R"(`token {
+TEST(cfg_Grammar, right_recursive)
+{
+    ConsoleReport report;
+    Grammar grammar = GrammarParser(
+                          GrammarLexer {
+                              R"(`token {
 		   `  NUMBER ::= [0-9]+
 		   `}
 		   `Start     ::= Expr;
@@ -60,36 +64,43 @@ TEST(cfg_Grammar, right_recursive) {
 		   `Factor    ::= '(' Expr ')'
 		   `            | NUMBER
 		   `            ;
-		   `)"_multiline}, &report).parse();
+		   `)"_multiline },
+                          &report)
+                          .parse();
 
-	ASSERT_FALSE(report.containsFailures());
-	grammar.finalize();
+    ASSERT_FALSE(report.containsFailures());
+    grammar.finalize();
 
-	log("Grammar:");
-	log(grammar.dump());
+    log("Grammar:");
+    log(grammar.dump());
 
-	ASSERT_EQ("\"(\"", fmt::format("{}", grammar.firstOf(Terminal{"("})));
-	ASSERT_EQ("\")\"", fmt::format("{}", grammar.firstOf(Terminal{")"})));
-	ASSERT_EQ("\"+\"", fmt::format("{}", grammar.firstOf(Terminal{"+"})));
-	ASSERT_EQ("\"*\"", fmt::format("{}", grammar.firstOf(Terminal{"*"})));
-	ASSERT_EQ("EOF", fmt::format("{}", grammar.firstOf(Terminal{regular::Rule{0,0,0, {"INITIAL"}, "EOF", "<<EOF>>"}})));
+    ASSERT_EQ("\"(\"", fmt::format("{}", grammar.firstOf(Terminal { "(" })));
+    ASSERT_EQ("\")\"", fmt::format("{}", grammar.firstOf(Terminal { ")" })));
+    ASSERT_EQ("\"+\"", fmt::format("{}", grammar.firstOf(Terminal { "+" })));
+    ASSERT_EQ("\"*\"", fmt::format("{}", grammar.firstOf(Terminal { "*" })));
+    ASSERT_EQ(
+        "EOF",
+        fmt::format(
+            "{}", grammar.firstOf(Terminal { regular::Rule { 0, 0, 0, { "INITIAL" }, "EOF", "<<EOF>>" } })));
 
-	// ASSERT_EQ(2, metadata.epsilon.size());
-	// ASSERT_TRUE(metadata.epsilon.find(NonTerminal{"Expr_"}) != metadata.epsilon.end());
-	// ASSERT_TRUE(metadata.epsilon.find(NonTerminal{"Term_"}) != metadata.epsilon.end());
+    // ASSERT_EQ(2, metadata.epsilon.size());
+    // ASSERT_TRUE(metadata.epsilon.find(NonTerminal{"Expr_"}) != metadata.epsilon.end());
+    // ASSERT_TRUE(metadata.epsilon.find(NonTerminal{"Term_"}) != metadata.epsilon.end());
 
-	ASSERT_EQ("", fmt::format("{}", grammar.followOf(NonTerminal{"Start"})));
-	ASSERT_EQ("\")\", EOF", fmt::format("{}", grammar.followOf(NonTerminal{"Expr"})));
-	ASSERT_EQ("\")\", EOF", fmt::format("{}", grammar.followOf(NonTerminal{"Expr_"})));
-	ASSERT_EQ("\")\", \"+\", EOF", fmt::format("{}", grammar.followOf(NonTerminal{"Term"})));
-	ASSERT_EQ("\")\", \"+\", EOF", fmt::format("{}", grammar.followOf(NonTerminal{"Term_"})));
-	ASSERT_EQ("\")\", \"*\", \"+\", EOF", fmt::format("{}", grammar.followOf(NonTerminal{"Factor"})));
+    ASSERT_EQ("", fmt::format("{}", grammar.followOf(NonTerminal { "Start" })));
+    ASSERT_EQ("\")\", EOF", fmt::format("{}", grammar.followOf(NonTerminal { "Expr" })));
+    ASSERT_EQ("\")\", EOF", fmt::format("{}", grammar.followOf(NonTerminal { "Expr_" })));
+    ASSERT_EQ("\")\", \"+\", EOF", fmt::format("{}", grammar.followOf(NonTerminal { "Term" })));
+    ASSERT_EQ("\")\", \"+\", EOF", fmt::format("{}", grammar.followOf(NonTerminal { "Term_" })));
+    ASSERT_EQ("\")\", \"*\", \"+\", EOF", fmt::format("{}", grammar.followOf(NonTerminal { "Factor" })));
 }
 
-TEST(cfg_Grammar, with_complex_tokens) {
-	ConsoleReport report;
-	Grammar grammar = GrammarParser(GrammarLexer{
-		R"(`token {
+TEST(cfg_Grammar, with_complex_tokens)
+{
+    ConsoleReport report;
+    Grammar grammar = GrammarParser(
+                          GrammarLexer {
+                              R"(`token {
 		   `  NUMBER ::= [0-9]+
 		   `}
 		   `
@@ -103,27 +114,33 @@ TEST(cfg_Grammar, with_complex_tokens) {
 		   `Factor    ::= '(' Expr ')'
 		   `            | NUMBER
 		   `            ;
-		   `)"_multiline}, &report).parse();
+		   `)"_multiline },
+                          &report)
+                          .parse();
 
-	ASSERT_FALSE(report.containsFailures());
-	grammar.finalize();
+    ASSERT_FALSE(report.containsFailures());
+    grammar.finalize();
 
-	log("Grammar:");
-	log(grammar.dump());
+    log("Grammar:");
+    log(grammar.dump());
 
-	ASSERT_EQ(9, grammar.productions.size());
+    ASSERT_EQ(9, grammar.productions.size());
 
-	ASSERT_EQ(1, symbols(grammar.productions.back().handle).size());
-	// ASSERT_EQ("[0-9]+", get<Terminal>(grammar.productions.back().handle.symbols.front()).pattern());
-	ASSERT_TRUE(holds_alternative<Terminal>(symbols(grammar.productions[8].handle)[0]));
-	ASSERT_TRUE(holds_alternative<regular::Rule>(get<Terminal>(symbols(grammar.productions[8].handle)[0]).literal));
-	ASSERT_EQ("[0-9]+", get<regular::Rule>(get<Terminal>(symbols(grammar.productions[8].handle)[0]).literal).pattern);
+    ASSERT_EQ(1, symbols(grammar.productions.back().handle).size());
+    // ASSERT_EQ("[0-9]+", get<Terminal>(grammar.productions.back().handle.symbols.front()).pattern());
+    ASSERT_TRUE(holds_alternative<Terminal>(symbols(grammar.productions[8].handle)[0]));
+    ASSERT_TRUE(
+        holds_alternative<regular::Rule>(get<Terminal>(symbols(grammar.productions[8].handle)[0]).literal));
+    ASSERT_EQ("[0-9]+",
+              get<regular::Rule>(get<Terminal>(symbols(grammar.productions[8].handle)[0]).literal).pattern);
 }
 
-TEST(cfg_Grammar, left_recursive) {
-	ConsoleReport report;
-	Grammar grammar = GrammarParser(GrammarLexer{
-		R"(`Start     ::= Expr "<<EOF>>";
+TEST(cfg_Grammar, left_recursive)
+{
+    ConsoleReport report;
+    Grammar grammar = GrammarParser(
+                          GrammarLexer {
+                              R"(`Start     ::= Expr "<<EOF>>";
 		   `Expr      ::= Expr '+' Term
 		   `            | Term;
 		   `Term      ::= Term '*' Factor
@@ -131,26 +148,30 @@ TEST(cfg_Grammar, left_recursive) {
 		   `Factor    ::= "NUMBER"
 		   `            | '(' Expr ')'
 		   `            ;
-		   `)"_multiline}, &report).parse();
+		   `)"_multiline },
+                          &report)
+                          .parse();
 
-	ASSERT_FALSE(report.containsFailures());
-	grammar.finalize();
+    ASSERT_FALSE(report.containsFailures());
+    grammar.finalize();
 
-	log("Grammar:");
-	log(grammar.dump());
+    log("Grammar:");
+    log(grammar.dump());
 
-	ASSERT_EQ("\"(\"", fmt::format("{}", grammar.firstOf(Terminal{"("})));
-	ASSERT_EQ("\")\"", fmt::format("{}", grammar.firstOf(Terminal{")"})));
-	ASSERT_EQ("\"+\"", fmt::format("{}", grammar.firstOf(Terminal{"+"})));
-	ASSERT_EQ("\"*\"", fmt::format("{}", grammar.firstOf(Terminal{"*"})));
-	ASSERT_EQ("\"<<EOF>>\"", fmt::format("{}", grammar.firstOf(Terminal{"<<EOF>>"})));
+    ASSERT_EQ("\"(\"", fmt::format("{}", grammar.firstOf(Terminal { "(" })));
+    ASSERT_EQ("\")\"", fmt::format("{}", grammar.firstOf(Terminal { ")" })));
+    ASSERT_EQ("\"+\"", fmt::format("{}", grammar.firstOf(Terminal { "+" })));
+    ASSERT_EQ("\"*\"", fmt::format("{}", grammar.firstOf(Terminal { "*" })));
+    ASSERT_EQ("\"<<EOF>>\"", fmt::format("{}", grammar.firstOf(Terminal { "<<EOF>>" })));
 
-	// TODO ASSERT_EQ(0, metadata.epsilon.size());
+    // TODO ASSERT_EQ(0, metadata.epsilon.size());
 
-	ASSERT_EQ("", fmt::format("{}", grammar.followOf(NonTerminal{"Start"})));
-	ASSERT_EQ("\")\", \"+\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Expr"})));
-	ASSERT_EQ("\")\", \"*\", \"+\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Term"})));
-	ASSERT_EQ("\")\", \"*\", \"+\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal{"Factor"})));
+    ASSERT_EQ("", fmt::format("{}", grammar.followOf(NonTerminal { "Start" })));
+    ASSERT_EQ("\")\", \"+\", \"<<EOF>>\"", fmt::format("{}", grammar.followOf(NonTerminal { "Expr" })));
+    ASSERT_EQ("\")\", \"*\", \"+\", \"<<EOF>>\"",
+              fmt::format("{}", grammar.followOf(NonTerminal { "Term" })));
+    ASSERT_EQ("\")\", \"*\", \"+\", \"<<EOF>>\"",
+              fmt::format("{}", grammar.followOf(NonTerminal { "Factor" })));
 }
 
 // vim:ts=4:sw=4:noet

@@ -6,30 +6,32 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/regular/State.h>
+
 #include <sstream>
 
 using namespace std;
 
-namespace klex::regular {
+namespace klex::regular
+{
 
 string to_string(const StateIdVec& S, string_view stateLabelPrefix)
 {
-	StateIdVec names = S;
-	sort(names.begin(), names.end());
+    StateIdVec names = S;
+    sort(names.begin(), names.end());
 
-	stringstream sstr;
-	sstr << "{";
-	int i = 0;
-	for (StateId name : names)
-	{
-		if (i)
-			sstr << ", ";
-		sstr << stateLabelPrefix << name;
-		i++;
-	}
-	sstr << "}";
+    stringstream sstr;
+    sstr << "{";
+    int i = 0;
+    for (StateId name: names)
+    {
+        if (i)
+            sstr << ", ";
+        sstr << stateLabelPrefix << name;
+        i++;
+    }
+    sstr << "}";
 
-	return sstr.str();
+    return sstr.str();
 }
 
-}  // namespace klex::regular
+} // namespace klex::regular

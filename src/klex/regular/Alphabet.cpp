@@ -7,48 +7,50 @@
 
 #include <klex/regular/Alphabet.h>
 #include <klex/regular/Symbols.h>
+
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 
 using namespace std;
 
-namespace klex::regular {
+namespace klex::regular
+{
 
 #if 0
-#	define DEBUG(msg, ...)                                     \
-		do                                                      \
-		{                                                       \
-			cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
-		} while (0)
+    #define DEBUG(msg, ...)                                \
+        do                                                 \
+        {                                                  \
+            cerr << fmt::format(msg, __VA_ARGS__) << "\n"; \
+        } while (0)
 #else
-#	define DEBUG(msg, ...) \
-		do                  \
-		{                   \
-		} while (0)
+    #define DEBUG(msg, ...) \
+        do                  \
+        {                   \
+        } while (0)
 #endif
 
 void Alphabet::insert(Symbol ch)
 {
-	if (alphabet_.find(ch) == alphabet_.end())
-	{
-		DEBUG("Alphabet: insert '{:}'", prettySymbol(ch));
-		alphabet_.insert(ch);
-	}
+    if (alphabet_.find(ch) == alphabet_.end())
+    {
+        DEBUG("Alphabet: insert '{:}'", prettySymbol(ch));
+        alphabet_.insert(ch);
+    }
 }
 
 string Alphabet::to_string() const
 {
-	stringstream sstr;
+    stringstream sstr;
 
-	sstr << '{';
+    sstr << '{';
 
-	for (Symbol c : alphabet_)
-		sstr << prettySymbol(c);
+    for (Symbol c: alphabet_)
+        sstr << prettySymbol(c);
 
-	sstr << '}';
+    sstr << '}';
 
-	return sstr.str();
+    return sstr.str();
 }
 
-}  // namespace klex::regular
+} // namespace klex::regular

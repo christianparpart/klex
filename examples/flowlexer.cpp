@@ -6,28 +6,30 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <klex/regular/Lexable.h>
+
 #include <fmt/format.h>
+
 #include <fstream>
 #include <iostream>
 
-#include "token.h"  // generated via mklex
+#include "token.h" // generated via mklex
 
-extern klex::regular::LexerDef lexerDef;  // generated via mklex
+extern klex::regular::LexerDef lexerDef; // generated via mklex
 
 int main(int argc, const char* argv[])
 {
-	auto ls = argc == 2
-				  ? klex::regular::Lexable<Token, Machine>{lexerDef, std::make_unique<std::ifstream>(argv[1])}
-				  : klex::regular::Lexable<Token, Machine>{lexerDef, std::cin};
+    auto ls = argc == 2 ? klex::regular::Lexable<Token, Machine> { lexerDef,
+                                                                   std::make_unique<std::ifstream>(argv[1]) }
+                        : klex::regular::Lexable<Token, Machine> { lexerDef, std::cin };
 
-	for (const auto& token : ls)
-	{
-		std::cerr << fmt::format("[{}-{}]: token {} (\"{}\")\n",
-								 token.offset,
-								 token.offset + token.literal.length(),
-								 lexerDef.tagName(static_cast<klex::regular::Tag>(token.token)),
-								 token.literal);
-	}
+    for (const auto& token: ls)
+    {
+        std::cerr << fmt::format("[{}-{}]: token {} (\"{}\")\n",
+                                 token.offset,
+                                 token.offset + token.literal.length(),
+                                 lexerDef.tagName(static_cast<klex::regular::Tag>(token.token)),
+                                 token.literal);
+    }
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

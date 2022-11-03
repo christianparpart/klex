@@ -9,5 +9,5 @@
 
 int main(int argc, const char* argv[])
 {
-	return klex::util::testing::main(argc, argv);
+    return klex::util::testing::main(argc, argv);
 }

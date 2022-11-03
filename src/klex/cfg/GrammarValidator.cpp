@@ -7,6 +7,7 @@
 
 #include <klex/cfg/Grammar.h>
 #include <klex/cfg/GrammarValidator.h>
+
 #include <variant>
 
 using namespace std;
@@ -15,13 +16,14 @@ using namespace klex::cfg;
 
 void GrammarValidator::validate(const Grammar& G)
 {
-	for (const Production& p : G.productions)
-		for (const Symbol b : symbols(p.handle))
-			if (holds_alternative<NonTerminal>(b))
-				if (!G.containsProduction(get<NonTerminal>(b)))
-					report_->typeError(SourceLocation{/*TODO: b.location()*/},
-									   "Non-terminal {} is missing a production rule.", b);
+    for (const Production& p: G.productions)
+        for (const Symbol b: symbols(p.handle))
+            if (holds_alternative<NonTerminal>(b))
+                if (!G.containsProduction(get<NonTerminal>(b)))
+                    report_->typeError(SourceLocation { /*TODO: b.location()*/ },
+                                       "Non-terminal {} is missing a production rule.",
+                                       b);
 
-	// TODO: check for unwanted infinite recursions
-	// such as: E ::= E
+    // TODO: check for unwanted infinite recursions
+    // such as: E ::= E
 }

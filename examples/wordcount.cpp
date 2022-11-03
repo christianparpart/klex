@@ -7,6 +7,7 @@
 
 #include <klex/regular/Compiler.h>
 #include <klex/regular/Lexable.h>
+
 #include <cstdlib>
 #include <iostream>
 #include <memory>
@@ -15,41 +16,41 @@
 
 int main(int argc, const char* argv[])
 {
-	klex::regular::Compiler cc;
-	cc.parse(R"(
+    klex::regular::Compiler cc;
+    cc.parse(R"(
 		Word  ::= [a-zA-Z]+
 		LF    ::= \n
 		Other ::= .
 		Eof   ::= <<EOF>>
 	)");
 
-	size_t words = 0;
-	size_t chars = 0;
-	size_t lines = 0;
+    size_t words = 0;
+    size_t chars = 0;
+    size_t lines = 0;
 
-	auto ld = cc.compile();
-	klex::regular::Lexable<int, int, false, false> lexer{ld, std::cin};
-	for (const auto& ti : lexer)
-	{
-		switch (token(ti))
-		{
-			case 4:  // EOF
-				break;
-			case 3:  // Other
-				chars++;
-				break;
-			case 2:  // LF
-				chars++;
-				lines++;
-				break;
-			case 1:  // Word
-				words++;
-				chars += literal(ti).size();
-				break;
-		}
-	}
+    auto ld = cc.compile();
+    klex::regular::Lexable<int, int, false, false> lexer { ld, std::cin };
+    for (const auto& ti: lexer)
+    {
+        switch (token(ti))
+        {
+            case 4: // EOF
+                break;
+            case 3: // Other
+                chars++;
+                break;
+            case 2: // LF
+                chars++;
+                lines++;
+                break;
+            case 1: // Word
+                words++;
+                chars += literal(ti).size();
+                break;
+        }
+    }
 
-	std::cout << "newlines: " << lines << ", words: " << words << ", characters: " << chars << "\n";
+    std::cout << "newlines: " << lines << ", words: " << words << ", characters: " << chars << "\n";
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

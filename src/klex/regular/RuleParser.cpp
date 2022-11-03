@@ -5,375 +5,375 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/regular/LexerDef.h>  // special tags
+#include <klex/regular/LexerDef.h> // special tags
 #include <klex/regular/RegExpr.h>
 #include <klex/regular/RegExprParser.h>
 #include <klex/regular/RuleParser.h>
+#include <klex/regular/Symbols.h>
+
 #include <cstring>
 #include <iostream>
 #include <sstream>
 
-#include <klex/regular/Symbols.h>
-
 using namespace std;
 
-namespace klex::regular {
-
-RuleParser::RuleParser(unique_ptr<istream> input, int firstTag)
-	: stream_{move(input)},
-	  refRules_{},
-	  lastParsedRule_{nullptr},
-	  lastParsedRuleIsRef_{false},
-	  currentChar_{0},
-	  line_{1},
-	  column_{0},
-	  offset_{0},
-	  nextTag_{firstTag}
+namespace klex::regular
 {
-	consumeChar();
+
+RuleParser::RuleParser(unique_ptr<istream> input, int firstTag):
+    stream_ { move(input) },
+    refRules_ {},
+    lastParsedRule_ { nullptr },
+    lastParsedRuleIsRef_ { false },
+    currentChar_ { 0 },
+    line_ { 1 },
+    column_ { 0 },
+    offset_ { 0 },
+    nextTag_ { firstTag }
+{
+    consumeChar();
 }
 
-RuleParser::RuleParser(string input, int firstTag)
-	: RuleParser{make_unique<stringstream>(move(input)), firstTag}
+RuleParser::RuleParser(string input, int firstTag):
+    RuleParser { make_unique<stringstream>(move(input)), firstTag }
 {
 }
 
 RuleList RuleParser::parseRules()
 {
-	RuleList rules;
+    RuleList rules;
 
-	for (;;)
-	{
-		consumeSpace();
-		if (eof())
-		{
-			break;
-		}
-		else if (currentChar() == '\n')
-		{
-			consumeChar();
-		}
-		else
-		{
-			parseRule(rules);
-		}
-	}
+    for (;;)
+    {
+        consumeSpace();
+        if (eof())
+        {
+            break;
+        }
+        else if (currentChar() == '\n')
+        {
+            consumeChar();
+        }
+        else
+        {
+            parseRule(rules);
+        }
+    }
 
-	// collect all condition labels, find all <*>-conditions, then replace their <*> with {collected
-	// conditions}
-	set<string> conditions;
-	list<Rule*> starRules;
-	for (Rule& rule : rules)
-	{
-		for (const string& condition : rule.conditions)
-		{
-			if (condition != "*")
-			{
-				conditions.emplace(condition);
-			}
-			else
-			{
-				rule.conditions.clear();
-				starRules.emplace_back(&rule);
-			}
-		}
-	}
-	for (Rule* rule : starRules)
-		for (const string& condition : conditions)
-			rule->conditions.emplace_back(condition);
+    // collect all condition labels, find all <*>-conditions, then replace their <*> with {collected
+    // conditions}
+    set<string> conditions;
+    list<Rule*> starRules;
+    for (Rule& rule: rules)
+    {
+        for (const string& condition: rule.conditions)
+        {
+            if (condition != "*")
+            {
+                conditions.emplace(condition);
+            }
+            else
+            {
+                rule.conditions.clear();
+                starRules.emplace_back(&rule);
+            }
+        }
+    }
+    for (Rule* rule: starRules)
+        for (const string& condition: conditions)
+            rule->conditions.emplace_back(condition);
 
-	return rules;
+    return rules;
 }
 
 void RuleParser::parseRule(RuleList& rules)
 {
-	// Rule         ::= RuleConditionList? BasicRule
-	//                | RuleConditionList '{' BasicRule* '}' (LF | EOF)?
-	// BasicRule    ::= TOKEN RuleOptions? SP '::=' SP RegEx SP? (LF | EOF)
-	// RuleOptions  ::= '(' RuleOption (',' RuleOption)*
-	// RuleOption   ::= ignore
+    // Rule         ::= RuleConditionList? BasicRule
+    //                | RuleConditionList '{' BasicRule* '}' (LF | EOF)?
+    // BasicRule    ::= TOKEN RuleOptions? SP '::=' SP RegEx SP? (LF | EOF)
+    // RuleOptions  ::= '(' RuleOption (',' RuleOption)*
+    // RuleOption   ::= ignore
 
-	consumeSP();
-	if (currentChar_ == '|' && lastParsedRule_ != nullptr)
-	{
-		consumeChar();
-		consumeSP();
-		const string pattern = parseExpression();
-		lastParsedRule_->pattern += '|' + pattern;
-		return;
-	}
+    consumeSP();
+    if (currentChar_ == '|' && lastParsedRule_ != nullptr)
+    {
+        consumeChar();
+        consumeSP();
+        const string pattern = parseExpression();
+        lastParsedRule_->pattern += '|' + pattern;
+        return;
+    }
 
-	// finalize ref-rule by surrounding it with round braces
-	if (lastParsedRuleIsRef_)
-		lastParsedRule_->pattern = fmt::format("({})", lastParsedRule_->pattern);
+    // finalize ref-rule by surrounding it with round braces
+    if (lastParsedRuleIsRef_)
+        lastParsedRule_->pattern = fmt::format("({})", lastParsedRule_->pattern);
 
-	vector<string> conditions = parseRuleConditions();
-	consumeSP();
-	if (!conditions.empty() && currentChar() == '{')
-	{
-		consumeChar();
-		consumeAnySP();  // allow whitespace, including LFs
-		while (!eof() && currentChar() != '}')
-		{
-			parseBasicRule(rules, vector<string>(conditions));
-			consumeSP();  //  part of the next line, allow indentation
-		}
-		consumeChar('}');
-		consumeSP();
-		if (currentChar() == '\n')
-			consumeChar();
-		else if (!eof())
-			throw UnexpectedChar{line_, column_, currentChar_, '\n'};
-	}
-	else
-	{
-		parseBasicRule(rules, move(conditions));
-	}
+    vector<string> conditions = parseRuleConditions();
+    consumeSP();
+    if (!conditions.empty() && currentChar() == '{')
+    {
+        consumeChar();
+        consumeAnySP(); // allow whitespace, including LFs
+        while (!eof() && currentChar() != '}')
+        {
+            parseBasicRule(rules, vector<string>(conditions));
+            consumeSP(); //  part of the next line, allow indentation
+        }
+        consumeChar('}');
+        consumeSP();
+        if (currentChar() == '\n')
+            consumeChar();
+        else if (!eof())
+            throw UnexpectedChar { line_, column_, currentChar_, '\n' };
+    }
+    else
+    {
+        parseBasicRule(rules, move(conditions));
+    }
 }
 
-struct TestRuleForName {
-	string name;
-	bool operator()(const Rule& r) const { return r.name == name; }
+struct TestRuleForName
+{
+    string name;
+    bool operator()(const Rule& r) const { return r.name == name; }
 };
 
 void RuleParser::parseBasicRule(RuleList& rules, vector<string>&& conditions)
 {
-	const unsigned int beginLine = line_;
-	const unsigned int beginColumn = column_;
+    const unsigned int beginLine = line_;
+    const unsigned int beginColumn = column_;
 
-	string token = consumeToken();
-	bool ignore = false;
-	bool ref = false;
-	if (currentChar_ == '(')
-	{
-		consumeChar();
-		unsigned optionOffset = offset_;
-		string option = consumeToken();
-		consumeChar(')');
+    string token = consumeToken();
+    bool ignore = false;
+    bool ref = false;
+    if (currentChar_ == '(')
+    {
+        consumeChar();
+        unsigned optionOffset = offset_;
+        string option = consumeToken();
+        consumeChar(')');
 
-		if (option == "ignore")
-			ignore = true;
-		else if (option == "ref")
-			ref = true;
-		else
-			throw InvalidRuleOption{optionOffset, option};
-	}
-	consumeSP();
-	consumeAssoc();
-	consumeSP();
-	const unsigned int line = line_;
-	const unsigned int column = column_;
-	const string pattern = parseExpression();
-	if (currentChar() == '\n')
-		consumeChar();
-	else if (!eof())
-		throw UnexpectedChar{line_, column_, currentChar_, '\n'};
+        if (option == "ignore")
+            ignore = true;
+        else if (option == "ref")
+            ref = true;
+        else
+            throw InvalidRuleOption { optionOffset, option };
+    }
+    consumeSP();
+    consumeAssoc();
+    consumeSP();
+    const unsigned int line = line_;
+    const unsigned int column = column_;
+    const string pattern = parseExpression();
+    if (currentChar() == '\n')
+        consumeChar();
+    else if (!eof())
+        throw UnexpectedChar { line_, column_, currentChar_, '\n' };
 
-	const Tag tag = [&] {
-		if (ignore || ref)
-			return IgnoreTag;
-		else if (auto i = find_if(rules.begin(), rules.end(), TestRuleForName{token}); i != rules.end())
-			return i->tag;
-		else
-			return nextTag_++;
-	}();
+    const Tag tag = [&] {
+        if (ignore || ref)
+            return IgnoreTag;
+        else if (auto i = find_if(rules.begin(), rules.end(), TestRuleForName { token }); i != rules.end())
+            return i->tag;
+        else
+            return nextTag_++;
+    }();
 
-	if (ref && !conditions.empty())
-		throw InvalidRefRuleWithConditions{beginLine, beginColumn,
-										   Rule{line, column, tag, move(conditions), token, pattern}};
+    if (ref && !conditions.empty())
+        throw InvalidRefRuleWithConditions { beginLine,
+                                             beginColumn,
+                                             Rule { line, column, tag, move(conditions), token, pattern } };
 
-	if (conditions.empty())
-		conditions.emplace_back("INITIAL");
+    if (conditions.empty())
+        conditions.emplace_back("INITIAL");
 
-	sort(conditions.begin(), conditions.end());
+    sort(conditions.begin(), conditions.end());
 
-	if (!ref)
-	{
-		if (auto i = find_if(rules.begin(), rules.end(), TestRuleForName{token}); i != rules.end())
-		{
-			throw DuplicateRule{Rule{line, column, tag, move(conditions), token, pattern}, *i};
-		}
-		else
-		{
-			rules.emplace_back(Rule{line, column, tag, conditions, token, pattern});
-			lastParsedRule_ = &rules.back();
-			lastParsedRuleIsRef_ = false;
-		}
-	}
-	else if (auto i = refRules_.find(token); i != refRules_.end())
-	{
-		throw DuplicateRule{Rule{line, column, tag, move(conditions), token, pattern}, i->second};
-	}
-	else
-	{
-		// TODO: throw if !conditions.empty();
-		refRules_[token] = {line, column, tag, {}, token, pattern};
-		lastParsedRule_ = &refRules_[token];
-		lastParsedRuleIsRef_ = true;
-	}
+    if (!ref)
+    {
+        if (auto i = find_if(rules.begin(), rules.end(), TestRuleForName { token }); i != rules.end())
+        {
+            throw DuplicateRule { Rule { line, column, tag, move(conditions), token, pattern }, *i };
+        }
+        else
+        {
+            rules.emplace_back(Rule { line, column, tag, conditions, token, pattern });
+            lastParsedRule_ = &rules.back();
+            lastParsedRuleIsRef_ = false;
+        }
+    }
+    else if (auto i = refRules_.find(token); i != refRules_.end())
+    {
+        throw DuplicateRule { Rule { line, column, tag, move(conditions), token, pattern }, i->second };
+    }
+    else
+    {
+        // TODO: throw if !conditions.empty();
+        refRules_[token] = { line, column, tag, {}, token, pattern };
+        lastParsedRule_ = &refRules_[token];
+        lastParsedRuleIsRef_ = true;
+    }
 }
 
 vector<string> RuleParser::parseRuleConditions()
 {
-	// RuleConditionList ::= '<' ('*' | TOKEN (',' SP* TOKEN)) '>'
-	if (currentChar() != '<')
-		return {};
+    // RuleConditionList ::= '<' ('*' | TOKEN (',' SP* TOKEN)) '>'
+    if (currentChar() != '<')
+        return {};
 
-	consumeChar();
+    consumeChar();
 
-	if (currentChar() == '*')
-	{
-		consumeChar();
-		consumeChar('>');
-		return {"*"};
-	}
+    if (currentChar() == '*')
+    {
+        consumeChar();
+        consumeChar('>');
+        return { "*" };
+    }
 
-	vector<string> conditions{consumeToken()};
+    vector<string> conditions { consumeToken() };
 
-	while (currentChar() == ',')
-	{
-		consumeChar();
-		consumeSP();
-		conditions.emplace_back(consumeToken());
-	}
+    while (currentChar() == ',')
+    {
+        consumeChar();
+        consumeSP();
+        conditions.emplace_back(consumeToken());
+    }
 
-	consumeChar('>');
+    consumeChar('>');
 
-	return conditions;
+    return conditions;
 }
 
 string RuleParser::parseExpression()
 {
-	// expression ::= " .... "
-	//              | ....
+    // expression ::= " .... "
+    //              | ....
 
-	stringstream sstr;
+    stringstream sstr;
 
-	size_t i = 0;
-	size_t lastGraph = 0;
-	while (!eof() && currentChar_ != '\n')
-	{
-		if (isgraph(currentChar_))
-			lastGraph = i + 1;
-		i++;
-		sstr << consumeChar();
-	}
-	string pattern = sstr.str().substr(0, lastGraph);  // skips trailing spaces
+    size_t i = 0;
+    size_t lastGraph = 0;
+    while (!eof() && currentChar_ != '\n')
+    {
+        if (isgraph(currentChar_))
+            lastGraph = i + 1;
+        i++;
+        sstr << consumeChar();
+    }
+    string pattern = sstr.str().substr(0, lastGraph); // skips trailing spaces
 
-	// replace all occurrences of {ref}
-	for (const pair<const string, Rule>& ref : refRules_)
-	{
-		const Rule& rule = ref.second;
-		const string name = fmt::format("{{{}}}", rule.name);
-		// for (size_t i = 0; (i = pattern.find(name, i)) != string::npos; i += rule.pattern.size()) {
-		//   pattern.replace(i, name.size(), rule.pattern);
-		// }
-		size_t i = 0;
-		while ((i = pattern.find(name, i)) != string::npos)
-		{
-			pattern.replace(i, name.size(), rule.pattern);
-			i += rule.pattern.size();
-		}
-	}
+    // replace all occurrences of {ref}
+    for (const pair<const string, Rule>& ref: refRules_)
+    {
+        const Rule& rule = ref.second;
+        const string name = fmt::format("{{{}}}", rule.name);
+        // for (size_t i = 0; (i = pattern.find(name, i)) != string::npos; i += rule.pattern.size()) {
+        //   pattern.replace(i, name.size(), rule.pattern);
+        // }
+        size_t i = 0;
+        while ((i = pattern.find(name, i)) != string::npos)
+        {
+            pattern.replace(i, name.size(), rule.pattern);
+            i += rule.pattern.size();
+        }
+    }
 
-	return pattern;
+    return pattern;
 }
 
 // skips space until LF or EOF
 void RuleParser::consumeSpace()
 {
-	for (;;)
-	{
-		switch (currentChar_)
-		{
-			case ' ':
-			case '\t':
-			case '\r':
-				consumeChar();
-				break;
-			case '#':
-				while (!eof() && currentChar_ != '\n')
-				{
-					consumeChar();
-				}
-				break;
-			default:
-				return;
-		}
-	}
+    for (;;)
+    {
+        switch (currentChar_)
+        {
+            case ' ':
+            case '\t':
+            case '\r': consumeChar(); break;
+            case '#':
+                while (!eof() && currentChar_ != '\n')
+                {
+                    consumeChar();
+                }
+                break;
+            default: return;
+        }
+    }
 }
 
 char RuleParser::currentChar() const noexcept
 {
-	return currentChar_;
+    return currentChar_;
 }
 
 char RuleParser::consumeChar(char ch)
 {
-	if (currentChar_ != ch)
-		throw UnexpectedChar{line_, column_, currentChar_, ch};
+    if (currentChar_ != ch)
+        throw UnexpectedChar { line_, column_, currentChar_, ch };
 
-	return consumeChar();
+    return consumeChar();
 }
 
 char RuleParser::consumeChar()
 {
-	char t = currentChar_;
+    char t = currentChar_;
 
-	currentChar_ = stream_->get();
-	if (!stream_->eof())
-	{
-		offset_++;
-		if (t == '\n')
-		{
-			line_++;
-			column_ = 1;
-		}
-		else
-		{
-			column_++;
-		}
-	}
+    currentChar_ = stream_->get();
+    if (!stream_->eof())
+    {
+        offset_++;
+        if (t == '\n')
+        {
+            line_++;
+            column_ = 1;
+        }
+        else
+        {
+            column_++;
+        }
+    }
 
-	return t;
+    return t;
 }
 
 bool RuleParser::eof() const noexcept
 {
-	return currentChar_ < 0 || stream_->eof();
+    return currentChar_ < 0 || stream_->eof();
 }
 
 string RuleParser::consumeToken()
 {
-	stringstream sstr;
+    stringstream sstr;
 
-	if (!isalpha(currentChar_) || currentChar_ == '_')
-		throw UnexpectedToken{offset_, currentChar_, "Token"};
+    if (!isalpha(currentChar_) || currentChar_ == '_')
+        throw UnexpectedToken { offset_, currentChar_, "Token" };
 
-	do
-		sstr << consumeChar();
-	while (isalnum(currentChar_) || currentChar_ == '_');
+    do
+        sstr << consumeChar();
+    while (isalnum(currentChar_) || currentChar_ == '_');
 
-	return sstr.str();
+    return sstr.str();
 }
 
 void RuleParser::consumeAnySP()
 {
-	while (currentChar_ == ' ' || currentChar_ == '\t' || currentChar_ == '\n')
-		consumeChar();
+    while (currentChar_ == ' ' || currentChar_ == '\t' || currentChar_ == '\n')
+        consumeChar();
 }
 
 void RuleParser::consumeSP()
 {
-	while (currentChar_ == ' ' || currentChar_ == '\t')
-		consumeChar();
+    while (currentChar_ == ' ' || currentChar_ == '\t')
+        consumeChar();
 }
 
 void RuleParser::consumeAssoc()
 {
-	consumeChar(':');
-	consumeChar(':');
-	consumeChar('=');
+    consumeChar(':');
+    consumeChar(':');
+    consumeChar('=');
 }
 
-}  // namespace klex::regular
+} // namespace klex::regular

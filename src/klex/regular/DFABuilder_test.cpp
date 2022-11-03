@@ -5,26 +5,28 @@
 // file except in compliance with the License. You may obtain a copy of
 // the License at: http://opensource.org/licenses/MIT
 
-#include <klex/util/testing.h>
+#include <klex/regular/Compiler.h>
+#include <klex/regular/DFA.h>
 #include <klex/regular/DFABuilder.h>
 #include <klex/regular/MultiDFA.h>
-#include <klex/regular/DFA.h>
-#include <klex/regular/Compiler.h>
-#include <sstream>
+#include <klex/util/testing.h>
+
 #include <memory>
+#include <sstream>
 
 using namespace klex::regular;
 
-TEST(regular_DFABuilder, shadowing) {
-  Compiler cc;
-  cc.parse(std::make_unique<std::stringstream>(R"(
+TEST(regular_DFABuilder, shadowing)
+{
+    Compiler cc;
+    cc.parse(std::make_unique<std::stringstream>(R"(
     Identifier  ::= [a-z][a-z0-9]*
     TrueLiteral ::= "true"
   )"));
-  // rule 2 is overshadowed by rule 1
-  Compiler::OvershadowMap overshadows;
-  DFA dfa = cc.compileDFA(&overshadows);
-  ASSERT_EQ(1, overshadows.size());
-  EXPECT_EQ(2, overshadows[0].first); // overshadowee
-  EXPECT_EQ(1, overshadows[0].second); // overshadower
+    // rule 2 is overshadowed by rule 1
+    Compiler::OvershadowMap overshadows;
+    DFA dfa = cc.compileDFA(&overshadows);
+    ASSERT_EQ(1, overshadows.size());
+    EXPECT_EQ(2, overshadows[0].first);  // overshadowee
+    EXPECT_EQ(1, overshadows[0].second); // overshadower
 }
