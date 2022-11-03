@@ -31,21 +31,21 @@ class GrammarLexer
 		Eof,         // <<EOF>>
 	};
 
-	bool eof() const noexcept { return offset_ >= content_.size(); }
-	size_t currentOffset() const { return offset_; }
-	Token currentToken() const { return currentToken_; }
-	const std::string& currentLiteral() const noexcept { return currentLiteral_; }
+	[[nodiscard]] bool eof() const noexcept { return offset_ >= content_.size(); }
+	[[nodiscard]] size_t currentOffset() const { return offset_; }
+	[[nodiscard]] Token currentToken() const { return currentToken_; }
+	[[nodiscard]] const std::string& currentLiteral() const noexcept { return currentLiteral_; }
 
-	Token recognize();
+	[[nodiscard]] Token recognize();
 
-	std::string consumeLiteralUntilLF();  // NB. only used for sub-language (klex)
+	[[nodiscard]] std::string consumeLiteralUntilLF();  // NB. only used for sub-language (klex)
 
   private:
 	Token recognizeOne();
 	Token consumeIdentifier();
 	Token consumeLiteral();
-	int currentChar() const;
-	int peekChar(size_t offset) const;
+	[[nodiscard]] int currentChar() const;
+	[[nodiscard]] int peekChar(size_t offset) const;
 	int consumeChar(size_t count = 1);
 
   private:

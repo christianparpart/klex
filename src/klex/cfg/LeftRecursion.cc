@@ -49,8 +49,10 @@ void LeftRecursion::indirect()
 		{
 			for (Production* p : select(nonterminals[i], nonterminals[k]))
 			{
+                (void) p; // TODO
 				for (Production* q : grammar_.getProductions(nonterminals[k]))
 				{
+                    (void) q; // TODO
 					// replace first non-terminal
 					;// p->replaceSymbolAt(0, NonTerminal{q->name});
 				}
@@ -120,7 +122,7 @@ pair<vector<Production*>, vector<Production*>> LeftRecursion::split(
 			head.emplace_back(p);
 	}
 
-	return make_pair(move(head), move(tail));
+	return make_pair(std::move(head), std::move(tail));
 }
 
 }  // namespace klex::cfg

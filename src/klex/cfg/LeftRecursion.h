@@ -35,12 +35,12 @@ class LeftRecursion {
 	/**
 	 * Creates a unique nonterminal symbol that by name relates to @p nt.
 	 */
-	NonTerminal createRelatedNonTerminal(const NonTerminal& nt) const;
+	[[nodiscard]] NonTerminal createRelatedNonTerminal(const NonTerminal& nt) const;
 
 	/**
 	 * Splits all productions of the same nonterminal into a vector of left-recursives and the rest.
 	 */
-	std::pair<std::vector<Production*>, std::vector<Production*>> split(std::vector<Production*> productions) const;
+	[[nodiscard]] std::pair<std::vector<Production*>, std::vector<Production*>> split(std::vector<Production*> productions) const;
 
   private:
 	Grammar& grammar_;

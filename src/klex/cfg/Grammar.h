@@ -32,7 +32,7 @@ struct Terminal {
 
 	std::string name;  // such as "KW_IF"
 
-	const std::string& pattern() const
+	[[nodiscard]] const std::string& pattern() const
 	{
 		if (std::holds_alternative<std::string>(literal))
 			return std::get<std::string>(literal);
@@ -120,10 +120,10 @@ struct _Symbols {
 		bool operator!=(const const_iterator& rhs) const noexcept { return i != rhs.i; }
 	};
 
-	bool empty() const noexcept;
-	size_t size() const noexcept;
+	[[nodiscard]] bool empty() const noexcept;
+	[[nodiscard]] size_t size() const noexcept;
 
-	Symbol operator[](size_t i) const
+	[[nodiscard]] Symbol operator[](size_t i) const
 	{
 		for (const auto& x : handle)
 			if (std::holds_alternative<Terminal>(x) || std::holds_alternative<NonTerminal>(x))
@@ -139,8 +139,8 @@ struct _Symbols {
 		throw std::runtime_error{"Range error"};
 	}
 
-	const_iterator begin() const { return const_iterator{handle.cbegin(), handle.cend()}; }
-	const_iterator end() const { return const_iterator{handle.cend(), handle.cend()}; }
+	[[nodiscard]] const_iterator begin() const { return const_iterator{handle.cbegin(), handle.cend()}; }
+	[[nodiscard]] const_iterator end() const { return const_iterator{handle.cend(), handle.cend()}; }
 
 	struct const_reverse_iterator {
 		Handle::const_reverse_iterator i;
@@ -152,7 +152,7 @@ struct _Symbols {
 				++i;
 		}
 
-		Symbol operator*() const
+		[[nodiscard]] Symbol operator*() const
 		{
 			if (std::holds_alternative<Terminal>(*i))
 				return std::get<Terminal>(*i);
@@ -171,12 +171,12 @@ struct _Symbols {
 		bool operator!=(const const_reverse_iterator& rhs) const noexcept { return i != rhs.i; }
 	};
 
-	const_reverse_iterator crbegin() const
+	[[nodiscard]] const_reverse_iterator crbegin() const
 	{
 		return const_reverse_iterator{handle.crbegin(), handle.crend()};
 	}
 
-	const_reverse_iterator crend() const { return const_reverse_iterator{handle.crend(), handle.crend()}; }
+	[[nodiscard]] const_reverse_iterator crend() const { return const_reverse_iterator{handle.crend(), handle.crend()}; }
 };
 
 std::optional<NonTerminal> firstNonTerminal(const Handle& h);
@@ -203,7 +203,7 @@ struct Production {
 	std::vector<Terminal> first = {};   //!< Accumulated set of terminals representing the FIRST-set.
 	std::vector<Terminal> follow = {};  //!< Accumulated set of terminals representing the FOLLOW-set.
 
-	std::vector<Terminal> first1() const;  //!< @returns the FIRST+-set of this production's handle.
+	[[nodiscard]] std::vector<Terminal> first1() const;  //!< @returns the FIRST+-set of this production's handle.
 };
 
 //! @returns a human readable form of Production @p p.
@@ -228,19 +228,19 @@ struct Grammar {
 	std::vector<Terminal> terminals;
 
 	//! @returns a set of Production alternating rules that represent given NonTerminal @p nt.
-	std::vector<const Production*> getProductions(const NonTerminal& nt) const;
+	[[nodiscard]] std::vector<const Production*> getProductions(const NonTerminal& nt) const;
 
 	//! @returns a set of Production alternating rules that represent given NonTerminal @p nt.
 	std::vector<Production*> getProductions(const NonTerminal& nt);
 
 	//! @returns boolean, indicating whether or not given symbol contains an epsilon.
-	bool containsEpsilon(const Symbol& s) const
+	[[nodiscard]] bool containsEpsilon(const Symbol& s) const
 	{
 		return std::holds_alternative<NonTerminal>(s) && containsEpsilon(std::get<NonTerminal>(s));
 	}
 
 	//! @returns boolean, indicating whether or not given symbol contains an epsilon.
-	bool containsEpsilon(const NonTerminal& nt) const
+	[[nodiscard]] bool containsEpsilon(const NonTerminal& nt) const
 	{
 		for (const Production* p : getProductions(nt))
 			if (p->epsilon)
@@ -250,14 +250,14 @@ struct Grammar {
 	}
 
 	//! @returns true if given non-terminal corresponds to a production, false otherwise.
-	bool containsProduction(const NonTerminal& nt) const
+	[[nodiscard]] bool containsProduction(const NonTerminal& nt) const
 	{
 		return std::any_of(productions.begin(), productions.end(),
 						   [&](const Production& p) { return p.name == nt.name; });
 	}
 
 	//! @returns boolean, indicating whether or not a terminal by given symbolic name has been declared.
-	bool containsExplicitTerminalWithName(const std::string& terminalName) const
+	[[nodiscard]] bool containsExplicitTerminalWithName(const std::string& terminalName) const
 	{
 		using namespace std;
 		return any_of(begin(explicitTerminals), end(explicitTerminals),
@@ -265,10 +265,10 @@ struct Grammar {
 	}
 
 	//! @returns a set of terminals representing the FIRST-set of Symbol @p b.
-	std::vector<Terminal> firstOf(const Symbol& b) const;
+	[[nodiscard]] std::vector<Terminal> firstOf(const Symbol& b) const;
 
 	//! @returns a set of terminals representing the FOLLOW-set of NonTerminal @p nt.
-	std::vector<Terminal> followOf(const NonTerminal& nt) const;
+	[[nodiscard]] std::vector<Terminal> followOf(const NonTerminal& nt) const;
 
 	//! Injects the EOF-terminal at the end of the start production.
 	void injectEof();
@@ -278,7 +278,7 @@ struct Grammar {
 	void finalize();
 
 	//! @returns the state of this Grammar in a print-compatbile form.
-	std::string dump() const;
+	[[nodiscard]] std::string dump() const;
 };
 
 std::vector<Terminal> terminals(const Grammar& grammar);

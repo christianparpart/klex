@@ -16,17 +16,17 @@ struct SourceLocation {
 	size_t offset;
 	size_t count;
 
-	long long int compare(const SourceLocation& other) const noexcept
+	[[nodiscard]] long long int compare(const SourceLocation& other) const noexcept
 	{
 		if (filename == other.filename)
-			return offset - other.offset;
+			return (long) offset - (long) other.offset;
 		else if (filename < other.filename)
 			return -1;
 		else
 			return 1;
 	}
 
-	std::string source() const;
+	[[nodiscard]] std::string source() const;
 
 	bool operator==(const SourceLocation& other) const noexcept { return compare(other) == 0; }
 	bool operator<=(const SourceLocation& other) const noexcept { return compare(other) <= 0; }

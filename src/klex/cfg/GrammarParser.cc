@@ -24,11 +24,11 @@ using namespace klex::cfg;
 	} while (0)
 // #define DEBUG(msg, ...) do { fmt::print((msg), __VA_ARGS__); fmt::print("\n"); } while (0)
 
-GrammarParser::GrammarParser(GrammarLexer&& _lexer, Report* _report) : report_{_report}, lexer_{move(_lexer)}
+GrammarParser::GrammarParser(GrammarLexer&& _lexer, Report* _report) : report_{_report}, lexer_{std::move(_lexer)}
 {
 }
 
-GrammarParser::GrammarParser(string source, Report* _report) : report_{_report}, lexer_{move(source)}
+GrammarParser::GrammarParser(string source, Report* _report) : report_{_report}, lexer_{std::move(source)}
 {
 }
 
@@ -65,7 +65,7 @@ Grammar GrammarParser::parse()
 
 void GrammarParser::consumeToken()
 {
-	lexer_.recognize();
+	(void) lexer_.recognize();
 	// DEBUG("consumeToken: {} \"{}\"", lexer_.currentToken(), lexer_.currentLiteral());
 }
 

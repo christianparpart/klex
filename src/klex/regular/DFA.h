@@ -43,10 +43,10 @@ class DFA {
 
 	DFA() : states_{}, initialState_{0}, backtrackStates_{}, acceptTags_{} {}
 
-	bool empty() const noexcept { return states_.empty(); }
-	size_t size() const noexcept { return states_.size(); }
+	[[nodiscard]] bool empty() const noexcept { return states_.empty(); }
+	[[nodiscard]] size_t size() const noexcept { return states_.size(); }
 
-	StateId lastState() const noexcept
+	[[nodiscard]] StateId lastState() const noexcept
 	{
 		assert(!empty());
 		return states_.size() - 1;

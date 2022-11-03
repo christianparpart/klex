@@ -7,6 +7,7 @@
 #pragma once
 
 #include <iosfwd>
+#include <istream>
 #include <string>
 
 namespace klex {
@@ -15,7 +16,7 @@ class CharStream {
   public:
 	virtual ~CharStream() = default;
 
-	virtual bool isEof() const noexcept = 0;
+	[[nodiscard]] virtual bool isEof() const noexcept = 0;
 	virtual char get() = 0;
 	virtual void rollback(int count) = 0;
 	virtual void rewind() = 0;
@@ -25,7 +26,7 @@ class StringStream : public CharStream {
   public:
 	explicit StringStream(std::string&& s) : source_{std::move(s)} {}
 
-	bool isEof() const noexcept override { return pos_ >= source_.size(); }
+	[[nodiscard]] bool isEof() const noexcept override { return pos_ >= source_.size(); }
 	char get() override { return source_[pos_++]; }
 	void rollback(int count) override { pos_ -= count; }
 	void rewind() override { pos_ = 0; }
@@ -39,8 +40,8 @@ class StandardStream : public CharStream {
   public:
 	explicit StandardStream(std::istream* source);
 
-	bool isEof() const noexcept override { return !source_->good(); }
-	char get() override { return source_->get(); }
+	[[nodiscard]] bool isEof() const noexcept override { return !source_->good(); }
+	char get() override { return static_cast<char>(source_->get()); }
 
 	void rollback(int count) override
 	{

@@ -37,12 +37,12 @@ class Analyzer {
 	Analyzer(const SyntaxTable& table, Report* report, std::string input,
 			 ActionHandler actionHandler = ActionHandler());
 
-	const Lexer& lexer() const noexcept { return lexer_; }
-	const std::string& lastLiteral() const noexcept { return lastLiteral_; }
+	[[nodiscard]] const Lexer& lexer() const noexcept { return lexer_; }
+	[[nodiscard]] const std::string& lastLiteral() const noexcept { return lastLiteral_; }
 
-	const std::string& actionName(int id) const noexcept { return def_.actionNames[id - def_.actionMin()]; }
+	[[nodiscard]] const std::string& actionName(int id) const noexcept { return def_.actionNames[id - def_.actionMin()]; }
 
-	const SemanticValue& semanticValue(int offset) const {
+	[[nodiscard]] const SemanticValue& semanticValue(int offset) const {
 		if (offset < 0)
 			return valueStack_[valueStack_.size() + offset];
 		else
@@ -52,19 +52,19 @@ class Analyzer {
 	[[nodiscard]] std::optional<SemanticValue> analyze();
 
   private:
-	std::optional<SyntaxTable::Expression> getHandleFor(StateValue nonterminal,
-														Terminal currentTerminal) const;
+	[[nodiscard]] std::optional<SyntaxTable::Expression> getHandleFor(StateValue nonterminal,
+																	Terminal currentTerminal) const;
 
-	bool isAction(StateValue v) const noexcept;
-	bool isTerminal(StateValue v) const noexcept;
-	bool isNonTerminal(StateValue v) const noexcept;
+	[[nodiscard]] bool isAction(StateValue v) const noexcept;
+	[[nodiscard]] bool isTerminal(StateValue v) const noexcept;
+	[[nodiscard]] bool isNonTerminal(StateValue v) const noexcept;
 
 	void log(const std::string& msg);
 
-	std::string dumpStateStack() const;
-	std::string dumpSemanticStack() const;
-	std::string stateValue(StateValue sv) const;
-	std::string handleString(const SyntaxTable::Expression& handle) const;
+	[[nodiscard]] std::string dumpStateStack() const;
+	[[nodiscard]] std::string dumpSemanticStack() const;
+	[[nodiscard]] std::string stateValue(StateValue sv) const;
+	[[nodiscard]] std::string handleString(const SyntaxTable::Expression& handle) const;
 
   private:
 	const SyntaxTable& def_;

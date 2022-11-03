@@ -16,7 +16,7 @@ using namespace klex;
 using namespace klex::cfg;
 
 GrammarLexer::GrammarLexer(string content)
-	: content_{move(content)}, offset_{0}, currentLiteral_{}, currentToken_{Token::Illegal}
+	: content_{std::move(content)}, offset_{0}, currentLiteral_{}, currentToken_{Token::Illegal}
 {
 }
 

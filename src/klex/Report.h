@@ -28,11 +28,11 @@ class Report {
 		std::string text;
 
 		Message(Type _type, SourceLocation _sloc, std::string _text)
-			: type{_type}, sourceLocation{_sloc}, text{_text}
+			: type{_type}, sourceLocation{std::move(_sloc)}, text{std::move(_text)}
 		{
 		}
 
-		std::string to_string() const;
+		[[nodiscard]] std::string to_string() const;
 
 		bool operator==(const Message& other) const noexcept;
 		bool operator!=(const Message& other) const noexcept { return !(*this == other); }
@@ -84,7 +84,7 @@ class Report {
 		}
 	}
 
-	bool containsFailures() const noexcept { return errorCount_ != 0; }
+	[[nodiscard]] bool containsFailures() const noexcept { return errorCount_ != 0; }
 
   private:
 	size_t errorCount_ = 0;
@@ -105,26 +105,26 @@ class BufferedReport : public Report {
 	{
 	}
 
-	std::string to_string() const;
+	[[nodiscard]] std::string to_string() const;
 
-	const MessageList& messages() const noexcept { return messages_; }
+	[[nodiscard]] const MessageList& messages() const noexcept { return messages_; }
 
 	void clear();
-	size_t size() const noexcept { return messages_.size(); }
-	const Message& operator[](size_t i) const { return messages_[i]; }
+	[[nodiscard]] size_t size() const noexcept { return messages_.size(); }
+	[[nodiscard]] const Message& operator[](size_t i) const { return messages_[i]; }
 
 	using iterator = MessageList::iterator;
 	using const_iterator = MessageList::const_iterator;
 
-	iterator begin() noexcept { return messages_.begin(); }
-	iterator end() noexcept { return messages_.end(); }
-	const_iterator begin() const noexcept { return messages_.begin(); }
-	const_iterator end() const noexcept { return messages_.end(); }
+	[[nodiscard]] iterator begin() noexcept { return messages_.begin(); }
+	[[nodiscard]] iterator end() noexcept { return messages_.end(); }
+	[[nodiscard]] const_iterator begin() const noexcept { return messages_.begin(); }
+	[[nodiscard]] const_iterator end() const noexcept { return messages_.end(); }
 
-	bool contains(const Message& m) const noexcept;
+	[[nodiscard]] bool contains(const Message& m) const noexcept;
 
-	bool operator==(const BufferedReport& other) const noexcept;
-	bool operator!=(const BufferedReport& other) const noexcept { return !(*this == other); }
+	[[nodiscard]] bool operator==(const BufferedReport& other) const noexcept;
+	[[nodiscard]] bool operator!=(const BufferedReport& other) const noexcept { return !(*this == other); }
 
   private:
 	void onMessage(Message&& msg);

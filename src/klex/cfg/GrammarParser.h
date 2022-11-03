@@ -36,12 +36,12 @@ class GrammarParser
 
 	void parseTokenBlock();
 
-	const std::string& currentLiteral() const noexcept { return lexer_.currentLiteral(); }
-	Token currentToken() const noexcept { return lexer_.currentToken(); }
+	[[nodiscard]] const std::string& currentLiteral() const noexcept { return lexer_.currentLiteral(); }
+	[[nodiscard]] Token currentToken() const noexcept { return lexer_.currentToken(); }
 	void consumeToken();
 	void consumeToken(Token expectedToken);
 
-	std::optional<const regular::Rule*> findExplicitTerminal(const std::string& terminalName) const;
+	[[nodiscard]] std::optional<const regular::Rule*> findExplicitTerminal(const std::string& terminalName) const;
 
   private:
 	Report* report_;
