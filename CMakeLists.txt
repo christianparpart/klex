@@ -24,10 +24,11 @@ endif()
 
 # fmtlib
 if(KLEX_EMBEDDED_FMTLIB)
-  add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fmt" EXCLUDE_FROM_ALL)
-  add_definitions(-DFMT_USE_WINDOWS_H=0)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fmt" EXCLUDE_FROM_ALL)
+    add_definitions(-DFMT_USE_WINDOWS_H=0)
 else()
-  # master project must provide its own fmtlib
+    # master project must provide its own fmtlib
+    find_package(fmt REQUIRED)
 endif()
 
 # ----------------------------------------------------------------------------
