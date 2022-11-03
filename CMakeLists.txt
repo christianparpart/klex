@@ -52,29 +52,29 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/klex.pc DESTINATION ${CMAKE_INSTALL_PR
 
 # ----------------------------------------------------------------------------
 add_library(klex STATIC
-    src/klex/Report.cc
-    src/klex/SourceLocation.cc
-    src/klex/cfg/Grammar.cc
-    src/klex/cfg/GrammarLexer.cc
-    src/klex/cfg/GrammarParser.cc
-    src/klex/cfg/GrammarValidator.cc
-    src/klex/cfg/LeftRecursion.cc
-    src/klex/cfg/ll/SyntaxTable.cc
-    src/klex/regular/Alphabet.cc
-    src/klex/regular/Compiler.cc
-    src/klex/regular/DFA.cc
-    src/klex/regular/DFABuilder.cc
-    src/klex/regular/DFAMinimizer.cc
-    src/klex/regular/DotWriter.cc
-    src/klex/regular/MultiDFA.cc
-    src/klex/regular/NFA.cc
-    src/klex/regular/NFABuilder.cc
-    src/klex/regular/RegExpr.cc
-    src/klex/regular/RegExprParser.cc
-    src/klex/regular/RuleParser.cc
-    src/klex/regular/State.cc
-    src/klex/regular/Symbols.cc
-    src/klex/util/Flags.cc
+    src/klex/Report.cpp
+    src/klex/SourceLocation.cpp
+    src/klex/cfg/Grammar.cpp
+    src/klex/cfg/GrammarLexer.cpp
+    src/klex/cfg/GrammarParser.cpp
+    src/klex/cfg/GrammarValidator.cpp
+    src/klex/cfg/LeftRecursion.cpp
+    src/klex/cfg/ll/SyntaxTable.cpp
+    src/klex/regular/Alphabet.cpp
+    src/klex/regular/Compiler.cpp
+    src/klex/regular/DFA.cpp
+    src/klex/regular/DFABuilder.cpp
+    src/klex/regular/DFAMinimizer.cpp
+    src/klex/regular/DotWriter.cpp
+    src/klex/regular/MultiDFA.cpp
+    src/klex/regular/NFA.cpp
+    src/klex/regular/NFABuilder.cpp
+    src/klex/regular/RegExpr.cpp
+    src/klex/regular/RegExprParser.cpp
+    src/klex/regular/RuleParser.cpp
+    src/klex/regular/State.cpp
+    src/klex/regular/Symbols.cpp
+    src/klex/util/Flags.cpp
     )
 
 target_link_libraries(klex PUBLIC fmt::fmt-header-only)
@@ -100,7 +100,7 @@ target_include_directories(klex PUBLIC
   $<INSTALL_INTERFACE:include>)
 
 # ----------------------------------------------------------------------------
-add_executable(mklex src/mklex.cc)
+add_executable(mklex src/mklex.cpp)
 set_target_properties(mklex PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 target_link_libraries(mklex klex)
 
@@ -114,23 +114,23 @@ endif()
 # ----------------------------------------------------------------------------
 if(KLEX_TESTS)
   add_executable(klex_test
-      src/klex/cfg/GrammarLexer_test.cc
-      src/klex/cfg/GrammarParser_test.cc
-      src/klex/cfg/Grammar_test.cc
-      src/klex/cfg/LeftRecursion_test.cc
-      src/klex/cfg/ll/Analyzer_test.cc
-      src/klex/cfg/ll/SyntaxTable_test.cc
-      src/klex/klex_test.cc
-      src/klex/regular/DFABuilder_test.cc
-      src/klex/regular/DotWriter_test.cc
-      src/klex/regular/Lexer_test.cc
-      src/klex/regular/NFA_test.cc
-      src/klex/regular/RegExprParser_test.cc
-      src/klex/regular/RuleParser_test.cc
-      src/klex/regular/State_test.cc
-      src/klex/regular/Symbols_test.cc
-      src/klex/util/iterator_test.cc
-      src/klex/util/testing.cc
+      src/klex/cfg/GrammarLexer_test.cpp
+      src/klex/cfg/GrammarParser_test.cpp
+      src/klex/cfg/Grammar_test.cpp
+      src/klex/cfg/LeftRecursion_test.cpp
+      src/klex/cfg/ll/Analyzer_test.cpp
+      src/klex/cfg/ll/SyntaxTable_test.cpp
+      src/klex/klex_test.cpp
+      src/klex/regular/DFABuilder_test.cpp
+      src/klex/regular/DotWriter_test.cpp
+      src/klex/regular/Lexer_test.cpp
+      src/klex/regular/NFA_test.cpp
+      src/klex/regular/RegExprParser_test.cpp
+      src/klex/regular/RuleParser_test.cpp
+      src/klex/regular/State_test.cpp
+      src/klex/regular/Symbols_test.cpp
+      src/klex/util/iterator_test.cpp
+      src/klex/util/testing.cpp
       )
 
   target_link_libraries(klex_test PUBLIC klex)
@@ -147,18 +147,18 @@ if(KLEX_EXAMPLES)
   klex_generate_cpp(examples/flow.klex ${FLOW_TOKEN_SRC} FLOW_TABLE_SRC)
   message(STATUS "example: KLEX_TABLE_SRC: ${FLOW_TABLE_SRC}")
 
-  add_executable(example_flowlexer examples/flowlexer.cc ${FLOW_TABLE_SRC})
+  add_executable(example_flowlexer examples/flowlexer.cpp ${FLOW_TABLE_SRC})
   set_target_properties(example_flowlexer PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
   target_include_directories(example_flowlexer PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/examples)
   target_link_libraries(example_flowlexer PUBLIC fmt::fmt-header-only)
   set_target_properties(example_flowlexer PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 
-  add_executable(example_mathexpr examples/mathexpr.cc)
+  add_executable(example_mathexpr examples/mathexpr.cpp)
   set_target_properties(example_mathexpr PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
   target_link_libraries(example_mathexpr klex)
   target_include_directories(example_mathexpr PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/examples)
 
-  add_executable(example_wordcount examples/wordcount.cc)
+  add_executable(example_wordcount examples/wordcount.cpp)
   set_target_properties(example_wordcount PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
   target_link_libraries(example_wordcount klex)
   target_include_directories(example_wordcount PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/examples)
